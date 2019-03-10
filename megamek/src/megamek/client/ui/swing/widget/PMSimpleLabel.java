@@ -134,10 +134,12 @@ public class PMSimpleLabel implements PMLabel, Accessible {
 
     public void setVisible(boolean v) {
         visible = v;
-        getAccessibleContext().firePropertyChange(
-            AccessibleContext.ACCESSIBLE_STATE_PROPERTY,
-            AccessibleState.VISIBLE,
-            null);
+        if (accessibleContext != null) {
+            accessibleContext.firePropertyChange(
+                AccessibleContext.ACCESSIBLE_STATE_PROPERTY,
+                AccessibleState.VISIBLE,
+                null);
+        }
     }
 
     public Rectangle getBounds() {
