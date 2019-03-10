@@ -26,6 +26,10 @@ import java.util.Vector;
 public class PMAreasGroup implements PMElement {
     private Vector<PMElement> gr = new Vector<PMElement>();
 
+    public int getChildrenCount() {
+        return gr.size();
+    }
+
     /**
      * Adds area to group
      */

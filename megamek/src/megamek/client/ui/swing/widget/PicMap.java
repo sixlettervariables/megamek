@@ -18,6 +18,7 @@ import java.awt.AWTEvent;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.IllegalComponentStateException;
 import java.awt.Image;
 import java.awt.Polygon;
 import java.awt.Rectangle;
@@ -25,8 +26,14 @@ import java.awt.Shape;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
+import java.util.Locale;
 import java.util.Vector;
 
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
 import javax.swing.JComponent;
 
 /**
@@ -35,10 +42,11 @@ import javax.swing.JComponent;
  * elements<br>
  * 1) BackgroundDrawers<br>
  * 2) Hot areas<br>
- * 3) Labels<br> * Hot areas and labels can be grouped handled together by
- * AreasGroup class. Content of PicMap - Areas group that includes all areas on
- * the stage. <p/> Added Elements are placed into several layers within PicMap
- * engine.
+ * 3) Labels<br>
+ * * Hot areas and labels can be grouped handled together by AreasGroup class.
+ * Content of PicMap - Areas group that includes all areas on the stage.
+ * <p/>
+ * Added Elements are placed into several layers within PicMap engine.
  * <ul>
  * <li>Bottom layer is BackgroundDrawers.
  * <li>Next is layer of all elements that not implements PMHotArea or PMLAbel
@@ -49,7 +57,7 @@ import javax.swing.JComponent;
  * </ul>
  * Within single layer elements are drawing in the order they added to PicMap.
  */
-public abstract class PicMap extends JComponent {
+public abstract class PicMap extends JComponent implements Accessible {
     /**
      * 
      */
@@ -85,16 +93,14 @@ public abstract class PicMap extends JComponent {
     private boolean bgIsOpaque = true;
 
     /**
-     * creates PicMap engine. If no areas, labels or Backround-drawers added
-     * this is just transparent layer over container.
+     * creates PicMap engine. If no areas, labels or Backround-drawers added this is
+     * just transparent layer over container.
      */
     public PicMap() {
         rootGroup.addArea(otherAreas);
         rootGroup.addArea(hotAreas);
         rootGroup.addArea(labels);
-        enableEvents(AWTEvent.MOUSE_EVENT_MASK
-                | AWTEvent.MOUSE_MOTION_EVENT_MASK
-                | AWTEvent.COMPONENT_EVENT_MASK);
+        enableEvents(AWTEvent.MOUSE_EVENT_MASK | AWTEvent.MOUSE_MOTION_EVENT_MASK | AWTEvent.COMPONENT_EVENT_MASK);
     }
 
     /**
@@ -105,11 +111,11 @@ public abstract class PicMap extends JComponent {
     public abstract void onResize();
 
     /**
-     * Adds element to PicMap component. Please note, that all objects
-     * implementing PMLabel interface will be placed in the topmost layer. All
-     * objects implementing PMHotArea will be placed in the middle layer. All
-     * others are going to bottom layer. Within same layer objects are drawing
-     * by order they added to components.
+     * Adds element to PicMap component. Please note, that all objects implementing
+     * PMLabel interface will be placed in the topmost layer. All objects
+     * implementing PMHotArea will be placed in the middle layer. All others are
+     * going to bottom layer. Within same layer objects are drawing by order they
+     * added to components.
      */
     public void addElement(PMElement e) {
         if (e instanceof PMLabel) {
@@ -160,8 +166,8 @@ public abstract class PicMap extends JComponent {
     }
 
     /**
-     * Adds background drawer to the stage. Background drawers are drawn in
-     * order they added to the component.
+     * Adds background drawer to the stage. Background drawers are drawn in order
+     * they added to the component.
      */
 
     public void addBgDrawer(BackGroundDrawer bd) {
@@ -178,8 +184,8 @@ public abstract class PicMap extends JComponent {
     }
 
     /**
-     * Sets margins in pixels around Content of component. Does not affect
-     * Backgroun Drawers.
+     * Sets margins in pixels around Content of component. Does not affect Backgroun
+     * Drawers.
      * 
      * @param l Left margin
      * @param t Top margin
@@ -258,8 +264,7 @@ public abstract class PicMap extends JComponent {
             bgd.drawInto(g, w, h);
         }
         Shape oldClip = g.getClip();
-        g.setClip(new Rectangle(leftMargin, topMargin, w - leftMargin
-                - rightMargin, h - topMargin - bottomMargin));
+        g.setClip(new Rectangle(leftMargin, topMargin, w - leftMargin - rightMargin, h - topMargin - bottomMargin));
 
         // Hot areas painting
         hotAreas.drawInto(g);
@@ -279,8 +284,7 @@ public abstract class PicMap extends JComponent {
     public Dimension getMinimumSize() {
         Rectangle r = rootGroup.getBounds();
         if (r != null) {
-            return new Dimension(r.x + r.width + rightMargin, r.y + r.height
-                    + bottomMargin);
+            return new Dimension(r.x + r.width + rightMargin, r.y + r.height + bottomMargin);
         }
         return new Dimension(minWidth, minHeight);
     }
@@ -313,11 +317,11 @@ public abstract class PicMap extends JComponent {
 
     /**
      * Sets background of PicMap to fully opaque or fully transparent. Notes:
-     * Setting Background opaque to "false" switch off buffering of PicMap.
-     * Please provide appropriate graphic buffering in container. Notes: Setting
-     * Background opaque to "false" does not prevent draw of BackgroundDrawers
-     * in PicMap component. Notes: It is required only for Java1.1. Under
-     * Java1.3 and up offscreen will be transparent by default.
+     * Setting Background opaque to "false" switch off buffering of PicMap. Please
+     * provide appropriate graphic buffering in container. Notes: Setting Background
+     * opaque to "false" does not prevent draw of BackgroundDrawers in PicMap
+     * component. Notes: It is required only for Java1.1. Under Java1.3 and up
+     * offscreen will be transparent by default.
      */
 
     public void setBackgroundOpaque(boolean v) {
@@ -328,18 +332,18 @@ public abstract class PicMap extends JComponent {
     protected void processMouseEvent(MouseEvent e) {
         PMHotArea ha = getAreaUnder(e.getX(), e.getY());
         switch (e.getID()) {
-            case MouseEvent.MOUSE_CLICKED:
-                if (ha != null)
-                    ha.onMouseClick(e);
-                break;
-            case MouseEvent.MOUSE_PRESSED:
-                if (ha != null)
-                    ha.onMouseDown(e);
-                break;
-            case MouseEvent.MOUSE_RELEASED:
-                if (ha != null)
-                    ha.onMouseUp(e);
-                break;
+        case MouseEvent.MOUSE_CLICKED:
+            if (ha != null)
+                ha.onMouseClick(e);
+            break;
+        case MouseEvent.MOUSE_PRESSED:
+            if (ha != null)
+                ha.onMouseDown(e);
+            break;
+        case MouseEvent.MOUSE_RELEASED:
+            if (ha != null)
+                ha.onMouseUp(e);
+            break;
         }
         update();
     }
@@ -347,32 +351,94 @@ public abstract class PicMap extends JComponent {
     @Override
     protected void processMouseMotionEvent(MouseEvent e) {
         switch (e.getID()) {
-            case MouseEvent.MOUSE_MOVED:
-                PMHotArea ha = getAreaUnder(e.getX(), e.getY());
-                if ((ha == null && activeHotArea != null)
-                        || (ha != null && !ha.equals(activeHotArea))) {
-                    if (activeHotArea != null)
-                        activeHotArea.onMouseExit(e);
-                    activeHotArea = ha;
-                    if (ha != null) {
-                        ha.onMouseOver(e);
-                        setCursor(ha.getCursor());
-                    } else {
-                        setCursor(Cursor.getDefaultCursor());
-                    }
-                    update();
+        case MouseEvent.MOUSE_MOVED:
+            PMHotArea ha = getAreaUnder(e.getX(), e.getY());
+            if ((ha == null && activeHotArea != null) || (ha != null && !ha.equals(activeHotArea))) {
+                if (activeHotArea != null)
+                    activeHotArea.onMouseExit(e);
+                activeHotArea = ha;
+                if (ha != null) {
+                    ha.onMouseOver(e);
+                    setCursor(ha.getCursor());
+                } else {
+                    setCursor(Cursor.getDefaultCursor());
                 }
-                break;
+                update();
+            }
+            break;
         }
     }
 
     @Override
     protected void processComponentEvent(ComponentEvent e) {
         switch (e.getID()) {
-            case ComponentEvent.COMPONENT_RESIZED:
-                onResize();
-                update();
-                break;
+        case ComponentEvent.COMPONENT_RESIZED:
+            onResize();
+            update();
+            break;
         }
+    }
+
+    @Override
+    public AccessibleContext getAccessibleContext() {
+        if (accessibleContext == null) {
+            accessibleContext = new AccessiblePicMap();
+        }
+        return accessibleContext;
+    }
+
+    protected class AccessiblePicMap extends AccessibleContext {
+
+        @Override
+        public AccessibleRole getAccessibleRole() {
+            return AccessibleRole.SWING_COMPONENT;
+        }
+
+        @Override
+        public AccessibleStateSet getAccessibleStateSet() {
+            AccessibleStateSet states = new AccessibleStateSet();
+            states.add(AccessibleState.ENABLED);
+            return states;
+        }
+
+        @Override
+        public int getAccessibleIndexInParent() {
+            return 0;
+        }
+
+        @Override
+        public int getAccessibleChildrenCount() {
+            return PicMap.this.labels.getChildrenCount()
+                    + PicMap.this.hotAreas.getChildrenCount()
+                    + PicMap.this.otherAreas.getChildrenCount();
+        }
+
+        @Override
+        public Accessible getAccessibleChild(int i) {
+            if (i < PicMap.this.labels.getChildrenCount()) {
+                PMElement element = PicMap.this.labels.elementAt(i);
+                return element instanceof Accessible ? (Accessible)element : null;
+            }
+
+            i -= PicMap.this.labels.getChildrenCount();
+            if (i < PicMap.this.hotAreas.getChildrenCount()) {
+                PMElement element =  PicMap.this.hotAreas.elementAt(i);
+                return element instanceof Accessible ? (Accessible)element : null;
+            }
+
+            i -= PicMap.this.hotAreas.getChildrenCount();
+            if (i < PicMap.this.otherAreas.getChildrenCount()) {
+                PMElement element =  PicMap.this.otherAreas.elementAt(i);
+                return element instanceof Accessible ? (Accessible)element : null;
+            }
+
+            return null;
+        }
+
+        @Override
+        public Locale getLocale() throws IllegalComponentStateException {
+            return Locale.getDefault();
+        }
+
     }
 }
