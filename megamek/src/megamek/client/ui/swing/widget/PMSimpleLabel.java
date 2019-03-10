@@ -229,7 +229,7 @@ public class PMSimpleLabel implements PMLabel, Accessible {
             if (visible) {
                 states.add(AccessibleState.VISIBLE);
             }
-            return null;
+            return states;
         }
 
         @Override
