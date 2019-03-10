@@ -22,6 +22,7 @@ import java.awt.Insets;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
+import javax.accessibility.Accessible;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
@@ -393,4 +394,28 @@ public class UnitDisplay extends JPanel {
     public ClientGUI getClientGUI() {
         return clientgui;
     }
+
+	public MovementPanel getMovementPanel() {
+		return mPan;
+	}
+
+	public PilotPanel getPilotPanel() {
+		return pPan;
+	}
+
+	public ArmorPanel getArmorPanel() {
+		return aPan;
+	}
+
+	public SystemPanel getSystemsPanel() {
+		return sPan;
+	}
+
+	public WeaponPanel getWeaponsPanel() {
+		return wPan;
+	}
+
+	public ExtraPanel getExtrasPanel() {
+		return ePan;
+	}
 }
