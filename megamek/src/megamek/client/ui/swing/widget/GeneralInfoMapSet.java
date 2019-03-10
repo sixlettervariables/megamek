@@ -114,6 +114,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
 
         pilotR = createLabel(
                 Messages.getString("GeneralInfoMapSet.playerR"), fm, pilotL.getSize().width + 10, getYCoord()); //$NON-NLS-1$
+        pilotL.setLabelFor(pilotR);
         content.addArea(pilotR);
 
         playerL = createLabel(
@@ -122,6 +123,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
 
         playerR = createLabel(
                 Messages.getString("GeneralInfoMapSet.playerR"), fm, playerL.getSize().width + 10, getYCoord()); //$NON-NLS-1$
+        playerL.setLabelFor(playerR);
         content.addArea(playerR);
 
         teamL = createLabel(
@@ -130,6 +132,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
 
         teamR = createLabel(
                 Messages.getString("GeneralInfoMapSet.teamR"), fm, teamL.getSize().width + 10, getYCoord()); //$NON-NLS-1$
+        teamL.setLabelFor(teamR);
         content.addArea(teamR);
 
         statusL = createLabel(
@@ -138,6 +141,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
 
         statusR = createLabel(STAR3, fm, statusL.getSize().width + 10,
                 getYCoord());
+        statusL.setLabelFor(statusR);
         content.addArea(statusR);
 
         weightL = createLabel(
@@ -146,6 +150,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
 
         weightR = createLabel(STAR3, fm, weightL.getSize().width + 10,
                 getYCoord());
+        weightL.setLabelFor(weightR);
         content.addArea(weightR);
 
         bvL = createLabel(
@@ -153,6 +158,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
         content.addArea(bvL);
 
         bvR = createLabel(STAR3, fm, bvL.getSize().width + 10, getYCoord());
+        bvL.setLabelFor(bvR);
         content.addArea(bvR);
 
         mpL0 = createLabel(
@@ -160,6 +166,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
         content.addArea(mpL0);
 
         mpR0 = createLabel("", fm, mpL0.getSize().width + 10, getYCoord()); //$NON-NLS-1$
+        mpL0.setLabelFor(mpR0);
         content.addArea(mpR0);
 
         mpL1 = createLabel(
@@ -168,6 +175,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
         content.addArea(mpL1);
 
         mpR1 = createLabel(STAR3, fm, mpL0.getSize().width + 10, getYCoord());
+        mpL1.setLabelFor(mpR1);
         content.addArea(mpR1);
 
         mpL2 = createLabel(
@@ -176,6 +184,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
         content.addArea(mpL2);
 
         mpR2 = createLabel(STAR3, fm, mpL0.getSize().width + 10, getYCoord());
+        mpL2.setLabelFor(mpR2);
         content.addArea(mpR2);
 
         mpL3 = createLabel(
@@ -184,6 +193,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
         content.addArea(mpL3);
 
         mpR3 = createLabel(STAR3, fm, mpL0.getSize().width + 10, getYCoord());
+        mpL3.setLabelFor(mpR3);
         content.addArea(mpR3);
 
         mpL4 = createLabel(
@@ -192,6 +202,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
         content.addArea(mpL4);
 
         mpR4 = createLabel("", fm, mpL0.getSize().width + 10, getYCoord());
+        mpL4.setLabelFor(mpR4);
         content.addArea(mpR4);
 
         curMoveL = createLabel(
@@ -200,6 +211,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
 
         curMoveR = createLabel(STAR3, fm, curMoveL.getSize().width + 10,
                 getYCoord());
+        curMoveL.setLabelFor(curMoveR);
         content.addArea(curMoveR);
 
         heatL = createLabel(
@@ -207,12 +219,14 @@ public class GeneralInfoMapSet implements DisplayMapSet {
         content.addArea(heatL);
 
         heatR = createLabel(STAR3, fm, heatL.getSize().width + 10, getYCoord());
+        heatL.setLabelFor(heatR);
         content.addArea(heatR);
 
         fuelL = createLabel(
                 Messages.getString("GeneralInfoMapSet.fuelL"), fm, 0, getNewYCoord()); //$NON-NLS-1$
         content.addArea(fuelL);
         fuelR = createLabel(STAR3, fm, fuelL.getSize().width + 10, getYCoord());
+        fuelL.setLabelFor(fuelR);
         content.addArea(fuelR);
 
         movementTypeL = createLabel(
@@ -220,6 +234,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
         content.addArea(movementTypeL);
         movementTypeR = createLabel(STAR3, fm,
                 movementTypeL.getSize().width + 10, getYCoord());
+        movementTypeL.setLabelFor(movementTypeR);
         content.addArea(movementTypeR);
 
         ejectL = createLabel(
@@ -227,6 +242,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
         content.addArea(ejectL);
         ejectR = createLabel(STAR3, fm, ejectL.getSize().width + 10,
                 getYCoord());
+        ejectL.setLabelFor(ejectR);
         content.addArea(ejectR);
 
         elevationL = createLabel(
@@ -234,6 +250,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
         content.addArea(elevationL);
         elevationR = createLabel(STAR3, fm, elevationL.getSize().width + 10,
                 getYCoord());
+        elevationL.setLabelFor(elevationR);
         content.addArea(elevationR);
 
         curSensorsL = createLabel(
@@ -241,6 +258,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
         content.addArea(curSensorsL);
         curSensorsR = createLabel(STAR3, fm, curSensorsL.getSize().width + 10,
                 getYCoord());
+        curSensorsL.setLabelFor(curSensorsR);
         content.addArea(curSensorsR);
 
         visualRangeL = createLabel(
@@ -248,6 +266,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
         content.addArea(visualRangeL);
         visualRangeR = createLabel(STAR3, fm,
                 visualRangeL.getSize().width + 10, getYCoord());
+        visualRangeL.setLabelFor(visualRangeR);
         content.addArea(visualRangeR);
 
         getNewYCoord(); // skip a line for readability
@@ -292,6 +311,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
                 .getString("GeneralInfoMapSet.prone") : Messages.getString("GeneralInfoMapSet.normal")); //$NON-NLS-1$ //$NON-NLS-2$
         if (en.getOwner() != null) {
             playerR.setString(en.getOwner().getName());
+            playerR.getAccessibleContext().setAccessibleDescription(String.format("%s is owned by %s", en.getDisplayName(), en.getOwner().getName()));
             if (en.getOwner().getTeam() == 0) {
                 teamL.setVisible(false);
                 teamR.setVisible(false);

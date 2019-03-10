@@ -2,6 +2,10 @@ package megamek.client.ui.swing.unitDisplay;
 
 import java.awt.Rectangle;
 import java.util.Enumeration;
+import java.util.Locale;
+
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
 
 import megamek.client.ui.swing.widget.BackGroundDrawer;
 import megamek.client.ui.swing.widget.GeneralInfoMapSet;
@@ -62,4 +66,44 @@ class MovementPanel extends PicMap {
         update();
     }
 
+    @Override
+    public AccessibleContext getAccessibleContext() {
+        if (accessibleContext == null) {
+            accessibleContext = new AccessibleMovementPanel();
+        }
+        return accessibleContext;
+    }
+
+    protected class AccessibleMovementPanel extends AccessiblePicMap {
+        @Override
+        public AccessibleRole getAccessibleRole() {
+            return AccessibleMovementPanelRole.MOVEMENT_PANEL;
+        }
+    }
+
+    protected static class AccessibleMovementPanelRole extends AccessibleRole {
+        public static final AccessibleRole MOVEMENT_PANEL = new AccessibleMovementPanelRole("movement_panel");
+
+        private AccessibleMovementPanelRole(String key) {
+            super(key);
+        }
+
+        /**
+         * Obtains the key as a localized string. If a localized string cannot be
+         * found for the key, the locale independent key stored in the role will be
+         * returned. This method is intended to be used only by subclasses so that
+         * they can specify their own resource bundles which contain localized
+         * strings for their keys.
+         *
+         * @param  resourceBundleName the name of the resource bundle to use for
+         *         lookup
+         * @param  locale the locale for which to obtain a localized string
+         * @return a localized string for the key
+         */
+        @Override
+        protected String toDisplayString(String resourceBundleName,
+                                        Locale locale) {
+            return "Unit Movement Information";
+        }
+    }
 }
