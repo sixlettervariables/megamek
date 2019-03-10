@@ -16,20 +16,32 @@ package megamek.client.ui.swing.widget;
 
 import java.awt.AWTEventMulticaster;
 import java.awt.Cursor;
+import java.awt.IllegalComponentStateException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
+import java.util.Locale;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleAction;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
+
+import megamek.common.preference.PreferenceManager;
 
 /**
  * Abstract class which defines common functionality for all hot areas such as
  * event handling and dispatching.
  */
-
-public abstract class PMGenericHotArea implements PMHotArea {
+public abstract class PMGenericHotArea implements PMHotArea, Accessible {
 
     private ActionListener actionListener = null;
     private Cursor cursor = new Cursor(Cursor.HAND_CURSOR);
+    
+    protected AccessibleHotArea accessibleContext;
 
     public Cursor getCursor() {
         return cursor;
@@ -60,16 +72,14 @@ public abstract class PMGenericHotArea implements PMHotArea {
         if (e.getClickCount() > 1)
             command = PMHotArea.MOUSE_DOUBLE_CLICK;
 
-        ActionEvent ae = new ActionEvent(this, ActionEvent.ACTION_PERFORMED,
-                command, modifiers);
+        ActionEvent ae = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, command, modifiers);
         dispatchEvent(ae);
     }
 
     public void onMouseOver(MouseEvent e) {
         int modifiers = e.getModifiers();
         String command = PMHotArea.MOUSE_OVER;
-        ActionEvent ae = new ActionEvent(this, ActionEvent.ACTION_PERFORMED,
-                command, modifiers);
+        ActionEvent ae = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, command, modifiers);
         dispatchEvent(ae);
 
     }
@@ -77,24 +87,21 @@ public abstract class PMGenericHotArea implements PMHotArea {
     public void onMouseExit(MouseEvent e) {
         int modifiers = e.getModifiers();
         String command = PMHotArea.MOUSE_EXIT;
-        ActionEvent ae = new ActionEvent(this, ActionEvent.ACTION_PERFORMED,
-                command, modifiers);
+        ActionEvent ae = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, command, modifiers);
         dispatchEvent(ae);
     }
 
     public void onMouseDown(MouseEvent e) {
         int modifiers = e.getModifiers();
         String command = PMHotArea.MOUSE_DOWN;
-        ActionEvent ae = new ActionEvent(this, ActionEvent.ACTION_PERFORMED,
-                command, modifiers);
+        ActionEvent ae = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, command, modifiers);
         dispatchEvent(ae);
     }
 
     public void onMouseUp(MouseEvent e) {
         int modifiers = e.getModifiers();
         String command = PMHotArea.MOUSE_UP;
-        ActionEvent ae = new ActionEvent(this, ActionEvent.ACTION_PERFORMED,
-                command, modifiers);
+        ActionEvent ae = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, command, modifiers);
         dispatchEvent(ae);
     }
 
@@ -104,4 +111,96 @@ public abstract class PMGenericHotArea implements PMHotArea {
         }
     }
 
+    @Override
+    public AccessibleContext getAccessibleContext() {
+        if (accessibleContext == null) {
+            accessibleContext = new AccessibleHotArea();
+        }
+        return accessibleContext;
+    }
+
+    protected class AccessibleHotArea extends AccessibleContext implements AccessibleAction {
+
+        @Override
+        public AccessibleAction getAccessibleAction() {
+            return this;
+        }
+
+        @Override
+        public AccessibleRole getAccessibleRole() {
+            return AccessibleRole.PUSH_BUTTON;
+        }
+
+        @Override
+        public AccessibleStateSet getAccessibleStateSet() {
+            AccessibleStateSet states = new AccessibleStateSet();
+            states.add(AccessibleState.ENABLED);
+            return states;
+        }
+
+        @Override
+        public int getAccessibleIndexInParent() {
+            return -1;
+        }
+
+        @Override
+        public int getAccessibleChildrenCount() {
+            return 0;
+        }
+
+        @Override
+        public Accessible getAccessibleChild(int i) {
+            return null;
+        }
+
+        @Override
+        public Locale getLocale() throws IllegalComponentStateException {
+            return PreferenceManager.getClientPreferences().getLocale();
+        }
+
+        @Override
+        public int getAccessibleActionCount() {
+            return 3;
+        }
+
+        @Override
+        public String getAccessibleActionDescription(int i) {
+            switch (i) {
+            case 0:
+                return PMHotArea.MOUSE_CLICK_LEFT;
+            case 1:
+                return PMHotArea.MOUSE_CLICK_RIGHT;
+            case 2:
+                return PMHotArea.MOUSE_DOUBLE_CLICK;
+            default:
+                return null;
+            }
+        }
+
+        @Override
+        public boolean doAccessibleAction(int i) {
+            int modifiers = 0; // TODO: how do we support this?
+            String command;
+            ActionEvent ae;
+            switch (i) {
+            case 0:
+                command = PMHotArea.MOUSE_CLICK_LEFT;
+                ae = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, command, modifiers);
+                PMGenericHotArea.this.dispatchEvent(ae);
+                return true;
+            case 1:
+                command = PMHotArea.MOUSE_CLICK_RIGHT;
+                ae = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, command, modifiers);
+                PMGenericHotArea.this.dispatchEvent(ae);
+                return true;
+            case 2:
+                command = PMHotArea.MOUSE_DOUBLE_CLICK;
+                ae = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, command, modifiers);
+                PMGenericHotArea.this.dispatchEvent(ae);
+                return true;
+            default:
+                return false;
+            }
+        }
+    }
 }
