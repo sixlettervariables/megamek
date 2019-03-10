@@ -19,6 +19,8 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
+import javax.accessibility.AccessibleContext;
+
 /*
  * A class for showing centered labels with desired value.
  */
@@ -28,21 +30,31 @@ public class PMValueLabel extends PMSimpleLabel {
     /*
      * Create the label.
      */
-    PMValueLabel(FontMetrics fm, Color c) {
+    public PMValueLabel(FontMetrics fm, Color c) {
         super("", fm, c); //$NON-NLS-1$
     }
 
     /*
      * Set/change the value displayed in the label.
      */
-    void setValue(String v) {
+    public void setValue(String v) {
+        String oldAccessibleName = null;
+        if (accessibleContext != null) {
+            oldAccessibleName = accessibleContext.getAccessibleName();
+        }
+
         string = v;
         width = fm.stringWidth(string);
-    }
+        height = fm.getHeight();
+        descent = fm.getMaxDescent();
 
-    @Override
-    public void setVisible(boolean v) {
-        super.setVisible(v);
+        if ((accessibleContext != null)
+            && (accessibleContext.getAccessibleName() != oldAccessibleName)) {
+                accessibleContext.firePropertyChange(
+                        AccessibleContext.ACCESSIBLE_VISIBLE_DATA_PROPERTY,
+                        oldAccessibleName,
+                        accessibleContext.getAccessibleName());
+        }
     }
 
     /*
