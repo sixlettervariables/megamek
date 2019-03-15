@@ -13,6 +13,8 @@ import java.awt.Polygon;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
@@ -31,6 +33,7 @@ public class MechPanelTabStrip extends PicMap implements Accessible {
      */
     private static final long serialVersionUID = -1282343469769007184L;
 
+    private String[] tabNames = new String[6];
     private PMPicPolygonalArea[] tabs = new PMPicPolygonalArea[6];
     private static final Image[] idleImage = new Image[6];
     private static final Image[] activeImage = new Image[6];
@@ -54,10 +57,7 @@ public class MechPanelTabStrip extends PicMap implements Accessible {
         redrawImages();
         update();
         if (accessibleContext != null) {
-            changeAccessibleSelection(
-                oldTab,
-                tabs[oldTab].getAccessibleContext().getAccessibleName(), 
-                activeTab);
+            changeAccessibleSelection(oldTab, tabs[oldTab].getAccessibleContext().getAccessibleName(), activeTab);
         }
     }
 
@@ -81,8 +81,7 @@ public class MechPanelTabStrip extends PicMap implements Accessible {
     }
 
     private void setImages() {
-        UnitDisplaySkinSpecification udSpec = SkinXMLHandler
-                .getUnitDisplaySkin();
+        UnitDisplaySkinSpecification udSpec = SkinXMLHandler.getUnitDisplaySkin();
         MediaTracker mt = new MediaTracker(this);
         Toolkit tk = getToolkit();
         idleImage[0] = tk.getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getGeneralTabIdle()).toString());
@@ -91,12 +90,18 @@ public class MechPanelTabStrip extends PicMap implements Accessible {
         idleImage[3] = tk.getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getSystemsTabIdle()).toString());
         idleImage[4] = tk.getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getWeaponsTabIdle()).toString());
         idleImage[5] = tk.getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getExtrasTabIdle()).toString());
-        activeImage[0] = tk.getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getGeneralTabActive()).toString());
-        activeImage[1] = tk.getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getPilotTabActive()).toString());
-        activeImage[2] = tk.getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getArmorTabActive()).toString());
-        activeImage[3] = tk.getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getSystemsTabActive()).toString());
-        activeImage[4] = tk.getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getWeaponsTabActive()).toString());
-        activeImage[5] = tk.getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getExtraTabActive()).toString());
+        activeImage[0] = tk
+                .getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getGeneralTabActive()).toString());
+        activeImage[1] = tk
+                .getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getPilotTabActive()).toString());
+        activeImage[2] = tk
+                .getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getArmorTabActive()).toString());
+        activeImage[3] = tk
+                .getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getSystemsTabActive()).toString());
+        activeImage[4] = tk
+                .getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getWeaponsTabActive()).toString());
+        activeImage[5] = tk
+                .getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getExtraTabActive()).toString());
         idleCorner = tk.getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getCornerIdle()).toString());
         selectedCorner = tk.getImage(new MegaMekFile(Configuration.widgetsDir(), udSpec.getCornerActive()).toString());
 
@@ -124,21 +129,19 @@ public class MechPanelTabStrip extends PicMap implements Accessible {
 
         for (int i = 0; i < 6; i++) {
             if (idleImage[i].getWidth(null) != activeImage[i].getWidth(null)) {
-                System.out.println("TabStrip Warning: idleImage and "
-                        + "activeImage do not match widths for image " + i);
+                System.out
+                        .println("TabStrip Warning: idleImage and " + "activeImage do not match widths for image " + i);
             }
             if (idleImage[i].getHeight(null) != activeImage[i].getHeight(null)) {
-                System.out.println("TabStrip Warning: idleImage and "
-                        + "activeImage do not match heights for image " + i);
+                System.out.println(
+                        "TabStrip Warning: idleImage and " + "activeImage do not match heights for image " + i);
             }
         }
         if (idleCorner.getWidth(null) != selectedCorner.getWidth(null)) {
-            System.out.println("TabStrip Warning: idleCorner and "
-                    + "selectedCorner do not match widths!");
+            System.out.println("TabStrip Warning: idleCorner and " + "selectedCorner do not match widths!");
         }
         if (idleCorner.getHeight(null) != selectedCorner.getHeight(null)) {
-            System.out.println("TabStrip Warning: idleCorner and "
-                    + "selectedCorner do not match heights!");
+            System.out.println("TabStrip Warning: idleCorner and " + "selectedCorner do not match heights!");
         }
     }
 
@@ -150,8 +153,7 @@ public class MechPanelTabStrip extends PicMap implements Accessible {
             int height = idleImage[i].getHeight(null);
             int[] pointsX = new int[] { 0, width, width + cornerWidth, 0 };
             int[] pointsY = new int[] { 0, 0, height, height };
-            tabs[i] = new PMPicPolygonalArea(new Polygon(pointsX, pointsY, 4),
-                    createImage(width, height));
+            tabs[i] = new PMPicPolygonalArea(new Polygon(pointsX, pointsY, 4), createImage(width, height));
         }
 
         int cumWidth = 0;
@@ -164,49 +166,34 @@ public class MechPanelTabStrip extends PicMap implements Accessible {
     }
 
     private void setListeners() {
-        tabs[0].addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (e.getActionCommand() == PMHotArea.MOUSE_CLICK_LEFT) {
-                    md.showPanel("movement"); //$NON-NLS-1$
-                }
-            }
-        });
-        tabs[1].addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (e.getActionCommand() == PMHotArea.MOUSE_CLICK_LEFT) {
-                    md.showPanel("pilot"); //$NON-NLS-1$
-                }
-            }
-        });
-        tabs[2].addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (e.getActionCommand() == PMHotArea.MOUSE_CLICK_LEFT) {
-                    md.showPanel("armor"); //$NON-NLS-1$
-                }
-            }
-        });
-        tabs[3].addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (e.getActionCommand() == PMHotArea.MOUSE_CLICK_LEFT) {
-                    md.showPanel("systems"); //$NON-NLS-1$
-                }
-            }
-        });
-        tabs[4].addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (e.getActionCommand() == PMHotArea.MOUSE_CLICK_LEFT) {
-                    md.showPanel("weapons"); //$NON-NLS-1$
-                }
-            }
-        });
-        tabs[5].addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                if (e.getActionCommand() == PMHotArea.MOUSE_CLICK_LEFT) {
-                    md.showPanel("extras"); //$NON-NLS-1$
-                }
-            }
-        });
+        tabNames[0] = "movement";
+        tabNames[1] = "pilot";
+        tabNames[2] = "armor";
+        tabNames[3] = "systems";
+        tabNames[4] = "weapons";
+        tabNames[5] = "extras";
 
+        for (int ii = 0; ii < tabs.length; ++ii) {
+            int tab = ii;
+            tabs[ii].addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    if (e.getActionCommand() == PMHotArea.MOUSE_CLICK_LEFT) {
+                        md.showPanel(tabNames[tab]);
+                    }
+                }
+            });
+            tabs[ii].addFocusListener(new FocusListener() {
+                @Override
+                public void focusGained(FocusEvent e) {
+                    MechPanelTabStrip.this.setTab(tab);
+                    md.showPanel(tabNames[tab]);
+                }
+
+                @Override
+                public void focusLost(FocusEvent e) {
+                }
+            });
+        }
     }
 
     private void redrawImages() {
