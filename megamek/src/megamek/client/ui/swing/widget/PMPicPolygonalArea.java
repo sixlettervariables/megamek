@@ -28,6 +28,8 @@ import java.awt.event.MouseEvent;
 
 public class PMPicPolygonalArea extends PMGenericHotArea {
 
+    private static final long serialVersionUID = -1774054754053135704L;
+    
     private Image idleImage;
     private Image activeImage;
     private boolean highlight = true;
@@ -36,6 +38,7 @@ public class PMPicPolygonalArea extends PMGenericHotArea {
     private boolean visible = true;
 
     public PMPicPolygonalArea(Polygon p, Image idle, Image active) {
+        super();
         this.areaShape = p;
         this.idleImage = idle;
         this.activeImage = active;

@@ -387,7 +387,9 @@ public abstract class PicMap extends JComponent implements Accessible {
         return accessibleContext;
     }
 
-    protected class AccessiblePicMap extends AccessibleContext {
+    protected class AccessiblePicMap extends AccessibleJComponent {
+
+        private static final long serialVersionUID = 6042277481607128130L;
 
         @Override
         public AccessibleRole getAccessibleRole() {
@@ -439,6 +441,5 @@ public abstract class PicMap extends JComponent implements Accessible {
         public Locale getLocale() throws IllegalComponentStateException {
             return Locale.getDefault();
         }
-
     }
 }

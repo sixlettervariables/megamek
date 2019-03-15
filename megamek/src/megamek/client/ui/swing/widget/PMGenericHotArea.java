@@ -29,6 +29,7 @@ import javax.accessibility.AccessibleContext;
 import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
+import javax.swing.JComponent;
 
 import megamek.common.preference.PreferenceManager;
 
@@ -36,12 +37,18 @@ import megamek.common.preference.PreferenceManager;
  * Abstract class which defines common functionality for all hot areas such as
  * event handling and dispatching.
  */
-public abstract class PMGenericHotArea implements PMHotArea, Accessible {
+public abstract class PMGenericHotArea extends JComponent implements PMHotArea, Accessible {
+
+    private static final long serialVersionUID = 227946635057903366L;
 
     private ActionListener actionListener = null;
     private Cursor cursor = new Cursor(Cursor.HAND_CURSOR);
     
     protected AccessibleHotArea accessibleContext;
+
+    protected PMGenericHotArea() {
+        setFocusable(true);
+    }
 
     public Cursor getCursor() {
         return cursor;
@@ -119,7 +126,9 @@ public abstract class PMGenericHotArea implements PMHotArea, Accessible {
         return accessibleContext;
     }
 
-    protected class AccessibleHotArea extends AccessibleContext implements AccessibleAction {
+    protected class AccessibleHotArea extends AccessibleJComponent implements AccessibleAction {
+
+        private static final long serialVersionUID = 4062089184365230374L;
 
         @Override
         public AccessibleAction getAccessibleAction() {

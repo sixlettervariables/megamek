@@ -33,9 +33,12 @@ import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
 import javax.accessibility.AccessibleText;
+import javax.swing.JComponent;
 import javax.swing.text.AttributeSet;
 
-public class PMSimpleLabel implements PMLabel, Accessible {
+public class PMSimpleLabel extends JComponent implements PMLabel, Accessible {
+
+    private static final long serialVersionUID = -2920115920668473039L;
 
     // The String to display.
     String string;
@@ -56,6 +59,18 @@ public class PMSimpleLabel implements PMLabel, Accessible {
     boolean visible = true;
 
     protected AccessiblePMLabel accessibleContext;
+
+    /**
+     * Client property key used to determine what label is labeling the
+     * component.  This is generally not used by labels, but is instead
+     * used by components such as text areas that are being labeled by
+     * labels.  When the labelFor property of a label is set, it will
+     * automatically set the LABELED_BY_PROPERTY of the component being
+     * labelled.
+     *
+     * @see #setLabelFor
+     */
+    static final String LABELED_BY_PROPERTY = "labeledBy";
 
     private PMElement labelFor;
 
@@ -166,6 +181,22 @@ public class PMSimpleLabel implements PMLabel, Accessible {
 
     public void setLabelFor(PMElement element) {
         labelFor = element;
+
+        if (element instanceof JComponent) {
+            ((JComponent)element).putClientProperty(LABELED_BY_PROPERTY, this);
+        }
+
+        if (element instanceof Accessible) {
+            Accessible accessibleElement = (Accessible)element;
+            AccessibleContext context = accessibleElement.getAccessibleContext();
+            AccessibleRelationSet relationSet = context.getAccessibleRelationSet();
+            if (relationSet != null) {
+                AccessibleRelation relation
+                        = new AccessibleRelation(AccessibleRelation.LABELED_BY);
+                relation.setTarget(this);
+                relationSet.add(relation);
+            }
+        }
     }
 
     @Override
@@ -176,13 +207,15 @@ public class PMSimpleLabel implements PMLabel, Accessible {
         return accessibleContext;
     }
 
-    protected class AccessiblePMLabel extends AccessibleContext implements AccessibleText {
+    protected class AccessiblePMLabel extends AccessibleJComponent implements AccessibleText {
+
+        private static final long serialVersionUID = 7248551813952007709L;
 
         /**
          * Get the accessible name of this object.
          *
-         * @return the localized name of the object -- can be null if this
-         * object does not have a name
+         * @return the localized name of the object -- can be null if this object does
+         *         not have a name
          * @see AccessibleContext#setAccessibleName
          */
         @Override

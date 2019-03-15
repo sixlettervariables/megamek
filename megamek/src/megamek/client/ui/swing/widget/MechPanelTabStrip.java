@@ -41,6 +41,8 @@ public class MechPanelTabStrip extends PicMap implements Accessible {
     public MechPanelTabStrip(UnitDisplay md) {
         super();
         this.md = md;
+
+        setFocusable(true);
     }
 
     public void setTab(int i) {
@@ -274,11 +276,13 @@ public class MechPanelTabStrip extends PicMap implements Accessible {
     }
 
     protected class AccessibleMechPanelTabStrip extends AccessiblePicMap implements AccessibleSelection {
+        
+        private static final long serialVersionUID = 2038342930061733608L;
+
         /**
-         * Gets the <code>AccessibleSelection</code> associated with
-         * this object.  In the implementation of the Java
-         * Accessibility API for this class,
-         * returns this object, which is responsible for implementing the
+         * Gets the <code>AccessibleSelection</code> associated with this object. In the
+         * implementation of the Java Accessibility API for this class, returns this
+         * object, which is responsible for implementing the
          * <code>AccessibleSelection</code> interface on behalf of itself.
          *
          * @return this object

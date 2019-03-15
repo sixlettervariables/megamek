@@ -22,7 +22,6 @@ import java.awt.Insets;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
-import javax.accessibility.Accessible;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
