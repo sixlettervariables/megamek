@@ -15,6 +15,7 @@
 package megamek.client.ui.swing.widget;
 
 import java.awt.AWTEvent;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -133,6 +134,9 @@ public abstract class PicMap extends JComponent implements Accessible {
             otherAreas.addArea(e);
         }
 
+        if (e instanceof Component) {
+            super.add((Component)e);
+        }
     }
 
     /**
@@ -149,6 +153,9 @@ public abstract class PicMap extends JComponent implements Accessible {
             otherAreas.removeArea(e);
         }
 
+        if (e instanceof Component) {
+            super.remove((Component)e);
+        }
     }
 
     /**
@@ -163,6 +170,8 @@ public abstract class PicMap extends JComponent implements Accessible {
         bgDrawers.removeAllElements();
         areascount = 0;
         activeHotArea = null;
+
+        super.removeAll();
     }
 
     /**
