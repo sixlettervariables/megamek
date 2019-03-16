@@ -18,7 +18,7 @@ import java.awt.Dimension;
 import java.awt.FontMetrics;
 
 public class WidgetUtils {
-    public static void setAreaColor(PMSimplePolygonArea ha, PMValueLabel l,
+    public static void setAreaColor(PMSimplePolygonArea ha, PMColoredElement l,
             double percentRemaining) {
         if (percentRemaining <= 0) {
             ha.backColor = Color.darkGray.brighter();
@@ -54,10 +54,26 @@ public class WidgetUtils {
         return l;
     }
 
+	public static PMSimpleText createCenteredTextLabel(int x, int y, String string, FontMetrics fm) {
+        PMSimpleText l = new PMSimpleText(fm, Color.red);
+        centerLabelAt(l, x, y);
+        l.setCentered(true);
+        l.setString(string);
+        return l;
+	}
+
     public static void centerLabelAt(PMSimpleLabel l, int x, int y) {
         if (l == null)
             return;
         Dimension d = l.getSize();
         l.moveTo(x - d.width / 2, y + d.height / 2);
     }
+
+    public static void centerLabelAt(PMSimpleText l, int x, int y) {
+        if (l == null)
+            return;
+        Dimension d = l.getSize();
+        l.moveTo(x - d.width / 2, y + d.height / 2);
+    }
+
 }

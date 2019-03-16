@@ -1,5 +1,5 @@
 /**
- * MegaMek - Copyright (C) 2000-2002 Ben Mazur (bmazur@sev.org)
+ * Copyright (C) 2019 The MegaMek Team
  * 
  *  This program is free software; you can redistribute it and/or modify it 
  *  under the terms of the GNU General Public License as published by the Free 
@@ -15,17 +15,11 @@
 package megamek.client.ui.swing.widget;
 
 /**
- * JLabel for PicMap component
+ * Elements with a foreground color for PicMap component
  */
 
-import java.awt.Dimension;
+import java.awt.Color;
 
-public interface PMLabel extends PMElement, PMColoredElement {
-    public Dimension getSize();
-
-    public int getDescent();
-
-    public void moveTo(int x, int y);
-
-    public void setString(String s);
+public interface PMColoredElement {
+    public void setColor(Color c);
 }

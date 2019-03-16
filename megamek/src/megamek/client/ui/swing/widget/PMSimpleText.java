@@ -56,9 +56,17 @@ public class PMSimpleText extends JComponent implements PMText, Accessible {
     Font f;
     FontMetrics fm;
 
+    boolean centered = false;
     boolean visible = true;
 
     protected AccessiblePMText accessibleContext;
+
+    /*
+     * Create the text object with the specified string, font and color
+     */
+    public PMSimpleText(FontMetrics fm, Color c) {
+        this("", fm, c);
+    }
 
     /*
      * Create the label with the specified string, font and color
@@ -72,15 +80,27 @@ public class PMSimpleText extends JComponent implements PMText, Accessible {
         color = c;
     }
 
+    public boolean getCentered() {
+        return centered;
+    }
+
+    public void setCentered(boolean c) {
+        centered = c;
+    }
+
     public void setString(String s) {
         string = s;
-        // The width use to just be the stringWidth, but this
-        // sometimes caused cropping when setString was called.
-        // The value of 140% was chosen by trial and error, and
-        // may be incorrect. In fact, this whole fix is
-        // basically a kludge, since I don't know why it
-        // is needed.
-        width = (int) Math.ceil(fm.stringWidth(string) * 1.4);
+        if (!centered) {
+            // The width use to just be the stringWidth, but this
+            // sometimes caused cropping when setString was called.
+            // The value of 140% was chosen by trial and error, and
+            // may be incorrect. In fact, this whole fix is
+            // basically a kludge, since I don't know why it
+            // is needed.
+            width = (int) Math.ceil(fm.stringWidth(string) * 1.4);
+        } else {
+            width = fm.stringWidth(string);
+        }
         height = fm.getHeight();
         descent = fm.getMaxDescent();
     }
@@ -115,7 +135,11 @@ public class PMSimpleText extends JComponent implements PMText, Accessible {
         Color temp = g.getColor();
         g.setColor(color);
         g.setFont(fm.getFont());
-        g.drawString(string, x, y);
+        if (!centered) {
+            g.drawString(string, x, y);
+        } else {
+            g.drawString(string, x - width / 2, y - fm.getMaxDescent());
+        }
         g.setColor(temp);
         g.setFont(font);
     }
@@ -131,7 +155,11 @@ public class PMSimpleText extends JComponent implements PMText, Accessible {
     }
 
     public Rectangle getBounds() {
-        return new Rectangle(x, y - height + descent, width, height);
+        if (!centered) {
+            return new Rectangle(x, y - height + descent, width, height);
+        } else {
+            return new Rectangle(x - width / 2, y - height, width, height + descent);
+        }
     }
 
     /*

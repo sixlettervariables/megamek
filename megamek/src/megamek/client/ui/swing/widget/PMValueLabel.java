@@ -27,6 +27,8 @@ import javax.accessibility.AccessibleContext;
 
 public class PMValueLabel extends PMSimpleLabel {
 
+    private static final long serialVersionUID = 3520868900367260156L;
+
     /*
      * Create the label.
      */
