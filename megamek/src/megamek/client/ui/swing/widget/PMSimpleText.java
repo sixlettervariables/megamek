@@ -22,13 +22,13 @@ import java.awt.Graphics;
 import java.awt.IllegalComponentStateException;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.text.BreakIterator;
 import java.util.Locale;
 
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
-import javax.accessibility.AccessibleRelation;
-import javax.accessibility.AccessibleRelationSet;
 import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
@@ -36,10 +36,10 @@ import javax.accessibility.AccessibleText;
 import javax.swing.JComponent;
 import javax.swing.text.AttributeSet;
 
-public class PMSimpleText extends JComponent implements PMText, Accessible {
+public class PMSimpleText extends JComponent implements PMText, Accessible, MouseListener {
 
     private static final long serialVersionUID = -5698947473205862889L;
-    
+
     // The String to display.
     String string;
     // The position of the label
@@ -78,6 +78,9 @@ public class PMSimpleText extends JComponent implements PMText, Accessible {
         height = fm.getHeight();
         descent = fm.getMaxDescent();
         color = c;
+
+        setFocusable(true);
+        addMouseListener(this);
     }
 
     public boolean getCentered() {
@@ -90,6 +93,7 @@ public class PMSimpleText extends JComponent implements PMText, Accessible {
 
     public void setString(String s) {
         string = s;
+        firePropertyChange(AccessibleContext.ACCESSIBLE_TEXT_PROPERTY, null, 0);
         if (!centered) {
             // The width use to just be the stringWidth, but this
             // sometimes caused cropping when setString was called.
@@ -147,10 +151,8 @@ public class PMSimpleText extends JComponent implements PMText, Accessible {
     public void setVisible(boolean v) {
         visible = v;
         if (accessibleContext != null) {
-            accessibleContext.firePropertyChange(
-                AccessibleContext.ACCESSIBLE_STATE_PROPERTY,
-                AccessibleState.VISIBLE,
-                null);
+            accessibleContext.firePropertyChange(AccessibleContext.ACCESSIBLE_STATE_PROPERTY, AccessibleState.VISIBLE,
+                    null);
         }
     }
 
@@ -253,8 +255,9 @@ public class PMSimpleText extends JComponent implements PMText, Accessible {
         /**
          * Return the zero-based offset of the caret.
          *
-         * Note: That to the right of the caret will have the same index
-         * value as the offset (the caret is between two characters).
+         * Note: That to the right of the caret will have the same index value as the
+         * offset (the caret is between two characters).
+         * 
          * @return the zero-based offset of the caret.
          */
         @Override
@@ -262,15 +265,14 @@ public class PMSimpleText extends JComponent implements PMText, Accessible {
             // There is no caret.
             return -1;
         }
-        
+
         /**
          * Returns the String at a given index.
          *
-         * @param part the AccessibleText.CHARACTER, AccessibleText.WORD,
-         * or AccessibleText.SENTENCE to retrieve
+         * @param part  the AccessibleText.CHARACTER, AccessibleText.WORD, or
+         *              AccessibleText.SENTENCE to retrieve
          * @param index an index within the text &gt;= 0
-         * @return the letter, word, or sentence,
-         *   null for an invalid index or part
+         * @return the letter, word, or sentence, null for an invalid index or part
          */
         public String getAtIndex(int part, int index) {
             if (index < 0 || index >= getCharCount()) {
@@ -279,23 +281,20 @@ public class PMSimpleText extends JComponent implements PMText, Accessible {
             switch (part) {
             case AccessibleText.CHARACTER:
                 return getText(index, 1);
-            case AccessibleText.WORD:
-                {
-                    String s = getText(0, getCharCount());
-                    BreakIterator words = BreakIterator.getWordInstance(getLocale());
-                    words.setText(s);
-                    int end = words.following(index);
-                    return s.substring(words.previous(), end);
-                }
-            case AccessibleText.SENTENCE:
-                {
-                    String s = getText(0, getCharCount());
-                    BreakIterator sentence =
-                        BreakIterator.getSentenceInstance(getLocale());
-                    sentence.setText(s);
-                    int end = sentence.following(index);
-                    return s.substring(sentence.previous(), end);
-                }
+            case AccessibleText.WORD: {
+                String s = getText(0, getCharCount());
+                BreakIterator words = BreakIterator.getWordInstance(getLocale());
+                words.setText(s);
+                int end = words.following(index);
+                return s.substring(words.previous(), end);
+            }
+            case AccessibleText.SENTENCE: {
+                String s = getText(0, getCharCount());
+                BreakIterator sentence = BreakIterator.getSentenceInstance(getLocale());
+                sentence.setText(s);
+                int end = sentence.following(index);
+                return s.substring(sentence.previous(), end);
+            }
             default:
                 return null;
             }
@@ -304,11 +303,10 @@ public class PMSimpleText extends JComponent implements PMText, Accessible {
         /**
          * Returns the String after a given index.
          *
-         * @param part the AccessibleText.CHARACTER, AccessibleText.WORD,
-         * or AccessibleText.SENTENCE to retrieve
+         * @param part  the AccessibleText.CHARACTER, AccessibleText.WORD, or
+         *              AccessibleText.SENTENCE to retrieve
          * @param index an index within the text &gt;= 0
-         * @return the letter, word, or sentence, null for an invalid
-         *  index or part
+         * @return the letter, word, or sentence, null for an invalid index or part
          */
         public String getAfterIndex(int part, int index) {
             if (index < 0 || index >= getCharCount()) {
@@ -316,41 +314,38 @@ public class PMSimpleText extends JComponent implements PMText, Accessible {
             }
             switch (part) {
             case AccessibleText.CHARACTER:
-                if (index+1 >= getCharCount()) {
-                   return null;
+                if (index + 1 >= getCharCount()) {
+                    return null;
                 }
-                return getText(index+1, 1);
-            case AccessibleText.WORD:
-                {
-                    String s = getText(0, getCharCount());
-                    BreakIterator words = BreakIterator.getWordInstance(getLocale());
-                    words.setText(s);
-                    int start = words.following(index);
-                    if (start == BreakIterator.DONE || start >= s.length()) {
-                        return null;
-                    }
-                    int end = words.following(start);
-                    if (end == BreakIterator.DONE || end >= s.length()) {
-                        return null;
-                    }
-                    return s.substring(start, end);
+                return getText(index + 1, 1);
+            case AccessibleText.WORD: {
+                String s = getText(0, getCharCount());
+                BreakIterator words = BreakIterator.getWordInstance(getLocale());
+                words.setText(s);
+                int start = words.following(index);
+                if (start == BreakIterator.DONE || start >= s.length()) {
+                    return null;
                 }
-            case AccessibleText.SENTENCE:
-                {
-                    String s = getText(0, getCharCount());
-                    BreakIterator sentence =
-                        BreakIterator.getSentenceInstance(getLocale());
-                    sentence.setText(s);
-                    int start = sentence.following(index);
-                    if (start == BreakIterator.DONE || start > s.length()) {
-                        return null;
-                    }
-                    int end = sentence.following(start);
-                    if (end == BreakIterator.DONE || end > s.length()) {
-                        return null;
-                    }
-                    return s.substring(start, end);
+                int end = words.following(start);
+                if (end == BreakIterator.DONE || end >= s.length()) {
+                    return null;
                 }
+                return s.substring(start, end);
+            }
+            case AccessibleText.SENTENCE: {
+                String s = getText(0, getCharCount());
+                BreakIterator sentence = BreakIterator.getSentenceInstance(getLocale());
+                sentence.setText(s);
+                int start = sentence.following(index);
+                if (start == BreakIterator.DONE || start > s.length()) {
+                    return null;
+                }
+                int end = sentence.following(start);
+                if (end == BreakIterator.DONE || end > s.length()) {
+                    return null;
+                }
+                return s.substring(start, end);
+            }
             default:
                 return null;
             }
@@ -359,14 +354,13 @@ public class PMSimpleText extends JComponent implements PMText, Accessible {
         /**
          * Returns the String before a given index.
          *
-         * @param part the AccessibleText.CHARACTER, AccessibleText.WORD,
-         *   or AccessibleText.SENTENCE to retrieve
+         * @param part  the AccessibleText.CHARACTER, AccessibleText.WORD, or
+         *              AccessibleText.SENTENCE to retrieve
          * @param index an index within the text &gt;= 0
-         * @return the letter, word, or sentence, null for an invalid index
-         *  or part
+         * @return the letter, word, or sentence, null for an invalid index or part
          */
         public String getBeforeIndex(int part, int index) {
-            if (index < 0 || index > getCharCount()-1) {
+            if (index < 0 || index > getCharCount() - 1) {
                 return null;
             }
             switch (part) {
@@ -374,34 +368,31 @@ public class PMSimpleText extends JComponent implements PMText, Accessible {
                 if (index == 0) {
                     return null;
                 }
-                return getText(index-1, 1);
-            case AccessibleText.WORD:
-                {
-                    String s = getText(0, getCharCount());
-                    BreakIterator words = BreakIterator.getWordInstance(getLocale());
-                    words.setText(s);
-                    int end = words.following(index);
-                    end = words.previous();
-                    int start = words.previous();
-                    if (start == BreakIterator.DONE) {
-                        return null;
-                    }
-                    return s.substring(start, end);
+                return getText(index - 1, 1);
+            case AccessibleText.WORD: {
+                String s = getText(0, getCharCount());
+                BreakIterator words = BreakIterator.getWordInstance(getLocale());
+                words.setText(s);
+                int end = words.following(index);
+                end = words.previous();
+                int start = words.previous();
+                if (start == BreakIterator.DONE) {
+                    return null;
                 }
-            case AccessibleText.SENTENCE:
-                {
-                    String s = getText(0, getCharCount());
-                    BreakIterator sentence =
-                        BreakIterator.getSentenceInstance(getLocale());
-                    sentence.setText(s);
-                    int end = sentence.following(index);
-                    end = sentence.previous();
-                    int start = sentence.previous();
-                    if (start == BreakIterator.DONE) {
-                        return null;
-                    }
-                    return s.substring(start, end);
+                return s.substring(start, end);
+            }
+            case AccessibleText.SENTENCE: {
+                String s = getText(0, getCharCount());
+                BreakIterator sentence = BreakIterator.getSentenceInstance(getLocale());
+                sentence.setText(s);
+                int end = sentence.following(index);
+                end = sentence.previous();
+                int start = sentence.previous();
+                if (start == BreakIterator.DONE) {
+                    return null;
                 }
+                return s.substring(start, end);
+            }
             default:
                 return null;
             }
@@ -420,9 +411,8 @@ public class PMSimpleText extends JComponent implements PMText, Accessible {
         }
 
         /**
-         * Returns the start offset within the selected text.
-         * If there is no selection, but there is
-         * a caret, the start and end offsets will be the same.
+         * Returns the start offset within the selected text. If there is no selection,
+         * but there is a caret, the start and end offsets will be the same.
          *
          * @return the index into the text of the start of the selection
          */
@@ -432,9 +422,8 @@ public class PMSimpleText extends JComponent implements PMText, Accessible {
         }
 
         /**
-         * Returns the end offset within the selected text.
-         * If there is no selection, but there is
-         * a caret, the start and end offsets will be the same.
+         * Returns the end offset within the selected text. If there is no selection,
+         * but there is a caret, the start and end offsets will be the same.
          *
          * @return the index into the text of the end of the selection
          */
@@ -454,11 +443,34 @@ public class PMSimpleText extends JComponent implements PMText, Accessible {
         }
 
         /*
-         * Returns the text substring starting at the specified
-         * offset with the specified length.
+         * Returns the text substring starting at the specified offset with the
+         * specified length.
          */
         private String getText(int offset, int length) {
             return PMSimpleText.this.string.substring(offset, length);
         }
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+        if (e.getButton() == MouseEvent.BUTTON1) {
+            requestFocusInWindow();
+        }
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseExited(MouseEvent e) {
     }
 }

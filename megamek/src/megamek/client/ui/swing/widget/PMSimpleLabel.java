@@ -84,6 +84,8 @@ public class PMSimpleLabel extends JComponent implements PMLabel, Accessible {
         height = fm.getHeight();
         descent = fm.getMaxDescent();
         color = c;
+
+        setFocusable(false);
     }
 
     public void setString(String s) {
