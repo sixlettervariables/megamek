@@ -119,7 +119,7 @@ public abstract class PicMap extends JComponent implements Accessible {
      * added to components.
      */
     public void addElement(PMElement e) {
-        if (e instanceof PMLabel) {
+        if (e instanceof PMLabel || e instanceof PMText) {
             labels.addArea(e);
         } else if (e instanceof PMHotArea) {
             hotAreas.addArea(e);
@@ -144,7 +144,7 @@ public abstract class PicMap extends JComponent implements Accessible {
      */
 
     public void removeElement(PMElement e) {
-        if (e instanceof PMLabel) {
+        if (e instanceof PMLabel || e instanceof PMText) {
             labels.removeArea(e);
         } else if (e instanceof PMHotArea) {
             if (hotAreas.removeArea(e))
