@@ -53,7 +53,7 @@ public class MechMapSet implements DisplayMapSet {
     // Array of fixed labels - short names of body parts
     private PMSimpleLabel[] labels = new PMSimpleLabel[20];
     // Array of value labels to show armor and IS values
-    private PMValueLabel[] vLabels = new PMValueLabel[21];
+    private PMSimpleText[] vLabels = new PMSimpleText[21];
     // Heat control area
     private PMPicPolygonalArea heatHotArea;
     // Set of Background Drawers
@@ -188,33 +188,33 @@ public class MechMapSet implements DisplayMapSet {
         for (int i = 0; i < m.locations(); i++) {
             a = m.getArmor(i);
             a0 = m.getOArmor(i);
-            vLabels[i].setValue(m.getArmorString(i));
+            vLabels[i].setString(m.getArmorString(i));
             WidgetUtils.setAreaColor(areas[i], vLabels[i], (double) a
                     / (double) a0);
             if (m.hasRearArmor(i)) {
                 a = m.getArmor(i, true);
                 a0 = m.getOArmor(i, true);
-                vLabels[i + REAR_AREA_OFFSET].setValue(m
+                vLabels[i + REAR_AREA_OFFSET].setString(m
                         .getArmorString(i, true));
                 WidgetUtils.setAreaColor(areas[i + REAR_AREA_OFFSET], vLabels[i
                         + REAR_AREA_OFFSET], (double) a / (double) a0);
             }
             a = m.getInternal(i);
             a0 = m.getOInternal(i);
-            vLabels[i + INT_STRUCTURE_OFFSET].setValue(m.getInternalString(i));
+            vLabels[i + INT_STRUCTURE_OFFSET].setString(m.getInternalString(i));
             WidgetUtils.setAreaColor(areas[i + INT_STRUCTURE_OFFSET], vLabels[i
                     + INT_STRUCTURE_OFFSET], (double) a / (double) a0);
         }
 
         // heat
-        vLabels[19].setValue(Integer.toString(m.heat));
+        vLabels[19].setString(Integer.toString(m.heat));
         drawHeatControl(m.heat, mtHeat);
         //TODO: this messes up the layout a bit, but only for industrial
         // mechs FIXME
         if (!m.hasPatchworkArmor() && m.hasBARArmor(1)) {
             content.addArea(labels[19]);
             content.addArea(vLabels[20]);
-            vLabels[20].setValue(String.valueOf(m.getBARRating(1)));
+            vLabels[20].setString(String.valueOf(m.getBARRating(1)));
         } else {
             content.removeArea(labels[19]);
             content.removeArea(vLabels[20]);
@@ -325,44 +325,52 @@ public class MechMapSet implements DisplayMapSet {
         // Value labels for all parts of mek
         // front
         fm = comp.getFontMetrics(FONT_VALUE);
-        vLabels[Mech.LOC_HEAD] = WidgetUtils.createValueLabel(62, 22, "", fm); //$NON-NLS-1$
-        vLabels[Mech.LOC_LARM] = WidgetUtils.createValueLabel(13, 72, "", fm); //$NON-NLS-1$
-        vLabels[Mech.LOC_LT] = WidgetUtils.createValueLabel(38, 44, "", fm); //$NON-NLS-1$
-        vLabels[Mech.LOC_CT] = WidgetUtils.createValueLabel(62, 57, "", fm); //$NON-NLS-1$
-        vLabels[Mech.LOC_RT] = WidgetUtils.createValueLabel(86, 44, "", fm); //$NON-NLS-1$
-        vLabels[Mech.LOC_RARM] = WidgetUtils.createValueLabel(112, 72, "", fm); //$NON-NLS-1$
-        vLabels[Mech.LOC_LLEG] = WidgetUtils.createValueLabel(31, 113, "", fm); //$NON-NLS-1$
-        vLabels[Mech.LOC_RLEG] = WidgetUtils.createValueLabel(94, 113, "", fm); //$NON-NLS-1$
+        vLabels[Mech.LOC_HEAD] = WidgetUtils.createCenteredTextLabel(62, 22, "", fm); //$NON-NLS-1$
+        vLabels[Mech.LOC_LARM] = WidgetUtils.createCenteredTextLabel(13, 72, "", fm); //$NON-NLS-1$
+        vLabels[Mech.LOC_LT] = WidgetUtils.createCenteredTextLabel(38, 44, "", fm); //$NON-NLS-1$
+        vLabels[Mech.LOC_CT] = WidgetUtils.createCenteredTextLabel(62, 57, "", fm); //$NON-NLS-1$
+        vLabels[Mech.LOC_RT] = WidgetUtils.createCenteredTextLabel(86, 44, "", fm); //$NON-NLS-1$
+        vLabels[Mech.LOC_RARM] = WidgetUtils.createCenteredTextLabel(112, 72, "", fm); //$NON-NLS-1$
+        vLabels[Mech.LOC_LLEG] = WidgetUtils.createCenteredTextLabel(31, 113, "", fm); //$NON-NLS-1$
+        vLabels[Mech.LOC_RLEG] = WidgetUtils.createCenteredTextLabel(94, 113, "", fm); //$NON-NLS-1$
 
         // back
-        vLabels[REAR_AREA_OFFSET + Mech.LOC_LT] = WidgetUtils.createValueLabel(
+        vLabels[REAR_AREA_OFFSET + Mech.LOC_LT] = WidgetUtils.createCenteredTextLabel(
                 132, 28, "", fm); //$NON-NLS-1$
-        vLabels[REAR_AREA_OFFSET + Mech.LOC_CT] = WidgetUtils.createValueLabel(
+        vLabels[REAR_AREA_OFFSET + Mech.LOC_CT] = WidgetUtils.createCenteredTextLabel(
                 156, 39, "", fm); //$NON-NLS-1$
-        vLabels[REAR_AREA_OFFSET + Mech.LOC_RT] = WidgetUtils.createValueLabel(
+        vLabels[REAR_AREA_OFFSET + Mech.LOC_RT] = WidgetUtils.createCenteredTextLabel(
                 177, 28, "", fm); //$NON-NLS-1$
 
         // Internal structure
         vLabels[INT_STRUCTURE_OFFSET + Mech.LOC_HEAD] = WidgetUtils
-                .createValueLabel(63, 142, "", fm); //$NON-NLS-1$
+                .createCenteredTextLabel(63, 142, "", fm); //$NON-NLS-1$
         vLabels[INT_STRUCTURE_OFFSET + Mech.LOC_LARM] = WidgetUtils
-                .createValueLabel(15, 187, "", fm); //$NON-NLS-1$
+                .createCenteredTextLabel(15, 187, "", fm); //$NON-NLS-1$
         vLabels[INT_STRUCTURE_OFFSET + Mech.LOC_LT] = WidgetUtils
-                .createValueLabel(42, 180, "", fm); //$NON-NLS-1$
+                .createCenteredTextLabel(42, 180, "", fm); //$NON-NLS-1$
         vLabels[INT_STRUCTURE_OFFSET + Mech.LOC_CT] = WidgetUtils
-                .createValueLabel(63, 182, "", fm); //$NON-NLS-1$
+                .createCenteredTextLabel(63, 182, "", fm); //$NON-NLS-1$
         vLabels[INT_STRUCTURE_OFFSET + Mech.LOC_RT] = WidgetUtils
-                .createValueLabel(85, 180, "", fm); //$NON-NLS-1$
+                .createCenteredTextLabel(85, 180, "", fm); //$NON-NLS-1$
         vLabels[INT_STRUCTURE_OFFSET + Mech.LOC_RARM] = WidgetUtils
-                .createValueLabel(111, 187, "", fm); //$NON-NLS-1$
+                .createCenteredTextLabel(111, 187, "", fm); //$NON-NLS-1$
         vLabels[INT_STRUCTURE_OFFSET + Mech.LOC_LLEG] = WidgetUtils
-                .createValueLabel(33, 223, "", fm); //$NON-NLS-1$
+                .createCenteredTextLabel(33, 223, "", fm); //$NON-NLS-1$
         vLabels[INT_STRUCTURE_OFFSET + Mech.LOC_RLEG] = WidgetUtils
-                .createValueLabel(92, 223, "", fm); //$NON-NLS-1$
+                .createCenteredTextLabel(92, 223, "", fm); //$NON-NLS-1$
+
+        // Labeling works up to 18.
+        for (int ii = 0; ii < 19; ++ii) {
+                labels[ii].setLabelFor(vLabels[ii]);
+        }
+
         // heat
-        vLabels[19] = WidgetUtils.createValueLabel(155, 90, "", fm); //$NON-NLS-1$
+        vLabels[19] = WidgetUtils.createCenteredTextLabel(155, 90, "", fm); //$NON-NLS-1$
+
         // BAR rating
-        vLabels[20] = WidgetUtils.createValueLabel(100, 345, "", fm); //$NON-NLS-1$
+        vLabels[20] = WidgetUtils.createCenteredTextLabel(100, 345, "", fm); //$NON-NLS-1$
+        labels[19].setLabelFor(vLabels[20]);
     }
 
     private void setGroups() {
