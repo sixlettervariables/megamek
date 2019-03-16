@@ -23,6 +23,7 @@ import javax.accessibility.AccessibleSelection;
 
 import megamek.client.ui.swing.accessibility.AccessibleMegaMekRole;
 import megamek.client.ui.swing.unitDisplay.UnitDisplay;
+import megamek.client.ui.swing.util.KeyCommandBind;
 import megamek.common.Configuration;
 import megamek.common.util.MegaMekFile;
 
@@ -167,11 +168,17 @@ public class MechPanelTabStrip extends PicMap implements Accessible {
 
     private void setListeners() {
         tabNames[0] = "movement";
+        tabs[0].setMnemonic(KeyCommandBind.UD_GENERAL.key);
         tabNames[1] = "pilot";
+        tabs[1].setMnemonic(KeyCommandBind.UD_PILOT.key);
         tabNames[2] = "armor";
+        tabs[2].setMnemonic(KeyCommandBind.UD_ARMOR.key);
         tabNames[3] = "systems";
+        tabs[3].setMnemonic(KeyCommandBind.UD_SYSTEMS.key);
         tabNames[4] = "weapons";
+        tabs[4].setMnemonic(KeyCommandBind.UD_WEAPONS.key);
         tabNames[5] = "extras";
+        tabs[5].setMnemonic(KeyCommandBind.UD_EXTRAS.key);
 
         for (int ii = 0; ii < tabs.length; ++ii) {
             int tab = ii;

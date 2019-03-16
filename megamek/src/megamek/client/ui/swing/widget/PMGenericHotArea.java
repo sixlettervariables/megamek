@@ -26,10 +26,13 @@ import java.util.Locale;
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleAction;
 import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleExtendedComponent;
+import javax.accessibility.AccessibleKeyBinding;
 import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
 import javax.swing.JComponent;
+import javax.swing.KeyStroke;
 
 import megamek.common.preference.PreferenceManager;
 
@@ -43,7 +46,8 @@ public abstract class PMGenericHotArea extends JComponent implements PMHotArea, 
 
     private ActionListener actionListener = null;
     private Cursor cursor = new Cursor(Cursor.HAND_CURSOR);
-    
+    private int mnemonic;
+
     protected AccessibleHotArea accessibleContext;
 
     protected PMGenericHotArea() {
@@ -56,6 +60,14 @@ public abstract class PMGenericHotArea extends JComponent implements PMHotArea, 
 
     public void setCursor(Cursor c) {
         cursor = c;
+    }
+
+    public int getMnemonic() {
+        return mnemonic;
+    }
+
+    public void setMnemonic(int m) {
+        mnemonic = m;
     }
 
     public synchronized void addActionListener(ActionListener l) {
@@ -126,7 +138,7 @@ public abstract class PMGenericHotArea extends JComponent implements PMHotArea, 
         return accessibleContext;
     }
 
-    protected class AccessibleHotArea extends AccessibleJComponent implements AccessibleAction {
+    protected class AccessibleHotArea extends AccessibleJComponent implements AccessibleAction, AccessibleExtendedComponent {
 
         private static final long serialVersionUID = 4062089184365230374L;
 
@@ -209,6 +221,70 @@ public abstract class PMGenericHotArea extends JComponent implements PMHotArea, 
                 return true;
             default:
                 return false;
+            }
+        }
+
+        /**
+         * Returns key bindings associated with this object
+         *
+         * @return the key bindings, if supported, of the object;
+         * otherwise, null
+         * @see AccessibleKeyBinding
+         */
+        public AccessibleKeyBinding getAccessibleKeyBinding() {
+            int mnemonic = PMGenericHotArea.this.getMnemonic();
+            if (mnemonic == 0) {
+                return null;
+            }
+            return new ButtonKeyBinding(mnemonic);
+        }
+
+        class ButtonKeyBinding implements AccessibleKeyBinding {
+            int mnemonic;
+
+            ButtonKeyBinding(int mnemonic) {
+                this.mnemonic = mnemonic;
+            }
+
+            /**
+             * Returns the number of key bindings for this object
+             *
+             * @return the zero-based number of key bindings for this object
+             */
+            public int getAccessibleKeyBindingCount() {
+                return 1;
+            }
+
+            /**
+             * Returns a key binding for this object.  The value returned is an
+             * java.lang.Object which must be cast to appropriate type depending
+             * on the underlying implementation of the key.  For example, if the
+             * Object returned is a javax.swing.KeyStroke, the user of this
+             * method should do the following:
+             * <nf><code>
+             * Component c = <get the component that has the key bindings>
+             * AccessibleContext ac = c.getAccessibleContext();
+             * AccessibleKeyBinding akb = ac.getAccessibleKeyBinding();
+             * for (int i = 0; i < akb.getAccessibleKeyBindingCount(); i++) {
+             *     Object o = akb.getAccessibleKeyBinding(i);
+             *     if (o instanceof javax.swing.KeyStroke) {
+             *         javax.swing.KeyStroke keyStroke = (javax.swing.KeyStroke)o;
+             *         <do something with the key binding>
+             *     }
+             * }
+             * </code></nf>
+             *
+             * @param i zero-based index of the key bindings
+             * @return a javax.lang.Object which specifies the key binding
+             * @exception IllegalArgumentException if the index is
+             * out of bounds
+             * @see #getAccessibleKeyBindingCount
+             */
+            public java.lang.Object getAccessibleKeyBinding(int i) {
+                if (i != 0) {
+                    throw new IllegalArgumentException();
+                }
+                return KeyStroke.getKeyStroke(mnemonic, 0);
             }
         }
     }
