@@ -105,6 +105,7 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
         narcLabel.setForeground(Color.WHITE);
 
         narcList = new JList<String>(new DefaultListModel<String>());
+        narcLabel.setLabelFor(narcList);
 
         // transport stuff
         // unusedL = new JLabel( "Unused Space:", JLabel.CENTER );
@@ -117,6 +118,7 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
         unusedR.setEditable(false);
         unusedR.setOpaque(false);
         unusedR.setForeground(Color.WHITE);
+        unusedL.setLabelFor(unusedR);
 
         carrysL = new JLabel(
                 Messages.getString("MechDisplay.Carryng"), SwingConstants.CENTER); //$NON-NLS-1$
@@ -126,6 +128,7 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
         carrysR.setEditable(false);
         carrysR.setOpaque(false);
         carrysR.setForeground(Color.WHITE);
+        carrysL.setLabelFor(carrysR);
 
         sinksL = new JLabel(
                 Messages.getString("MechDisplay.activeSinksLabel"),
@@ -136,6 +139,7 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
         sinksR.setEditable(false);
         sinksR.setOpaque(false);
         sinksR.setForeground(Color.WHITE);
+        sinksL.setLabelFor(sinksR);
 
         sinks2B = new JButton(
                 Messages.getString("MechDisplay.configureActiveSinksLabel"));
@@ -155,6 +159,7 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
         heatR.setEditable(false);
         heatR.setOpaque(false);
         heatR.setForeground(Color.WHITE);
+        heatL.setLabelFor(heatR);
         
         lblLastTarget = new JLabel(
                 Messages.getString("MechDisplay.LastTarget"),
@@ -165,6 +170,7 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
         lastTargetR.setEditable(false);
         lastTargetR.setOpaque(false);
         lastTargetR.setForeground(Color.WHITE);
+        lblLastTarget.setLabelFor(lastTargetR);
 
         curSensorsL = new JLabel(
                 (Messages.getString("MechDisplay.CurrentSensors"))
@@ -175,6 +181,7 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
 
         chSensors = new JComboBox<String>();
         chSensors.addItemListener(this);
+        curSensorsL.setLabelFor(chSensors);
 
         activateHidden.setToolTipText(Messages
                 .getString("MechDisplay.ActivateHidden.ToolTip"));
