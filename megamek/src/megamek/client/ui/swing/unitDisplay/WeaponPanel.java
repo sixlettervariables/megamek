@@ -441,6 +441,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
             String entry = "MechDisplay.WeaponSortOrder." + s.i18nEntry;
             weapSortOrder.addItem(Messages.getString(entry));
         }
+        wSortOrder.setLabelFor(weapSortOrder);
         add(weapSortOrder,
                 GBC.eol().insets(15, 9, 15, 1)
                    .fill(GridBagConstraints.HORIZONTAL)
@@ -450,6 +451,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
 
         // weapon list
         weaponList = new JList<String>(new DefaultListModel<String>());
+        weaponList.setToolTipText("Weapon List");
         WeaponListMouseAdapter mouseAdapter = new WeaponListMouseAdapter();
         weaponList.addMouseListener(mouseAdapter);
         weaponList.addMouseMotionListener(mouseAdapter);
@@ -474,12 +476,14 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         wAmmo.setOpaque(false);
         wAmmo.setForeground(Color.WHITE);
         m_chAmmo = new JComboBox<String>();
+        wAmmo.setLabelFor(m_chAmmo);
 
         wBayWeapon = new JLabel(
                 Messages.getString("MechDisplay.Weapon"), SwingConstants.LEFT); //$NON-NLS-1$
         wBayWeapon.setOpaque(false);
         wBayWeapon.setForeground(Color.WHITE);
         m_chBayWeapon = new JComboBox<String>();
+        wBayWeapon.setLabelFor(m_chBayWeapon);
 
         add(wBayWeapon, GBC.std().insets(15, 1, 1, 1).gridy(gridy).gridx(0));
 
@@ -501,6 +505,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         currentHeatBuildupR = new JLabel("--", SwingConstants.LEFT); //$NON-NLS-1$
         currentHeatBuildupR.setOpaque(false);
         currentHeatBuildupR.setForeground(Color.WHITE);
+        currentHeatBuildupL.setLabelFor(currentHeatBuildupR);
 
         add(currentHeatBuildupL,
             GBC.std().fill(GridBagConstraints.HORIZONTAL)
@@ -532,15 +537,19 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         wNameR = new JLabel("", SwingConstants.CENTER); //$NON-NLS-1$
         wNameR.setOpaque(false);
         wNameR.setForeground(Color.WHITE);
+        wNameL.setLabelFor(wNameR);
         wHeatR = new JLabel("--", SwingConstants.CENTER); //$NON-NLS-1$
         wHeatR.setOpaque(false);
         wHeatR.setForeground(Color.WHITE);
+        wHeatL.setLabelFor(wHeatR);
         wDamR = new JLabel("--", SwingConstants.CENTER); //$NON-NLS-1$
         wDamR.setOpaque(false);
         wDamR.setForeground(Color.WHITE);
+        wDamL.setLabelFor(wDamR);
         wArcHeatR = new JLabel("--", SwingConstants.CENTER); //$NON-NLS-1$
         wArcHeatR.setOpaque(false);
         wArcHeatR.setForeground(Color.WHITE);
+        wArcHeatL.setLabelFor(wArcHeatR);
 
         wDamageTrooperL = new JLabel(
                 Messages.getString("MechDisplay.DamageTrooper"), SwingConstants.CENTER); //$NON-NLS-1$
@@ -549,6 +558,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         wDamageTrooperR = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wDamageTrooperR.setOpaque(false);
         wDamageTrooperR.setForeground(Color.WHITE);
+        wDamageTrooperL.setLabelFor(wDamageTrooperR);
 
         add(wNameL,
             GBC.std().fill(GridBagConstraints.HORIZONTAL)
@@ -610,18 +620,23 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         wMinR = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wMinR.setOpaque(false);
         wMinR.setForeground(Color.WHITE);
+        wMinL.setLabelFor(wMinR);
         wShortR = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wShortR.setOpaque(false);
         wShortR.setForeground(Color.WHITE);
+        wShortL.setLabelFor(wShortR);
         wMedR = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wMedR.setOpaque(false);
         wMedR.setForeground(Color.WHITE);
+        wMedL.setLabelFor(wMedR);
         wLongR = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wLongR.setOpaque(false);
         wLongR.setForeground(Color.WHITE);
+        wLongL.setLabelFor(wLongR);
         wExtR = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wExtR.setOpaque(false);
         wExtR.setForeground(Color.WHITE);
+        wExtL.setLabelFor(wExtR);
         wAVL = new JLabel(
                 Messages.getString("MechDisplay.AV"), SwingConstants.CENTER); //$NON-NLS-1$
         wAVL.setOpaque(false);
@@ -645,36 +660,42 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         wInfantryRange0R = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wInfantryRange0R.setOpaque(false);
         wInfantryRange0R.setForeground(Color.WHITE);
+        wInfantryRange0L.setLabelFor(wInfantryRange0R);
         wInfantryRange1L = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wInfantryRange1L.setOpaque(false);
         wInfantryRange1L.setForeground(Color.WHITE);
         wInfantryRange1R = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wInfantryRange1R.setOpaque(false);
         wInfantryRange1R.setForeground(Color.WHITE);
+        wInfantryRange1L.setLabelFor(wInfantryRange1R);
         wInfantryRange2L = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wInfantryRange2L.setOpaque(false);
         wInfantryRange2L.setForeground(Color.WHITE);
         wInfantryRange2R = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wInfantryRange2R.setOpaque(false);
         wInfantryRange2R.setForeground(Color.WHITE);
+        wInfantryRange2L.setLabelFor(wInfantryRange2R);
         wInfantryRange3L = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wInfantryRange3L.setOpaque(false);
         wInfantryRange3L.setForeground(Color.WHITE);
         wInfantryRange3R = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wInfantryRange3R.setOpaque(false);
         wInfantryRange3R.setForeground(Color.WHITE);
+        wInfantryRange3L.setLabelFor(wInfantryRange3R);
         wInfantryRange4L = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wInfantryRange4L.setOpaque(false);
         wInfantryRange4L.setForeground(Color.WHITE);
         wInfantryRange4R = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wInfantryRange4R.setOpaque(false);
         wInfantryRange4R.setForeground(Color.WHITE);
+        wInfantryRange4L.setLabelFor(wInfantryRange4R);
         wInfantryRange5L = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wInfantryRange5L.setOpaque(false);
         wInfantryRange5L.setForeground(Color.WHITE);
         wInfantryRange5R = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wInfantryRange5R.setOpaque(false);
         wInfantryRange5R.setForeground(Color.WHITE);
+        wInfantryRange5L.setLabelFor(wInfantryRange5R);
 
         add(wMinL,
             GBC.std().fill(GridBagConstraints.HORIZONTAL)
@@ -797,12 +818,15 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         wTargetR = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wTargetR.setOpaque(false);
         wTargetR.setForeground(Color.WHITE);
+        wTargetL.setLabelFor(wTargetR);
         wRangeR = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wRangeR.setOpaque(false);
         wRangeR.setForeground(Color.WHITE);
+        wRangeL.setLabelFor(wRangeR);
         wToHitR = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
         wToHitR.setOpaque(false);
         wToHitR.setForeground(Color.WHITE);
+        wToHitL.setLabelFor(wToHitR);
 
         add(wTargetL,
             GBC.std().fill(GridBagConstraints.HORIZONTAL)
@@ -833,6 +857,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
 
         // to-hit text
         toHitText = new JTextArea("", 2, 20); //$NON-NLS-1$
+        toHitText.setToolTipText("A description of the To-Hit modifiers");
         toHitText.setEditable(false);
         toHitText.setLineWrap(true);
         toHitText.setFont(new Font("SansSerif", Font.PLAIN, 10)); //$NON-NLS-1$
