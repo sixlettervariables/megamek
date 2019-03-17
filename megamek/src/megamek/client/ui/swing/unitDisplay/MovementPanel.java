@@ -46,6 +46,11 @@ public class MovementPanel extends PicMap implements SelectablePanel {
         setLayout(gridbag);
 
         JLayeredPane layeredPane = new JLayeredPane();
+        c.fill = GridBagConstraints.BOTH;
+        c.gridwidth = GridBagConstraints.REMAINDER;
+        c.weightx = 1.0;
+        c.weighty = 1.0;
+        gridbag.setConstraints(layeredPane, c);
         add(layeredPane);
 
         int layerIndex = 0;

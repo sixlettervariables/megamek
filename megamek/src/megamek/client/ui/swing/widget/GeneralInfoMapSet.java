@@ -697,18 +697,43 @@ public class GeneralInfoMapSet implements DisplayMapSet {
     }
 
     private JLabel createLabel(String s, FontMetrics fm, int x, int y) {
-        JLabel l = new JLabel(s);
+        JLabel l = new JLabel(s) {
+            private static final long serialVersionUID = 8701462161736094045L;
+
+            @Override
+            public void setText(String s) {
+                super.setText(s);
+                GeneralInfoMapSet.this.setSize(this, fm, s);
+            }
+        };
         l.setForeground(Color.white);
+        l.setOpaque(false);
         setLocationAndSize(l, fm, s, x, y);
         return l;
     }
 
     private JTextField createText(String s, FontMetrics fm, int x, int y) {
-        JTextField t = new JTextField(s);
+        JTextField t = new JTextField(s) {
+            private static final long serialVersionUID = 8701462161736094045L;
+
+            @Override
+            public void setText(String s) {
+                super.setText(s);
+                GeneralInfoMapSet.this.setSize(this, fm, s);
+            }
+        };
+        t.setBorder(javax.swing.BorderFactory.createEmptyBorder());
         t.setForeground(Color.white);
+        t.setOpaque(false);
         t.setEditable(false);
         setLocationAndSize(t, fm, s, x, y);
         return t;
+    }
+
+    private void setSize(Component c, FontMetrics fm, String s) {
+        int width = (int) Math.ceil(fm.stringWidth(s) * 1.4);
+        int height = fm.getHeight();
+        c.setSize(width, height);
     }
 
     private void setLocationAndSize(JComponent c, FontMetrics fm, String s, int x, int y) {
@@ -716,6 +741,7 @@ public class GeneralInfoMapSet implements DisplayMapSet {
         int height = fm.getHeight();
         int descent = fm.getMaxDescent();
 
+        c.setSize(width, height);
         c.setBounds(x, y - height + descent, width, height);
     }
 
