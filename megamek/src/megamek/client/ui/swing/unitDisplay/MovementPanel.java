@@ -1,12 +1,17 @@
 package megamek.client.ui.swing.unitDisplay;
 
+import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Rectangle;
 import java.util.Enumeration;
+import java.util.List;
 
 import javax.accessibility.AccessibleContext;
 import javax.accessibility.AccessibleRole;
 import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
+import javax.swing.JLayeredPane;
 
 import megamek.client.ui.swing.accessibility.AccessibleMegaMekRole;
 import megamek.client.ui.swing.widget.BackGroundDrawer;
@@ -20,9 +25,6 @@ import megamek.common.Entity;
  */
 public class MovementPanel extends PicMap implements SelectablePanel {
 
-    /**
-     *
-     */
     private static final long serialVersionUID = 8284603003897415518L;
 
     private GeneralInfoMapSet gi;
@@ -34,7 +36,25 @@ public class MovementPanel extends PicMap implements SelectablePanel {
 
     MovementPanel() {
         gi = new GeneralInfoMapSet(this);
-        addElement(gi.getContentGroup());
+
+        // layout choice panel
+        GridBagLayout gridbag;
+        GridBagConstraints c;
+
+        gridbag = new GridBagLayout();
+        c = new GridBagConstraints();
+        setLayout(gridbag);
+
+        JLayeredPane layeredPane = new JLayeredPane();
+        add(layeredPane);
+
+        int layerIndex = 0;
+        for (List<Component> layer : gi.getLayers()) {
+            for (Component component : layer) {
+                layeredPane.add(component, layerIndex);
+            }
+            layerIndex++;
+        }
         Enumeration<BackGroundDrawer> iter = gi.getBackgroundDrawers()
                                                .elements();
         while (iter.hasMoreElements()) {
@@ -53,12 +73,14 @@ public class MovementPanel extends PicMap implements SelectablePanel {
     public void onResize() {
         int w = getSize().width;
         Rectangle r = getContentBounds();
-        int dx = Math.round(((w - r.width) / 2));
-        if (dx < minLeftMargin) {
-            dx = minLeftMargin;
+        if (null != r) {
+            int dx = Math.round(((w - r.width) / 2));
+            if (dx < minLeftMargin) {
+                dx = minLeftMargin;
+            }
+            int dy = minTopMargin;
+            setContentMargins(dx, dy, dx, dy);
         }
-        int dy = minTopMargin;
-        setContentMargins(dx, dy, dx, dy);
     }
 
     /**
