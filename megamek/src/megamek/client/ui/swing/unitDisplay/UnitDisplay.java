@@ -24,6 +24,7 @@ import java.util.ArrayList;
 
 import javax.swing.JComponent;
 import javax.swing.JPanel;
+import javax.swing.JTabbedPane;
 import javax.swing.KeyStroke;
 
 import megamek.client.event.MechDisplayEvent;
@@ -50,6 +51,7 @@ public class UnitDisplay extends JPanel {
 
     private MechPanelTabStrip tabStrip;
 
+    private JTabbedPane tabbedPane;
     private JPanel displayP;
     private MovementPanel mPan;
     private PilotPanel pPan;
@@ -79,37 +81,29 @@ public class UnitDisplay extends JPanel {
         super(new GridBagLayout());
         this.clientgui = clientgui;
 
-        tabStrip = new MechPanelTabStrip(this);
+        tabbedPane = new JTabbedPane();
 
-        displayP = new JPanel(new CardLayout());
         mPan = new MovementPanel();
-        displayP.add("movement", mPan); //$NON-NLS-1$
+        tabbedPane.addTab("General", mPan);
         pPan = new PilotPanel(this);
-        displayP.add("pilot", pPan); //$NON-NLS-1$
+        tabbedPane.addTab("Pilot", pPan);
         aPan = new ArmorPanel(clientgui != null ? clientgui.getClient().getGame() : null, this);
-        displayP.add("armor", aPan); //$NON-NLS-1$
+        tabbedPane.addTab("Armor", aPan);
         wPan = new WeaponPanel(this);
-        displayP.add("weapons", wPan); //$NON-NLS-1$
+        tabbedPane.addTab("Weapons", wPan);
         sPan = new SystemPanel(this);
-        displayP.add("systems", sPan); //$NON-NLS-1$
+        tabbedPane.addTab("Systems", sPan);
         ePan = new ExtraPanel(this);
-        displayP.add("extras", ePan); //$NON-NLS-1$
+        tabbedPane.addTab("Extras", ePan);
 
         // layout main panel
         GridBagConstraints c = new GridBagConstraints();
         c.fill = GridBagConstraints.BOTH;
-        c.insets = new Insets(4, 1, 0, 1);
-
-        c.weightx = 1.0;
-        c.weighty = 0.0;
-
         c.gridwidth = GridBagConstraints.REMAINDER;
-        addBag(tabStrip, c);
         c.insets = new Insets(0, 1, 1, 1);
+        c.weightx = 1.0;
         c.weighty = 1.0;
-        addBag(displayP, c);
-
-        ((CardLayout) displayP.getLayout()).show(displayP, "movement"); //$NON-NLS-1$
+        addBag(tabbedPane, c);
         
         if (controller != null) {
             registerKeyboardCommands(this, controller);
@@ -139,9 +133,7 @@ public class UnitDisplay extends JPanel {
 
                     @Override
                     public void performAction() {
-                        ((CardLayout) displayP.getLayout()).show(displayP,
-                                "movement");
-                        tabStrip.setTab(0);
+                        tabbedPane.setSelectedIndex(0);
                     }
 
                 });
@@ -161,9 +153,7 @@ public class UnitDisplay extends JPanel {
 
                     @Override
                     public void performAction() {
-                        ((CardLayout) displayP.getLayout()).show(displayP,
-                                "pilot");
-                        tabStrip.setTab(1);
+                        tabbedPane.setSelectedIndex(1);
                     }
 
                 });
@@ -183,9 +173,7 @@ public class UnitDisplay extends JPanel {
 
                     @Override
                     public void performAction() {
-                        ((CardLayout) displayP.getLayout()).show(displayP,
-                                "armor");
-                        tabStrip.setTab(2);
+                        tabbedPane.setSelectedIndex(2);
                     }
 
                 });
@@ -205,9 +193,7 @@ public class UnitDisplay extends JPanel {
 
                     @Override
                     public void performAction() {
-                        ((CardLayout) displayP.getLayout()).show(displayP,
-                                "systems");
-                        tabStrip.setTab(3);
+                        tabbedPane.setSelectedIndex(3);
                     }
 
                 });
@@ -227,9 +213,7 @@ public class UnitDisplay extends JPanel {
 
                     @Override
                     public void performAction() {
-                        ((CardLayout) displayP.getLayout()).show(displayP,
-                                "weapons");
-                        tabStrip.setTab(4);
+                        tabbedPane.setSelectedIndex(4);
                     }
 
                 });
@@ -249,9 +233,7 @@ public class UnitDisplay extends JPanel {
 
                     @Override
                     public void performAction() {
-                        ((CardLayout) displayP.getLayout()).show(displayP,
-                                "extras");
-                        tabStrip.setTab(5);
+                        tabbedPane.setSelectedIndex(5);
                     }
 
                 });
@@ -328,20 +310,18 @@ public class UnitDisplay extends JPanel {
      * Changes to the specified panel.
      */
     public void showPanel(String s) {
-        ((CardLayout) displayP.getLayout()).show(displayP, s);
         if ("movement".equals(s)) { //$NON-NLS-1$
-            tabStrip.setTab(0);
-        }
-        if ("pilot".equals(s)) { //$NON-NLS-1$
-            tabStrip.setTab(1);
+            tabbedPane.setSelectedIndex(0);
+        } else if ("pilot".equals(s)) { //$NON-NLS-1$
+            tabbedPane.setSelectedIndex(1);
         } else if ("armor".equals(s)) { //$NON-NLS-1$
-            tabStrip.setTab(2);
+            tabbedPane.setSelectedIndex(2);
         } else if ("weapons".equals(s)) { //$NON-NLS-1$
-            tabStrip.setTab(4);
+            tabbedPane.setSelectedIndex(4);
         } else if ("systems".equals(s)) { //$NON-NLS-1$
-            tabStrip.setTab(3);
+            tabbedPane.setSelectedIndex(3);
         } else if ("extras".equals(s)) { //$NON-NLS-1$
-            tabStrip.setTab(5);
+            tabbedPane.setSelectedIndex(5);
         }
     }
     
@@ -350,8 +330,7 @@ public class UnitDisplay extends JPanel {
      * @param loc
      */
     public void showSpecificSystem(int loc) {
-        ((CardLayout) displayP.getLayout()).show(displayP, "systems");
-        tabStrip.setTab(3);
+        tabbedPane.setSelectedIndex(3);
         sPan.selectLocation(loc);
     }
 
