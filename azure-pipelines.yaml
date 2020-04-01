@@ -29,17 +29,4 @@ steps:
     jdkArchitectureOption: 'x64'
     publishJUnitResults: false
     testResultsFiles: '**/TEST-*.xml'
-    tasks: 'releaseAll'
-
-#
-# We really only need to do these last two for one of the agents, we'll pick Linux
-#
-- task: CopyFiles@2
-  condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'))
-  inputs:
-    sourceFolder: 'MekHQ/build/distributions'
-    contents: '**/*'
-    targetFolder: '$(Build.ArtifactStagingDirectory)'
-
-- task: PublishBuildArtifacts@1
-  condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'))
+    tasks: 'build'
