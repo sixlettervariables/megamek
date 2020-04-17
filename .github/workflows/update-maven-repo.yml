@@ -32,8 +32,9 @@ jobs:
         repository: sixlettervariables/mavenrepo
         path: mavenrepo
     - name: Copy Maven Outputs to Repo
+      working-directory: megamek/megamek/build/mavenrepo/
       run: |
-        cp -r megamek/megamek/build/mavenrepo/ mavenrepo/
+        cp -r . ../../../../mavenrepo/
     - name: Inspect git status output
       working-directory: mavenrepo
       run: |
