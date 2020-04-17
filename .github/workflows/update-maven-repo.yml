@@ -47,7 +47,7 @@ jobs:
         git commit -m "MegaMek ${{ github.event.after }}"
     - name: Push changes to the Maven Repo
       env:
-        GIT_USER: ${{ secrets.GH_PAT_FOR_MM }}
+        GIT_PAT: ${{ secrets.GH_PAT_FOR_MM }}
       working-directory: mavenrepo
       run: |
-        git push "https://${GIT_USER}:x-oauth-basic@github.com/sixlettervariables/mavenrepo.git" HEAD:master
+        git push "https://sixlettervariables:${GIT_PAT}@github.com/sixlettervariables/mavenrepo.git" HEAD:master
