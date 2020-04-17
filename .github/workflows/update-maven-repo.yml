@@ -45,9 +45,9 @@ jobs:
         git config user.email ${{ github.event.pusher.email }}
         git config user.name ${{ github.event.pusher.name }}
         git commit -m "MegaMek ${{ github.event.after }}"
-    - name: Push changes to the Maven Repo
-      env:
-        GIT_PAT: ${{ secrets.GH_PAT_FOR_MM }}
+    - name: Setup SSH and Push changes to the Maven Repo
       working-directory: mavenrepo
       run: |
-        git push "https://sixlettervariables:${GIT_PAT}@github.com/sixlettervariables/mavenrepo.git" HEAD:master
+        eval "$(ssh-agent -s)"
+        ssh-add - <<< "${{ secrets.MAVEN_REPO_DEPLOY_KEY }}"
+        git push "git@github.com:sixlettervariables/mavenrepo.git" HEAD:master
