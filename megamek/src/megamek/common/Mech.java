@@ -1071,17 +1071,17 @@ public abstract class Mech extends Entity {
      */
     @Override
     public int getRunMP(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
+            boolean ignoremodulararmor, boolean ignoreCrew) {
         if (hasArmedMASCAndSuperCharger()) {
             return ((int) Math.ceil(getWalkMP(gravity, ignoreheat,
-                    ignoremodulararmor) * 2.5))
+                    ignoremodulararmor, ignoreCrew) * 2.5))
                     - (hasMPReducingHardenedArmor() ? 1 : 0);
         }
         if (hasArmedMASC()) {
-            return (getWalkMP(gravity, ignoreheat, ignoremodulararmor) * 2)
+            return (getWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew) * 2)
                     - (hasMPReducingHardenedArmor() ? 1 : 0);
         }
-        return Math.max(0, super.getRunMP(gravity, ignoreheat, ignoremodulararmor)
+        return Math.max(0, super.getRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew)
                 - (hasMPReducingHardenedArmor() ? 1 : 0));
     }
 
@@ -1092,8 +1092,8 @@ public abstract class Mech extends Entity {
      */
     @Override
     public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
-        return super.getRunMP(gravity, ignoreheat, ignoremodulararmor)
+            boolean ignoremodulararmor, boolean ignoreCrew) {
+        return super.getRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew)
                 - (hasMPReducingHardenedArmor() ? 1 : 0);
     }
 
@@ -1136,7 +1136,7 @@ public abstract class Mech extends Entity {
         if (hasHipCrit()) {
             return getRunMP();
         }
-        return getSprintMP(true, false, false);
+        return getSprintMP(true, false, false, false);
     }
 
     /*
@@ -1146,31 +1146,21 @@ public abstract class Mech extends Entity {
      */
     @Override
     public int getSprintMP(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
+            boolean ignoremodulararmor, boolean ignoreCrew) {
         if (hasHipCrit()) {
-            return getRunMP(gravity, ignoreheat, ignoremodulararmor);
+            return getRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
         }
         if (hasArmedMASCAndSuperCharger()) {
             return ((int) Math.ceil(getWalkMP(gravity, ignoreheat,
-                    ignoremodulararmor) * 3.0))
+                    ignoremodulararmor, ignoreCrew) * 3.0))
                     - (hasMPReducingHardenedArmor() ? 1 : 0);
         }
         if (hasArmedMASC()) {
             return ((int) Math.ceil(getWalkMP(gravity, ignoreheat,
-                    ignoremodulararmor) * 2.5))
+                    ignoremodulararmor, ignoreCrew) * 2.5))
                     - (hasMPReducingHardenedArmor() ? 1 : 0);
         }
-        return getSprintMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor);
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see megamek.common.Entity#getSprintMPwithoutMASC(boolean, boolean)
-     */
-    @Override
-    public int getSprintMPwithoutMASC() {
-        return getSprintMPwithoutMASC(true, false, false);
+        return getSprintMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
     }
 
     /*
@@ -1181,12 +1171,12 @@ public abstract class Mech extends Entity {
      */
     @Override
     public int getSprintMPwithoutMASC(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
+            boolean ignoremodulararmor, boolean ignoreCrew) {
         if (hasHipCrit()) {
-            return getRunMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor);
+            return getRunMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
         }
         return ((int) Math.ceil(getWalkMP(gravity, ignoreheat,
-                ignoremodulararmor) * 2.0))
+                ignoremodulararmor, ignoreCrew) * 2.0))
                 - (hasMPReducingHardenedArmor() ? 1 : 0);
     }
 
@@ -1213,9 +1203,9 @@ public abstract class Mech extends Entity {
     @Override
     public int getRunningGravityLimit() {
         if (game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_SPRINT)) {
-            return getSprintMP(false, false, false);
+            return getSprintMP(false, false, false, false);
         }
-        return getRunMP(false, false, false);
+        return getRunMP(false, false, false, false);
     }
 
     /**
@@ -3876,7 +3866,7 @@ public abstract class Mech extends Entity {
         // adjust for target movement modifier
         // we use full possible movement, ignoring gravity, heat and modular
         // armor, but taking into account hit actuators
-        int bvWalk = getWalkMP(false, true, true);
+        int bvWalk = getWalkMP(false, true, true, false);
         int airmechMP = 0;
         if (((getEntityType() & ETYPE_LAND_AIR_MECH) != 0)) {
             bvWalk = ((LandAirMech)this).getBVWalkMP();
@@ -8693,7 +8683,7 @@ public abstract class Mech extends Entity {
         // modular armor since they're reasonably permanent but ignoring heat
         // effects -- have dropped to 0, we're stuck even if we still have
         // jump jets because we can't get up anymore to *use* them.
-        if ((getWalkMP(true, true, false) <= 0) && isProne()) {
+        if ((getWalkMP(true, true, false, !checkCrew) <= 0) && isProne()) {
             return true;
         }
         // Gyro destroyed? TW p. 258 at least heavily implies that that counts

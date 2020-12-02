@@ -132,10 +132,10 @@ public class FighterSquadron extends Aero {
 
     @Override
     public int getWalkMP(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
+            boolean ignoremodulararmor, boolean ignoreCrew) {
         return fighters.stream().map(fid -> game.getEntity(fid))
                 .filter(ACTIVE_CHECK)
-                .mapToInt(ent -> ent.getWalkMP(gravity, ignoreheat)).min()
+                .mapToInt(ent -> ent.getWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew)).min()
                 .orElse(0);
     }
     

@@ -2392,9 +2392,9 @@ public class Jumpship extends Aero {
     }
 
     @Override
-    public int getRunMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getRunMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         if (!hasStationKeepingDrive()) {
-            return super.getRunMP(gravity, ignoreheat, ignoremodulararmor);
+            return super.getRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
         }
         return (int) Math.floor(getAccumulatedThrust());
     }

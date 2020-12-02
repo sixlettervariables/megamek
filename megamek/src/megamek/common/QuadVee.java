@@ -123,11 +123,11 @@ public class QuadVee extends QuadMech {
      * bg.battletech.com/forums/index.php?topic=55261.msg1271935#msg1271935
      */
     @Override
-    public int getWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         if (getConversionMode() == CONV_MODE_VEHICLE) {
-            return getCruiseMP(gravity, ignoreheat, ignoremodulararmor);
+            return getCruiseMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
         } else {
-            return super.getWalkMP(gravity, ignoreheat, ignoremodulararmor);
+            return super.getWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
         }
     }
     
@@ -135,7 +135,7 @@ public class QuadVee extends QuadMech {
      * In vehicle mode the QuadVee ignores actuator and hip criticals, but is subject to track/wheel
      * damage and various effects of vehicle motive damage.
      */
-    public int getCruiseMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getCruiseMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         int wmp = getOriginalWalkMP();
         //Bonus for wheeled movement
         if (getMotiveType() == MOTIVE_WHEEL) {
@@ -211,7 +211,7 @@ public class QuadVee extends QuadMech {
                 .booleanOption(OptionsConstants.ADVGRNDMOV_VEHICLE_ADVANCED_MANEUVERS))) {
             return getRunMP();
         }
-        return getSprintMP(true, false, false);
+        return getSprintMP(true, false, false, false);
     }
 
     /*
@@ -221,12 +221,12 @@ public class QuadVee extends QuadMech {
      */
     @Override
     public int getSprintMP(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
+            boolean ignoremodulararmor, boolean ignoreCrew) {
         if (getConversionMode() == CONV_MODE_VEHICLE && (game == null || !game.getOptions()
                 .booleanOption(OptionsConstants.ADVGRNDMOV_VEHICLE_ADVANCED_MANEUVERS))) {
-            return getRunMP(gravity, ignoreheat, ignoremodulararmor);
+            return getRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
         }
-        return super.getSprintMP(gravity, ignoreheat, ignoremodulararmor);
+        return super.getSprintMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
     }
 
     /*
@@ -237,17 +237,17 @@ public class QuadVee extends QuadMech {
      */
     @Override
     public int getSprintMPwithoutMASC(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
+            boolean ignoremodulararmor, boolean ignoreCrew) {
         if (getConversionMode() == CONV_MODE_VEHICLE) {
             if (game == null || !game.getOptions()
                     .booleanOption(OptionsConstants.ADVGRNDMOV_VEHICLE_ADVANCED_MANEUVERS)) {
-                return getRunMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor);
+                return getRunMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
             } else {
                 return (int) Math.ceil(getWalkMP(gravity, ignoreheat,
-                        ignoremodulararmor) * 2.0);
+                        ignoremodulararmor, ignoreCrew) * 2.0);
             }
         } else {
-            return super.getSprintMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor);
+            return super.getSprintMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
         }
     }
 

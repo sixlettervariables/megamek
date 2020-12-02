@@ -692,8 +692,7 @@ public class UnitEditorDialog extends JDialog {
         panSystem.add(new JLabel("<html><b>" + Messages.getString("UnitEditorDialog.motiveDamage")
                 + "</b><br></html>"), gridBagConstraints);
         int motiveHits = 0;
-        // FIXME: motive hits arent working quite right
-        if (tank.isImmobile()) {
+        if (tank.isPermanentlyImmobilized(false)) {
             motiveHits = 4;
         } else if (tank.hasHeavyMovementDamage()) {
             motiveHits = 3;
@@ -1363,6 +1362,9 @@ public class UnitEditorDialog extends JDialog {
             if (null != motiveCrit) {
                 tank.resetMovementDamage();
                 tank.addMovementDamage(motiveCrit.getHits());
+
+                // Apply movement damage immediately if we've set the Tank to be Immobile
+                tank.applyMovementDamage();
             }
             if ((tank instanceof VTOL) && (null != flightStabilizerCrit)) {
                 if (flightStabilizerCrit.getHits() > 0) {

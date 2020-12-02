@@ -376,7 +376,7 @@ public class GunEmplacement extends Tank {
     }
 
     @Override
-    public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         return 0;
     }
 

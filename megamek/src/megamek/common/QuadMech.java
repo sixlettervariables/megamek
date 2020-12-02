@@ -80,7 +80,7 @@ public class QuadMech extends Mech {
     }
 
     @Override
-    public int getWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         int wmp = getOriginalWalkMP();
 
         int legsDestroyed = 0;
@@ -187,26 +187,26 @@ public class QuadMech extends Mech {
      */
 
     @Override
-    public int getRunMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getRunMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         if (countBadLegs() <= 1
                 || (this instanceof QuadVee && getConversionMode() == QuadVee.CONV_MODE_VEHICLE
                 && !convertingNow)) {
-            return super.getRunMP(gravity, ignoreheat, ignoremodulararmor);
+            return super.getRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
         }
-        return getWalkMP(gravity, ignoreheat, ignoremodulararmor);
+        return getWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
     }
 
     /**
      * Returns run MP without considering MASC modified for leg loss & stuff.
      */
     @Override
-    public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         if (countBadLegs() <= 1
                 || (this instanceof QuadVee && getConversionMode() == QuadVee.CONV_MODE_VEHICLE
                 && !convertingNow)) {
-            return super.getRunMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor);
+            return super.getRunMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
         }
-        return getWalkMP(gravity, ignoreheat);
+        return getWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
     }
 
     @Override

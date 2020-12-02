@@ -87,7 +87,7 @@ public class BipedMech extends Mech {
     }
     
     @Override
-    public int getWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         int wmp = getOriginalWalkMP();
         int legsDestroyed = 0;
         int hipHits = 0;
@@ -190,11 +190,11 @@ public class BipedMech extends Mech {
      * Returns this mech's running/flank mp modified for leg loss & stuff.
      */
     @Override
-    public int getRunMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getRunMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         if (countBadLegs() == 0) {
-            return super.getRunMP(gravity, ignoreheat, ignoremodulararmor);
+            return super.getRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
         }
-        return getWalkMP(gravity, ignoreheat, ignoremodulararmor);
+        return getWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
     }
 
     /**
@@ -202,11 +202,11 @@ public class BipedMech extends Mech {
      */
 
     @Override
-    public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         if (countBadLegs() == 0) {
-            return super.getRunMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor);
+            return super.getRunMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
         }
-        return getWalkMP(gravity, ignoreheat, ignoremodulararmor);
+        return getWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
     }
 
     /**

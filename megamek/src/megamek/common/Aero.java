@@ -330,7 +330,7 @@ public class Aero extends Entity implements IAero, IBomber {
      * temperatures, gravity, partial repairs and bomb load.
      */
     @Override
-    public int getWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         int j = getOriginalWalkMP();
         // adjust for engine hits
         if (engineHits >= getMaxEngineHits()) {
@@ -2762,17 +2762,17 @@ public class Aero extends Entity implements IAero, IBomber {
      * Fighters don't have MASC
      */
     @Override
-    public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
-        return getRunMP(gravity, ignoreheat, ignoremodulararmor);
+    public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
+        return getRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
     }
 
     @Override
-    public int getRunMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getRunMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         // if aeros are on the ground, they can only move at cruising speed
         if (!isAirborne()) {
-            return getWalkMP(gravity, ignoreheat, ignoremodulararmor);
+            return getWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
         }
-        return super.getRunMP(gravity, ignoreheat, ignoremodulararmor);
+        return super.getRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
     }
 
     @Override

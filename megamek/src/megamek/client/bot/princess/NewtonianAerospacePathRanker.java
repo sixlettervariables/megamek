@@ -54,7 +54,7 @@ public class NewtonianAerospacePathRanker extends BasicPathRanker implements IPa
             // If a unit has not moved, assume it will move away from me.
             int unmovedDistMod = 0;
             if (e.isSelectableThisTurn() && !e.isImmobile()) {
-                unmovedDistMod = e.getWalkMP(true, false, false);
+                unmovedDistMod = e.getWalkMP(true, false, false, false);
             }
 
             if ((position.distance(e.getPosition()) + unmovedDistMod) < range) {

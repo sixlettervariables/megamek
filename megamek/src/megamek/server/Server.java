@@ -8812,7 +8812,7 @@ public class Server implements Runnable {
         // pilot damage on a 2
         if ((entity instanceof Protomech) && ((Protomech) entity).hasMyomerBooster()
                 && (md.getMpUsed() > ((Protomech) entity)
-                        .getRunMPwithoutMyomerBooster(true, false, false))) {
+                        .getRunMPwithoutMyomerBooster(true, false, false, false))) {
             r = new Report(2373);
             r.addDesc(entity);
             r.subject = entity.getId();
@@ -20816,7 +20816,8 @@ public class Server implements Runnable {
                         if (!entity.gotPavementBonus) {
                             int j = entity.mpUsed;
                             int damage = 0;
-                            while (j > (entity.getRunMP(false, false, false) + k)) {
+                            int mp = entity.getRunMP(false, false, false, false);
+                            while (j > (mp + k)) {
                                 j--;
                                 damage++;
                             }

@@ -240,14 +240,14 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
      * ground movement.
      */
     @Override
-    public int getWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         int mp;
         if (getConversionMode() == CONV_MODE_FIGHTER) {
             mp = getFighterModeWalkMP(gravity, ignoremodulararmor);
         } else if (getConversionMode() == CONV_MODE_AIRMECH) {
             mp = getAirMechCruiseMP(gravity, ignoremodulararmor);
         } else {
-            mp = super.getWalkMP(gravity, ignoreheat, ignoremodulararmor);
+            mp = super.getWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
         }
         if (convertingNow) {
             mp /= 2;
@@ -257,11 +257,11 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
     
     // Use Mech mode to determine walk MP for BV calculations
     public int getBVWalkMP() {
-        return super.getWalkMP(false, true, true);
+        return super.getWalkMP(false, true, true, false);
     }
 
     @Override
-    public int getRunMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getRunMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         int mp;
         if (getConversionMode() == CONV_MODE_FIGHTER) {
             mp = getFighterModeRunMP(gravity, ignoremodulararmor);
@@ -269,7 +269,7 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
             mp = getAirMechFlankMP(gravity, ignoremodulararmor);
         } else {
             // conversion reduction has already been done at this point
-            return super.getRunMP(gravity, ignoreheat, ignoremodulararmor);
+            return super.getRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
         }
         if (convertingNow) {
             mp /= 2;
@@ -278,14 +278,14 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
     }
 
     @Override
-    public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         int mp;
         if (getConversionMode() == CONV_MODE_FIGHTER) {
             mp = getFighterModeRunMP(gravity, ignoremodulararmor);
         } else if (getConversionMode() == CONV_MODE_AIRMECH) {
             mp = getAirMechFlankMP(gravity, ignoremodulararmor);
         } else {
-            return super.getRunMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor);
+            return super.getRunMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
         }
         if (convertingNow) {
             mp /= 2;
@@ -297,33 +297,33 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
      * This value should only be used for biped and airmech ground movement.
      */
     @Override
-    public int getSprintMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getSprintMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         if (getConversionMode() == CONV_MODE_FIGHTER) {
             return getRunMP();
         } else if (getConversionMode() == CONV_MODE_AIRMECH) {
             if (hasHipCrit()) {
-                return getAirMechRunMP(gravity, ignoreheat, ignoremodulararmor);
+                return getAirMechRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
             }
             return (int) Math
-                    .ceil(getAirMechWalkMP(gravity, ignoreheat, ignoremodulararmor) * (hasArmedMASC() ? 2.5 : 2.0));
+                    .ceil(getAirMechWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew) * (hasArmedMASC() ? 2.5 : 2.0));
         }
-        return super.getSprintMP(gravity, ignoreheat, ignoremodulararmor);
+        return super.getSprintMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
     }
 
     /**
      * This value should only be used for biped and airmech ground movement.
      */
     @Override
-    public int getSprintMPwithoutMASC(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getSprintMPwithoutMASC(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         if (getConversionMode() == CONV_MODE_FIGHTER) {
             return getRunMP();
         } else if (getConversionMode() == CONV_MODE_AIRMECH) {
             if (hasHipCrit()) {
-                return getAirMechRunMP(gravity, ignoreheat, ignoremodulararmor);
+                return getAirMechRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
             }
-            return getAirMechWalkMP(gravity, ignoreheat, ignoremodulararmor) * 2;
+            return getAirMechWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew) * 2;
         }
-        return super.getSprintMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor);
+        return super.getSprintMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
     }
 
     @Override
@@ -352,11 +352,11 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
     }
 
     public int getAirMechWalkMP() {
-        return getAirMechWalkMP(true, false, false);
+        return getAirMechWalkMP(true, false, false, false);
     }
 
-    public int getAirMechWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
-        int mp = (int) Math.ceil(super.getWalkMP(gravity, ignoreheat, ignoremodulararmor) * 0.33);
+    public int getAirMechWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
+        int mp = (int) Math.ceil(super.getWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew) * 0.33);
         if (convertingNow) {
             mp /= 2;
         }
@@ -364,11 +364,11 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
     }
 
     public int getAirMechRunMP() {
-        return getAirMechRunMP(true, false, false);
+        return getAirMechRunMP(true, false, false, false);
     }
 
-    public int getAirMechRunMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
-        int mp = (int) Math.ceil(getAirMechWalkMP(gravity, ignoreheat, ignoremodulararmor) * 1.5);
+    public int getAirMechRunMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
+        int mp = (int) Math.ceil(getAirMechWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew) * 1.5);
         if (convertingNow) {
             mp /= 2;
         }
@@ -438,11 +438,11 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
     }
 
     @Override
-    public boolean isImmobile() {
+    public boolean isImmobile(boolean checkCrew) {
         if (getConversionMode() == CONV_MODE_FIGHTER && (isAirborne() || isSpaceborne())) {
             return false;
         }
-        return super.isImmobile();
+        return super.isImmobile(checkCrew);
     }
 
     @Override

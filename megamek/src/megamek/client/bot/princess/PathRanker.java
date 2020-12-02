@@ -280,7 +280,7 @@ public abstract class PathRanker implements IPathRanker {
             // If a unit has not moved, assume it will move away from me.
             int unmovedDistMod = 0;
             if (e.isSelectableThisTurn() && !e.isImmobile()) {
-                unmovedDistMod = e.getWalkMP(true, false, false);
+                unmovedDistMod = e.getWalkMP(true, false, false, false);
             }
 
             int distance = position.distance(e.getPosition());

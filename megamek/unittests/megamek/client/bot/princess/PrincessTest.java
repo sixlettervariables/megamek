@@ -119,7 +119,7 @@ public class PrincessTest {
 
         // Test a 6/9/6 regular mech.
         Entity mockMech = Mockito.mock(BipedMech.class);
-        Mockito.when(mockMech.getRunMP(Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean()))
+        Mockito.when(mockMech.getRunMP(Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean()))
                .thenReturn(9);
         Mockito.when(mockMech.getJumpMP(Mockito.anyBoolean())).thenReturn(6);
         Mockito.when(mockMech.isProne()).thenReturn(false);
@@ -181,7 +181,7 @@ public class PrincessTest {
 
         // Test a BA unit.
         Entity mockBA = Mockito.mock(BattleArmor.class);
-        Mockito.when(mockBA.getRunMP(Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean()))
+        Mockito.when(mockBA.getRunMP(Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean()))
                .thenReturn(1);
         Mockito.when(mockBA.getJumpMP(Mockito.anyBoolean())).thenReturn(3);
         Mockito.when(mockBA.isProne()).thenReturn(false);
@@ -197,7 +197,7 @@ public class PrincessTest {
 
         // Test an Inf unit.
         Entity mockInf = Mockito.mock(Infantry.class);
-        Mockito.when(mockInf.getRunMP(Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean()))
+        Mockito.when(mockInf.getRunMP(Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean()))
                .thenReturn(1);
         Mockito.when(mockInf.getJumpMP(Mockito.anyBoolean())).thenReturn(0);
         Mockito.when(mockInf.isProne()).thenReturn(false);
@@ -213,7 +213,7 @@ public class PrincessTest {
 
         // Test a Tank.
         Entity mockTank = Mockito.mock(Tank.class);
-        Mockito.when(mockTank.getRunMP(Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean()))
+        Mockito.when(mockTank.getRunMP(Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean()))
                .thenReturn(6);
         Mockito.when(mockTank.getJumpMP(Mockito.anyBoolean())).thenReturn(0);
         Mockito.when(mockTank.isProne()).thenReturn(false);

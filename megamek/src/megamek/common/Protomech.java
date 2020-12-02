@@ -216,7 +216,7 @@ public class Protomech extends Entity {
     }
 
     @Override
-    public int getWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         if (isEngineHit()) {
             return 0;
         }
@@ -277,7 +277,7 @@ public class Protomech extends Entity {
     @Override
     public String getRunMPasString() {
         if (hasMyomerBooster()) {
-            return getRunMPwithoutMyomerBooster(true, false, false) + "(" + getRunMP() + ")";
+            return getRunMPwithoutMyomerBooster(true, false, false, false) + "(" + getRunMP() + ")";
         }
         return Integer.toString(getRunMP());
     }
@@ -599,17 +599,17 @@ public class Protomech extends Entity {
      * @return
      */
     public int getRunMPwithoutMyomerBooster(boolean gravity,
-            boolean ignoreheat, boolean ignoremodulararmor) {
-        return super.getRunMP(gravity, ignoreheat, ignoremodulararmor);
+            boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
+        return super.getRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
     }
 
     @Override
     public int getRunMP(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
+            boolean ignoremodulararmor, boolean ignoreCrew) {
         if (hasMyomerBooster()) {
-            return (getWalkMP(gravity, ignoreheat, ignoremodulararmor) * 2);
+            return (getWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew) * 2);
         }
-        return super.getRunMP(gravity, ignoreheat, ignoremodulararmor);
+        return super.getRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
     }
 
     /**
@@ -1125,7 +1125,7 @@ public class Protomech extends Entity {
         bvText.append(endColumn);
 
         // adjust for target movement modifier
-        double tmmRan = Compute.getTargetMovementModifier(getRunMP(false, true, true), false, false, game).getValue();
+        double tmmRan = Compute.getTargetMovementModifier(getRunMP(false, true, true, false), false, false, game).getValue();
         // Gliders get +1 for being airborne.
         if (isGlider) {
             tmmRan++;
@@ -1483,7 +1483,7 @@ public class Protomech extends Entity {
 
         // adjust further for speed factor
         double speedFactor = Math
-                .pow(1 + ((((double) getRunMP(false, true, true) + (Math
+                .pow(1 + ((((double) getRunMP(false, true, true, false) + (Math
                         .round(Math.max(jumpMP, umuMP) / 2.0))) - 5) / 10), 1.2);
         speedFactor = Math.round(speedFactor * 100) / 100.0;
 
@@ -2090,8 +2090,8 @@ public class Protomech extends Entity {
 
     @Override
     public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
-        return getRunMP(gravity, ignoreheat, ignoremodulararmor);
+            boolean ignoremodulararmor, boolean ignoreCrew) {
+        return getRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
     }
 
     @Override

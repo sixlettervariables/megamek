@@ -1745,7 +1745,15 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      */
     @Override
     public boolean isImmobile() {
-        return isShutDown() || ((crew != null) && crew.isUnconscious());
+        return isImmobile(true);
+    }
+
+    /**
+     * Is this entity shut down or, if applicable, is the crew unconscious?
+     * @param checkCrew true if the check should include the crew.
+     */
+    public boolean isImmobile(boolean checkCrew) {
+        return isShutDown() || (checkCrew && (crew != null) && crew.isUnconscious());
     }
 
     /**
@@ -1762,8 +1770,8 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
                  * Need to make sure here that we're ignoring heat because
                  * that's not actually "permanent":
                  */
-                && ((getWalkMP(true, true, false) == 0)
-                    && (getRunMP(true, true, false) == 0) && (getJumpMP() == 0))) {
+                && ((getWalkMP(true, true, false, !checkCrew) == 0)
+                    && (getRunMP(true, true, false, !checkCrew) == 0) && (getJumpMP() == 0))) {
             return true;
         } else {
             return false;
@@ -2650,11 +2658,11 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * @param ignoreheat Should heat be ignored?
      */
     public int getWalkMP(boolean gravity, boolean ignoreheat) {
-        return getWalkMP(gravity, ignoreheat, false);
+        return getWalkMP(gravity, ignoreheat, false, false);
     }
 
     public int getWalkMP(boolean gravity, boolean ignoreheat,
-                         boolean ignoremodulararmor) {
+                         boolean ignoremodulararmor, boolean ignoreCrew) {
         int mp = getOriginalWalkMP();
 
         if (!ignoreheat) {
@@ -2728,20 +2736,20 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * Returns this entity's running/flank mp modified for heat and gravity.
      */
     public int getRunMP() {
-        return getRunMP(true, false, false);
+        return getRunMP(true, false, false, false);
     }
 
     public int getRunMP(boolean gravity, boolean ignoreheat,
-                        boolean ignoremodulararmor) {
+                        boolean ignoremodulararmor, boolean ignoreCrew) {
         return (int) Math.ceil(getWalkMP(gravity, ignoreheat,
-                                         ignoremodulararmor) * 1.5);
+                                         ignoremodulararmor, ignoreCrew) * 1.5);
     }
 
     /**
      * Returns run MP without considering MASC
      */
     public int getRunMPwithoutMASC() {
-        return getRunMPwithoutMASC(true, false, false);
+        return getRunMPwithoutMASC(true, false, false, false);
     }
 
     /**
@@ -2749,7 +2757,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * and possibly ignoring heat
      */
     public abstract int getRunMPwithoutMASC(boolean gravity,
-                                            boolean ignoreheat, boolean ignoremodulararmor);
+                                            boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew);
 
     /**
      * Returns this entity's running/flank mp as a string.
@@ -2780,15 +2788,15 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     }
 
     public int getSprintMP(boolean gravity, boolean ignoreheat,
-                           boolean ignoremodulararmor) {
-        return getRunMP(gravity, ignoreheat, ignoremodulararmor);
+                           boolean ignoremodulararmor, boolean ignoreCrew) {
+        return getRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
     }
 
     /**
      * Returns sprint MP without considering MASC
      */
     public int getSprintMPwithoutMASC() {
-        return getRunMPwithoutMASC();
+        return getSprintMPwithoutMASC(true, false, false, false);
     }
 
     /**
@@ -2796,8 +2804,8 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * gravity and possibly ignoring heat
      */
     public int getSprintMPwithoutMASC(boolean gravity, boolean ignoreheat,
-                                      boolean ignoremodulararmor) {
-        return getRunMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor);
+                                      boolean ignoremodulararmor, boolean ignoreCrew) {
+        return getRunMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
     }
 
     /**
@@ -2818,7 +2826,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
      * get the gravity limit for ground movement
      */
     public int getRunningGravityLimit() {
-        return getRunMP(false, false, false);
+        return getRunMP(false, false, false, false);
     }
 
     /**
@@ -7362,7 +7370,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
                 break;
             case MOVE_SPRINT:
             case MOVE_VTOL_SPRINT:
-                maxSafeMP = getSprintMP(false, true, true) + wigeBonus;
+                maxSafeMP = getSprintMP(false, true, true, false) + wigeBonus;
                 if (isEligibleForPavementBonus() && gotPavementBonus) {
                     maxSafeMP++;
                 }
@@ -7370,7 +7378,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
             default:
                 // Max safe MP is based on whatever is the current maximum.
                 // http://bg.battletech.com/forums/index.php?topic=6681.msg154097#msg154097
-                maxSafeMP = getRunMP(false, true, true) + wigeBonus;
+                maxSafeMP = getRunMP(false, true, true, false) + wigeBonus;
                 if (isEligibleForPavementBonus() && gotPavementBonus) {
                     maxSafeMP++;
                 }

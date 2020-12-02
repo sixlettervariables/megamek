@@ -577,7 +577,7 @@ public class VTOL extends Tank implements IBomber {
 
     @Override
     public int getWalkMP(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
+            boolean ignoremodulararmor, boolean ignoreCrew) {
         int j = getOriginalWalkMP();
         if (engineHit) {
             return 0;

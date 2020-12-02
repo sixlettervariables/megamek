@@ -418,12 +418,12 @@ public class BattleArmor extends Infantry {
      */
     @Override
     public int getWalkMP(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
-        return getWalkMP(gravity, ignoreheat, ignoremodulararmor, false, false);
+            boolean ignoremodulararmor, boolean ignoreCrew) {
+        return getWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew, false, false);
     }
 
     public int getWalkMP(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor, boolean ignoreDWP,
+            boolean ignoremodulararmor, boolean ignoreCrew, boolean ignoreDWP,
             boolean ignoreMyomerBooster) {
         int j = getOriginalWalkMP();
         if (hasMyomerBooster()) {
@@ -463,14 +463,14 @@ public class BattleArmor extends Infantry {
 
     @Override
     public int getRunMP(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
+            boolean ignoremodulararmor, boolean ignoreCrew) {
         boolean fastMove = (game != null) &&
                 game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_FAST_INFANTRY_MOVE);
         if(fastMove) {
-            return getWalkMP(gravity, ignoreheat, ignoremodulararmor, false,
+            return getWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew, false,
                     false) + 1;
         }
-        return getWalkMP(gravity, ignoreheat, ignoremodulararmor, false, false);
+        return getWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew, false, false);
     }
 
     /**
@@ -943,7 +943,7 @@ public class BattleArmor extends Infantry {
                     }
                 }
             }
-            int runMP = getWalkMP(false, false, true, true, false);
+            int runMP = getWalkMP(false, false, true, true, false, false);
             int umuMP = getActiveUMUCount();
             int tmmRan = Compute.getTargetMovementModifier(Math.max(runMP,umuMP), false, false,
                     game).getValue();
@@ -1047,7 +1047,7 @@ public class BattleArmor extends Infantry {
                         }
                     }
                     // getJumpMP won't return UMU MP, so weed need to count that extra
-                    int movement = Math.max(getWalkMP(false, false, true, true, false),
+                    int movement = Math.max(getWalkMP(false, false, true, true, false, false),
                             Math.max(getJumpMP(false, true, true), getActiveUMUCount()));
                     double speedFactor = Math.pow(1 + ((double) (movement - 5) / 10), 1.2);
                     speedFactor = Math.round(speedFactor * 100) / 100.0;
@@ -2047,7 +2047,7 @@ public class BattleArmor extends Infantry {
         if (hasDWP()) {
         	movement.put("", getWalkMP());
         }
-        int move = Math.max(getWalkMP(true, false, false, true, false),
+        int move = Math.max(getWalkMP(true, false, false, true, false, false),
                 getJumpMP(true, true, true));
         movement.put(getMovementModeAsBattleForceString(), move);
     }    

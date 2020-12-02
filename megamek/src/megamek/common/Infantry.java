@@ -411,7 +411,7 @@ public class Infantry extends Entity {
      * return this infantry's walk mp, adjusted for planetary conditions
      */
     @Override
-    public int getWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
+    public int getWalkMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
         int mp = getOriginalWalkMP();
         //encumbering armor reduces MP by 1 to a minimum of one (TacOps, pg. 318)
         if(encumbering) {
@@ -456,23 +456,24 @@ public class Infantry extends Entity {
      * Return this Infantry's run MP, which is identical to its walk MP
      */
     @Override
-    public int getRunMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
-        if( (game != null)
+    public int getRunMP(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
+        int mp = getWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
+        if ((game != null)
                 && game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_TACOPS_FAST_INFANTRY_MOVE) ) {
-            if(getWalkMP(gravity, ignoreheat, ignoremodulararmor) > 0) {
-                return getWalkMP(gravity, ignoreheat, ignoremodulararmor) + 1;
+            if (mp > 0) {
+                return mp + 1;
             }
-            return getWalkMP(gravity, ignoreheat, ignoremodulararmor) + 2;
+            return mp + 2;
         }
-        return getWalkMP(gravity, ignoreheat, ignoremodulararmor);
+        return mp;
     }
 
     /**
      * Infantry don't have MASC
      */
     @Override
-    public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor) {
-        return getRunMP(gravity, ignoreheat, ignoremodulararmor);
+    public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat, boolean ignoremodulararmor, boolean ignoreCrew) {
+        return getRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
     }
 
 
@@ -910,7 +911,7 @@ public class Infantry extends Entity {
         double dbr = 0; //defensive battle rating
 
         dbr = men * 1.5 * calcDamageDivisor();
-        int tmmRan = Compute.getTargetMovementModifier(getRunMP(false, true, true), false, false, game)
+        int tmmRan = Compute.getTargetMovementModifier(getRunMP(false, true, true, false), false, false, game)
                 .getValue();
 
         final int jumpMP = getJumpMP(false);
@@ -1051,7 +1052,7 @@ public class Infantry extends Entity {
         // is handled differently (page 315, TM, compare
         // http://forums.classicbattletech.com/index.php/topic,20468.0.html
         double speedFactor;
-        double speedFactorTableLookup = getRunMP(false, true, true)
+        double speedFactorTableLookup = getRunMP(false, true, true, false)
                 + Math.round(Math.max(jumpMP, umuMP) / 2.0);
         if (speedFactorTableLookup > 25) {
             speedFactor = Math.pow(1 + ((((double) walkMP

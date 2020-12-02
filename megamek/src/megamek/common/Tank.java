@@ -248,21 +248,12 @@ public class Tank extends Entity {
             ctl.addComponent(getDualTurretTA());
         }
     }
-    
-    /**
-     * Returns this entity's walking/cruising mp, factored for heat, extreme
-     * temperatures, and gravity.
-     */
-    @Override
-    public int getWalkMP(boolean gravity, boolean ignoreheat) {
-        return getWalkMP(gravity, ignoreheat, false);
-    }
 
     @Override
     public int getWalkMP(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
+            boolean ignoremodulararmor, boolean ignoreCrew) {
         int j = getOriginalWalkMP();
-        if (engineHit || isImmobile()) {
+        if (engineHit || isImmobile(!ignoreCrew)) {
             return 0;
         }
         j = Math.max(0, j - motiveDamage);
@@ -505,17 +496,17 @@ public class Tank extends Entity {
     }
 
     @Override
-    public boolean isImmobile() {
+    public boolean isImmobile(boolean checkCrew) {
         if ((game != null)
                 && game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_NO_IMMOBILE_VEHICLES)) {
-            return super.isImmobile();
+            return super.isImmobile(checkCrew);
         }
         //Towed trailers need to reference the tractor, or they return Immobile due to 0 MP...
         //We do run into some double-blind entityList differences though, so include a null check
         if (isTrailer() && getTractor() != Entity.NONE) {
-            return (game.getEntity(getTractor()) != null ? game.getEntity(getTractor()).isImmobile() : super.isImmobile() || m_bImmobile);
+            return (game.getEntity(getTractor()) != null ? game.getEntity(getTractor()).isImmobile(checkCrew) : super.isImmobile(checkCrew) || m_bImmobile);
         }
-        return super.isImmobile() || m_bImmobile;
+        return m_bImmobile || super.isImmobile(checkCrew);
     }
     
     /**
@@ -715,14 +706,25 @@ public class Tank extends Entity {
 
     @Override
     public void applyDamage() {
+        // Before applying damage to the rest of the tank, apply damage
+        // specific to the movement system.
+        applyMovementDamage();
+
+        super.applyDamage();
+    }
+
+    /**
+     * Applies movement damage to the tank or towed trailer.
+     */
+    public void applyMovementDamage() {
         m_bImmobile |= m_bImmobileHit;
-        //Towed trailers need to use the values of the tractor, or they return Immobile due to 0 MP...
-        if (isTrailer() && getTractor() != Entity.NONE && game.getEntity(getTractor()).hasETypeFlag(Entity.ETYPE_TANK)) {
+
+        // Towed trailers need to use the values of the tractor, or they return Immobile due to 0 MP...
+        if (isTrailer() && (getTractor() != Entity.NONE) && game.getEntity(getTractor()).hasETypeFlag(Entity.ETYPE_TANK)) {
             Tank Tractor = (Tank) game.getEntity(getTractor());
             m_bImmobile = Tractor.m_bImmobile;
             m_bImmobileHit = Tractor.m_bImmobileHit;
         }
-        super.applyDamage();
     }
 
     @Override
@@ -1507,7 +1509,7 @@ public class Tank extends Entity {
         bvText.append(endColumn);
         // adjust for target movement modifier
         double tmmRan = Compute.getTargetMovementModifier(
-                getRunMP(false, true, true), this instanceof VTOL,
+                getRunMP(false, true, true, false), this instanceof VTOL,
                 this instanceof VTOL, game).getValue();
         // for the future, when we implement jumping tanks
         double tmmJumped = (getJumpMP() > 0) ? Compute.
@@ -1969,11 +1971,11 @@ public class Tank extends Entity {
         weaponBV += getWeight() / 2;
 
         // adjust further for speed factor
-        double runMP = getRunMP(false, true, true);
+        double runMP = getRunMP(false, true, true, false);
 
         // Trains use cruise instead of flank MP for speed factor
         if (getMovementMode() == EntityMovementMode.RAIL) {
-            runMP = getWalkMP(false, true, true);
+            runMP = getWalkMP(false, true, true, false);
         }
         // trailers have original run MP of 0, but should count at 1 for speed
         // factor calculation
@@ -2184,8 +2186,8 @@ public class Tank extends Entity {
      */
     @Override
     public int getRunMPwithoutMASC(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
-        return super.getRunMP(gravity, ignoreheat, ignoremodulararmor);
+            boolean ignoremodulararmor, boolean ignoreCrew) {
+        return super.getRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
     }
 
     /*
@@ -2195,11 +2197,11 @@ public class Tank extends Entity {
      */
     @Override
     public int getRunMP(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
+            boolean ignoremodulararmor, boolean ignoreCrew) {
         if (hasArmedMASC()) {
-            return (getWalkMP(gravity, ignoreheat, ignoremodulararmor) * 2);
+            return (getWalkMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew) * 2);
         }
-        return getRunMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor);
+        return getRunMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
     }
 
     /*
@@ -2212,9 +2214,9 @@ public class Tank extends Entity {
         // Overdrive
         if (game != null
                 && game.getOptions().booleanOption(OptionsConstants.ADVGRNDMOV_VEHICLE_ADVANCED_MANEUVERS)) {
-            return getSprintMP(true, false, false);
+            return getSprintMP(true, false, false, false);
         }
-        return getSprintMP(true, false, false);
+        return getSprintMP(true, false, false, false);
     }
 
     /*
@@ -2224,28 +2226,18 @@ public class Tank extends Entity {
      */
     @Override
     public int getSprintMP(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
+            boolean ignoremodulararmor, boolean ignoreCrew) {
         if (game != null && game.getOptions()
                 .booleanOption(OptionsConstants.ADVGRNDMOV_VEHICLE_ADVANCED_MANEUVERS)) {
             if (hasArmedMASC()) {
                 return (int) Math.ceil(getWalkMP(gravity, ignoreheat,
-                        ignoremodulararmor) * 2.5);
+                        ignoremodulararmor, ignoreCrew) * 2.5);
             } else {
-                return getSprintMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor);
+                return getSprintMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
             }
         } else {
-            return getRunMP(gravity, ignoreheat, ignoremodulararmor);
+            return getRunMP(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
         }
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see megamek.common.Entity#getSprintMPwithoutMASC(boolean, boolean)
-     */
-    @Override
-    public int getSprintMPwithoutMASC() {
-        return getSprintMPwithoutMASC(true, false, false);
     }
 
     /*
@@ -2256,13 +2248,13 @@ public class Tank extends Entity {
      */
     @Override
     public int getSprintMPwithoutMASC(boolean gravity, boolean ignoreheat,
-            boolean ignoremodulararmor) {
+            boolean ignoremodulararmor, boolean ignoreCrew) {
         if (game != null && game.getOptions()
                 .booleanOption(OptionsConstants.ADVGRNDMOV_VEHICLE_ADVANCED_MANEUVERS)) {
             return (int) Math.ceil(getWalkMP(gravity, ignoreheat,
-                    ignoremodulararmor) * 2.0);
+                    ignoremodulararmor, ignoreCrew) * 2.0);
         } else {
-            return getRunMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor);
+            return getRunMPwithoutMASC(gravity, ignoreheat, ignoremodulararmor, ignoreCrew);
         }
     }
 
@@ -2997,6 +2989,7 @@ public class Tank extends Entity {
             case 4:
                 motiveDamage = getOriginalWalkMP();
                 immobilize();
+                break;
         }
     }
 
@@ -3484,6 +3477,7 @@ public class Tank extends Entity {
         moderateMovementDamage = false;
         heavyMovementDamage = false;
         m_bImmobileHit = false;
+        m_bImmobile = false;
     }
 
     public void unlockTurret() {

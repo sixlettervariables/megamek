@@ -382,7 +382,7 @@ public class SharedUtility {
                             || (moveType == EntityMovementType.MOVE_RUN)
                             || (moveType == EntityMovementType  .MOVE_VTOL_RUN)) {
                         //TODO: need to adjust for sprinting, but game options are not passed
-                        if (step.getMpUsed() > entity.getRunMP(false, false, false)) {
+                        if (step.getMpUsed() > entity.getRunMP(false, false, false, false)) {
                             rollTarget = entity.checkMovedTooFast(step, overallMoveType);
                             checkNag(rollTarget, nagReport, psrList);
                         }
@@ -410,7 +410,7 @@ public class SharedUtility {
                         }
                     } else if (moveType == EntityMovementType.MOVE_SPRINT
                             || moveType == EntityMovementType.MOVE_VTOL_SPRINT) {
-                        if (step.getMpUsed() > entity.getSprintMP(false, false, false)) {
+                        if (step.getMpUsed() > entity.getSprintMP(false, false, false, false)) {
                             rollTarget = entity.checkMovedTooFast(step, overallMoveType);
                             checkNag(rollTarget, nagReport, psrList);
                         }
@@ -423,16 +423,15 @@ public class SharedUtility {
 
                         // For Tanks, we need to check if the tank had more MPs
                         // because it was moving along a road
-                        if ((step.getMpUsed() > entity.getRunMP(false, false,
-                                false)) && !step.isOnlyPavement()) {
+                        if ((step.getMpUsed() > entity.getRunMP(false, false, false, false))
+                                && !step.isOnlyPavement()) {
                             rollTarget = entity.checkMovedTooFast(step, overallMoveType);
                             checkNag(rollTarget, nagReport, psrList);
                         }
                         // If the tank was moving on a road, he got a +1 bonus.
                         // N.B. The Ask Precentor Martial forum said that a 4/6
                         // tank on a road can move 5/7, **not** 5/8.
-                        else if (step.getMpUsed() > (entity.getRunMP(false,
-                                false, false) + 1)) {
+                        else if (step.getMpUsed() > (entity.getRunMP(false, false, false, false) + 1)) {
                             rollTarget = entity.checkMovedTooFast(step,
                                     overallMoveType);
                             checkNag(rollTarget, nagReport, psrList);

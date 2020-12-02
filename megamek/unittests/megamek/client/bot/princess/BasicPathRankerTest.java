@@ -1038,7 +1038,7 @@ public class BasicPathRankerTest {
         Mockito.when(unmovedMech.getPosition()).thenReturn(new Coords(9, 9)); // Now the closest by position.
         Mockito.when(unmovedMech.isSelectableThisTurn()).thenReturn(true);
         Mockito.when(unmovedMech.isImmobile()).thenReturn(false);
-        Mockito.when(unmovedMech.getWalkMP(Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean()))
+        Mockito.when(unmovedMech.getWalkMP(Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean(), Mockito.anyBoolean()))
                .thenReturn(6); // Movement should cause it to be further away.
         enemyList.add(unmovedMech);
         expected = enemyMech;
