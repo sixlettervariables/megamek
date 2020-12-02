@@ -669,6 +669,7 @@ class EntitySprite extends Sprite {
     private Color getDamageColor() {
         switch (entity.getDamageLevel()) {
             case Entity.DMG_CRIPPLED:
+            case Entity.DMG_UNMANNED:
                 return Color.black;
             case Entity.DMG_HEAVY:
                 return Color.red;

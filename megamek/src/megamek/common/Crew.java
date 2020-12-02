@@ -761,6 +761,22 @@ public class Crew implements Serializable {
     }
 
     /**
+     * Gets a value indicating whether or not the crew is
+     * comprised entirely of dead or missing members.
+     */
+    public boolean isUnmanned() {
+        int deadOrMissing = 0, total = 0;
+        for (int i = 0; i < getSlotCount(); i++) {
+            total++;
+            if (dead[i] || missing[i]) {
+                deadOrMissing++;
+            }
+        }
+
+        return deadOrMissing == total;
+    }
+
+    /**
      * The crew as a whole is considered active if any member is active.
      *
      * @return Whether the crew has at least one active member.

@@ -163,6 +163,8 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     public static final int DMG_MODERATE = 2;
     public static final int DMG_HEAVY = 3;
     public static final int DMG_CRIPPLED = 4;
+    public static final int DMG_UNMANNED = 5;
+    public static final int DMG_LEVELS = DMG_UNMANNED + 1;
 
     public static final int USE_STRUCTURAL_RATING = -1;
 
@@ -14325,6 +14327,13 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     }
 
     /**
+     * Gets a value indicating whether or not this entity is uncrewed.
+     */
+    public boolean isUnmanned() {
+        return (getCrew() == null) || getCrew().isUnmanned();
+    }
+
+    /**
      * Returns TRUE if the entity meets the requirements for crippling damage as
      * detailed in TW pg 258.
      *
@@ -14364,7 +14373,7 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     /**
      * Returns the entity's current damage level.
      *
-     * @return DMG_CRIPLED, DMG_HEAVY, DMG_MODERATE, DMG_LIGHT or DMG_NONE.
+     * @return DMG_UNMANNED, DMG_CRIPLED, DMG_HEAVY, DMG_MODERATE, DMG_LIGHT or DMG_NONE.
      */
     public int getDamageLevel() {
         return getDamageLevel(true);
@@ -14373,9 +14382,12 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     /**
      * Returns the entity's current damage level.
      *
-     * @return DMG_CRIPLED, DMG_HEAVY, DMG_MODERATE, DMG_LIGHT or DMG_NONE.
+     * @return DMG_UNMANNED, DMG_CRIPLED, DMG_HEAVY, DMG_MODERATE, DMG_LIGHT or DMG_NONE.
      */
     public int getDamageLevel(boolean checkCrew) {
+        if (checkCrew && isUnmanned()) {
+            return DMG_UNMANNED;    
+        }
         if (isCrippled(checkCrew)) {
             return DMG_CRIPPLED;
         }

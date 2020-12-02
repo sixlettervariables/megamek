@@ -287,6 +287,9 @@ public class UnitDisplay extends JPanel {
 
         String enName = en.getShortName();
         switch (en.getDamageLevel()) {
+            case Entity.DMG_UNMANNED:
+                enName += " [UNMANNED]";
+                break;
             case Entity.DMG_CRIPPLED:
                 enName += " [CRIPPLED]";
                 break;
