@@ -15,9 +15,16 @@
 package megamek.client.ui.swing.widget;
 
 import java.awt.Graphics;
+import java.awt.IllegalComponentStateException;
 import java.awt.Rectangle;
 import java.util.Enumeration;
+import java.util.Locale;
 import java.util.Vector;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleStateSet;
 
 /**
  * PMAreasGroup allows to group handle PicMap elements as single entity.
@@ -25,6 +32,7 @@ import java.util.Vector;
 
 public class PMAreasGroup implements PMElement {
     private Vector<PMElement> gr = new Vector<PMElement>();
+    private AccessiblePMAreasGroup accessibleContext;
 
     /**
      * Adds area to group
@@ -129,4 +137,51 @@ public class PMAreasGroup implements PMElement {
         }
     }
 
+    @Override
+    public AccessibleContext getAccessibleContext() {
+        if (accessibleContext != null) {
+            accessibleContext = new AccessiblePMAreasGroup();
+        }
+
+        return accessibleContext;
+    }
+
+    protected class AccessiblePMAreasGroup extends AccessibleContext {
+
+        @Override
+        public AccessibleRole getAccessibleRole() {
+            return AccessibleRole.PANEL;
+        }
+
+        @Override
+        public AccessibleStateSet getAccessibleStateSet() {
+            // TODO Auto-generated method stub
+            return new AccessibleStateSet();
+        }
+
+        @Override
+        public int getAccessibleIndexInParent() {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        @Override
+        public int getAccessibleChildrenCount() {
+            return PMAreasGroup.this.gr.size();
+        }
+
+        @Override
+        public Accessible getAccessibleChild(int i) {
+            if (i < 0 || i >= PMAreasGroup.this.gr.size()) {
+                return null;
+            }
+
+            return PMAreasGroup.this.gr.elementAt(i);
+        }
+
+        @Override
+        public Locale getLocale() throws IllegalComponentStateException {
+            return Locale.getDefault();
+        }
+    }
 }

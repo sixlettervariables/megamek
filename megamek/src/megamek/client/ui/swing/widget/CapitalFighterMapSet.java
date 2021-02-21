@@ -219,13 +219,13 @@ public class CapitalFighterMapSet implements DisplayMapSet {
         sensorCritLabel.translate(5 + armorCols * (squareSize + 1), 4 * stepY);
         pilotCritLabel.translate(5 + armorCols * (squareSize + 1), 5 * stepY);
 
-        avCritArea.translate(10 + pilotCritLabel.width + armorCols * (squareSize + 1), stepY - (squareSize + 1));
-        engineCritArea.translate(10 + pilotCritLabel.width + armorCols * (squareSize + 1),
+        avCritArea.translate(10 + pilotCritLabel.getWidth() + armorCols * (squareSize + 1), stepY - (squareSize + 1));
+        engineCritArea.translate(10 + pilotCritLabel.getWidth() + armorCols * (squareSize + 1),
                 2 * stepY - (squareSize + 1));
-        fcsCritArea.translate(10 + pilotCritLabel.width + armorCols * (squareSize + 1), 3 * stepY - (squareSize + 1));
-        sensorCritArea.translate(10 + pilotCritLabel.width + armorCols * (squareSize + 1),
+        fcsCritArea.translate(10 + pilotCritLabel.getWidth() + armorCols * (squareSize + 1), 3 * stepY - (squareSize + 1));
+        sensorCritArea.translate(10 + pilotCritLabel.getWidth() + armorCols * (squareSize + 1),
                 4 * stepY - (squareSize + 1));
-        pilotCritArea.translate(10 + pilotCritLabel.width + armorCols * (squareSize + 1), 5 * stepY - (squareSize + 1));
+        pilotCritArea.translate(10 + pilotCritLabel.getWidth() + armorCols * (squareSize + 1), 5 * stepY - (squareSize + 1));
     }
 
     private void drawCrits(Image im, int crits) {

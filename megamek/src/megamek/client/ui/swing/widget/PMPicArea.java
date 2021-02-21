@@ -17,11 +17,19 @@ package megamek.client.ui.swing.widget;
 import java.awt.AWTEventMulticaster;
 import java.awt.Cursor;
 import java.awt.Graphics;
+import java.awt.IllegalComponentStateException;
 import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.util.Locale;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
 
 /**
  * Simple rectangle hot are for PicMap component. Show single image when idle
@@ -39,12 +47,12 @@ public class PMPicArea implements PMHotArea {
     private boolean selected = false;
     private boolean visible = true;
     private Cursor cursor = new Cursor(Cursor.HAND_CURSOR);
+    private AccessiblePMPicArea accessibleContext;
 
     public PMPicArea(Image idle, Image active) {
         this.idleImage = idle;
         this.activeImage = active;
-        areaShape = new Rectangle(x, y, idle.getWidth(null), idle
-                .getHeight(null));
+        areaShape = new Rectangle(x, y, idle.getWidth(null), idle.getHeight(null));
     }
 
     public PMPicArea(Image im) {
@@ -77,7 +85,7 @@ public class PMPicArea implements PMHotArea {
     public void setIdleImage(Image idle) {
         this.idleImage = idle;
     }
-    
+
     public void setVisible(boolean v) {
         visible = v;
     }
@@ -104,7 +112,7 @@ public class PMPicArea implements PMHotArea {
     }
 
     public void onMouseClick(MouseEvent e) {
-        // !!!!!!code here
+        // Override
     }
 
     public void onMouseOver(MouseEvent e) {
@@ -118,8 +126,61 @@ public class PMPicArea implements PMHotArea {
     }
 
     public void onMouseDown(MouseEvent e) {
+        // Override
     }
 
     public void onMouseUp(MouseEvent e) {
+        // Override
+    }
+
+    @Override
+    public AccessibleContext getAccessibleContext() {
+        if (accessibleContext == null) {
+            accessibleContext = new AccessiblePMPicArea();
+        }
+
+        return accessibleContext;
+    }
+
+    protected class AccessiblePMPicArea extends AccessibleContext {
+
+        @Override
+        public AccessibleRole getAccessibleRole() {
+            return AccessibleRole.CANVAS;
+        }
+
+        @Override
+        public AccessibleStateSet getAccessibleStateSet() {
+            AccessibleStateSet stateSet = new AccessibleStateSet();
+            if (PMPicArea.this.highlight) {
+                stateSet.add(AccessibleState.SELECTABLE);
+            }
+            if (PMPicArea.this.selected) {
+                stateSet.add(AccessibleState.SELECTED);
+            }
+            return stateSet;
+        }
+
+        @Override
+        public int getAccessibleIndexInParent() {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        @Override
+        public int getAccessibleChildrenCount() {
+            return 0;
+        }
+
+        @Override
+        public Accessible getAccessibleChild(int i) {
+            return null;
+        }
+
+        @Override
+        public Locale getLocale() throws IllegalComponentStateException {
+            return Locale.getDefault();
+        }
+        
     }
 }

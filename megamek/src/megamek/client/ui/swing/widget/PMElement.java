@@ -21,7 +21,9 @@ package megamek.client.ui.swing.widget;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
-public interface PMElement {
+import javax.accessibility.Accessible;
+
+public interface PMElement extends Accessible {
     /**
      * Translates element by x and y.
      */

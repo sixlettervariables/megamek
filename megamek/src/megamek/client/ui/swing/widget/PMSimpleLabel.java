@@ -15,22 +15,17 @@
 package megamek.client.ui.swing.widget;
 
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
-public class PMSimpleLabel implements PMLabel {
+import javax.swing.JLabel;
 
-    // The String to display.
-    String string;
-    // The position of the label
-    int x = 0;
-    int y = 0;
-    // The width and height of the label
-    int width;
-    int height;
+public class PMSimpleLabel extends JLabel implements PMLabel {
+
+    private static final long serialVersionUID = 2980037123366497246L;
+
     // The descent of the label
     int descent;
     // Color to draw the label with.
@@ -39,30 +34,29 @@ public class PMSimpleLabel implements PMLabel {
     Font f;
     FontMetrics fm;
 
-    boolean visible = true;
-
     /*
      * Create the label with the specified string, font and color
      */
     public PMSimpleLabel(String s, FontMetrics fm, Color c) {
-        string = s;
+        super(s);
         this.fm = fm;
-        width = fm.stringWidth(string);
-        height = fm.getHeight();
+        super.setSize(fm.stringWidth(s), fm.getHeight());
         descent = fm.getMaxDescent();
         color = c;
+        setFocusable(true);
     }
 
     public void setString(String s) {
-        string = s;
+        setText(s);
         // The width use to just be the stringWidth, but this
         // sometimes caused cropping when setString was called.
         // The value of 140% was chosen by trial and error, and
         // may be incorrect. In fact, this whole fix is
         // basically a kludge, since I don't know why it
         // is needed.
-        width = (int) Math.ceil(fm.stringWidth(string) * 1.4);
-        height = fm.getHeight();
+        int width = (int) Math.ceil(fm.stringWidth(s) * 1.4);
+        int height = fm.getHeight();
+        setSize(width, height);
         descent = fm.getMaxDescent();
     }
 
@@ -77,43 +71,30 @@ public class PMSimpleLabel implements PMLabel {
      * translate the coordinates of the label.
      */
     public void moveTo(int x, int y) {
-        this.x = x;
-        this.y = y;
+        setLocation(x, y);
     }
 
     public void translate(int x, int y) {
-        this.x += x;
-        this.y += y;
+        setLocation(getX() + x, getY() + y);
     }
 
     /*
      * Draw the label.
      */
     public void drawInto(Graphics g) {
-        if (!visible)
+        if (!isVisible())
             return;
         Font font = g.getFont();
         Color temp = g.getColor();
         g.setColor(color);
         g.setFont(fm.getFont());
-        g.drawString(string, x, y);
+        g.drawString(getText(), getX(), getY());
         g.setColor(temp);
         g.setFont(font);
     }
 
-    public void setVisible(boolean v) {
-        visible = v;
-    }
-
     public Rectangle getBounds() {
-        return new Rectangle(x, y - height + descent, width, height);
-    }
-
-    /*
-     * Returns the size of the label
-     */
-    public Dimension getSize() {
-        return new Dimension(width, height);
+        return new Rectangle(getX(), getY() - getHeight() + descent, getWidth(), getHeight());
     }
 
     /*
@@ -122,5 +103,4 @@ public class PMSimpleLabel implements PMLabel {
     public int getDescent() {
         return descent;
     }
-
 }

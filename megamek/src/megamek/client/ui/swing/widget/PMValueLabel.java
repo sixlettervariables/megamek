@@ -36,13 +36,8 @@ public class PMValueLabel extends PMSimpleLabel {
      * Set/change the value displayed in the label.
      */
     void setValue(String v) {
-        string = v;
-        width = fm.stringWidth(string);
-    }
-
-    @Override
-    public void setVisible(boolean v) {
-        super.setVisible(v);
+        setText(v);
+        setSize(fm.stringWidth(v), getHeight());
     }
 
     /*
@@ -50,16 +45,16 @@ public class PMValueLabel extends PMSimpleLabel {
      */
     @Override
     public void drawInto(Graphics g) {
-        if (!visible)
+        if (!isVisible())
             return;
         Color temp = g.getColor();
         g.setColor(color);
-        g.drawString(string, x - width / 2, y - fm.getMaxDescent());
+        g.drawString(getText(), getX() - getWidth() / 2, getY() - fm.getMaxDescent());
         g.setColor(temp);
     }
 
     @Override
     public Rectangle getBounds() {
-        return new Rectangle(x - width / 2, y - height, width, height + descent);
+        return new Rectangle(getX() - getWidth() / 2, getY() - getHeight(), getWidth(), getHeight() + descent);
     }
 }

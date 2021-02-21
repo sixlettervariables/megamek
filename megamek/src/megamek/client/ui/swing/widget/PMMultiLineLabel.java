@@ -29,8 +29,7 @@ public class PMMultiLineLabel extends PMSimpleLabel {
      */
     public void clear() {
         labels.clear();
-        height = 0;
-        width = 0;
+        setSize(0, 0);
     }
     
     /**
@@ -40,12 +39,13 @@ public class PMMultiLineLabel extends PMSimpleLabel {
     public void addString(String s) {
         labels.add(s);
         
+        int width = getWidth();
         int newWidth = fm.stringWidth(s);
-        if(newWidth > width) {
+        if(newWidth > getWidth()) {
             width = newWidth;
         }
         
-        height += fm.getHeight();
+        setSize(width, getHeight() + fm.getHeight());
     }
     
     /*
@@ -53,17 +53,17 @@ public class PMMultiLineLabel extends PMSimpleLabel {
      */
     @Override
     public void drawInto(Graphics g) {
-        if (!visible)
+        if (!isVisible())
             return;
         Font font = g.getFont();
         Color temp = g.getColor();
         g.setColor(color);
         g.setFont(fm.getFont());
         
-        int currentY = y;
+        int currentY = getY();
 
         for(String s : labels) {
-            g.drawString(s, x, currentY);
+            g.drawString(s, getX(), currentY);
             currentY += fm.getHeight();
         }
         

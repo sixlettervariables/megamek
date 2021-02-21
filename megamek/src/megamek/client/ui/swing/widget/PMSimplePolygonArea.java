@@ -18,11 +18,19 @@ import java.awt.AWTEventMulticaster;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Graphics;
+import java.awt.IllegalComponentStateException;
 import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.util.Locale;
+
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+import javax.accessibility.AccessibleState;
+import javax.accessibility.AccessibleStateSet;
 
 import megamek.client.ui.swing.unitDisplay.UnitDisplay;
 
@@ -54,6 +62,8 @@ public class PMSimplePolygonArea implements PMHotArea {
     private boolean visible = true;
 
     private Cursor cursor = new Cursor(Cursor.HAND_CURSOR);
+
+    private AccessiblePMSimplePolygonArea accessibleContext;
 
     public PMSimplePolygonArea(Polygon p, Color backColor, Color brdColor,
             Color hiBrdColor, boolean highlight, UnitDisplay unitDisplay,
@@ -149,5 +159,54 @@ public class PMSimplePolygonArea implements PMHotArea {
     }
 
     public void onMouseUp(MouseEvent e) {
+    }
+
+    @Override
+    public AccessibleContext getAccessibleContext() {
+        if (accessibleContext == null) {
+            accessibleContext = new AccessiblePMSimplePolygonArea();
+        }
+
+        return accessibleContext;
+    }
+
+    protected class AccessiblePMSimplePolygonArea extends AccessibleContext {
+
+        @Override
+        public AccessibleRole getAccessibleRole() {
+            return AccessibleRole.CANVAS;
+        }
+
+        @Override
+        public AccessibleStateSet getAccessibleStateSet() {
+            AccessibleStateSet stateSet = new AccessibleStateSet();
+            if (PMSimplePolygonArea.this.highlight) {
+                stateSet.add(AccessibleState.SELECTABLE);
+            }
+            if (PMSimplePolygonArea.this.selected) {
+                stateSet.add(AccessibleState.SELECTED);
+            }
+            return stateSet;
+        }
+
+        @Override
+        public int getAccessibleIndexInParent() {
+            return 0;
+        }
+
+        @Override
+        public int getAccessibleChildrenCount() {
+            return 0;
+        }
+
+        @Override
+        public Accessible getAccessibleChild(int i) {
+            return null;
+        }
+
+        @Override
+        public Locale getLocale() throws IllegalComponentStateException {
+            return Locale.getDefault();
+        }
     }
 }

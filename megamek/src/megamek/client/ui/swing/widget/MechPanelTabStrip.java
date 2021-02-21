@@ -45,6 +45,10 @@ public class MechPanelTabStrip extends PicMap {
         update();
     }
 
+    public int getSelectedIndex() {
+        return activeTab;
+    }
+
     @Override
     public void addNotify() {
         super.addNotify();

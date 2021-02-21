@@ -3,6 +3,9 @@ package megamek.client.ui.swing.unitDisplay;
 import java.awt.Rectangle;
 import java.util.Enumeration;
 
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
+
 import megamek.client.ui.swing.widget.BackGroundDrawer;
 import megamek.client.ui.swing.widget.GeneralInfoMapSet;
 import megamek.client.ui.swing.widget.PicMap;
@@ -60,6 +63,22 @@ class MovementPanel extends PicMap {
         gi.setEntity(en);
         onResize();
         update();
+    }
+
+    @Override
+    public AccessibleContext getAccessibleContext() {
+        if (accessibleContext == null) {
+            accessibleContext = new AccessibleMovementPanel();
+        }
+
+        return accessibleContext;
+    }
+
+    protected class AccessibleMovementPanel extends AccessiblePicMap {
+        @Override
+        public AccessibleRole getAccessibleRole() {
+            return AccessibleRole.PAGE_TAB;
+        }
     }
 
 }

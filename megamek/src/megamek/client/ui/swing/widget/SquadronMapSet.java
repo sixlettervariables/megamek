@@ -301,15 +301,15 @@ public class SquadronMapSet implements DisplayMapSet {
             sensorCritLabel[i].translate(5 + (armorCols * (squareSize + 1)), (4 * stepY) + (blockSize * i));
             pilotCritLabel[i].translate(5 + (armorCols * (squareSize + 1)), (5 * stepY) + (blockSize * i));
 
-            avCritArea[i].translate(10 + pilotCritLabel[0].width + (armorCols * (squareSize + 1)),
+            avCritArea[i].translate(10 + pilotCritLabel[0].getWidth() + (armorCols * (squareSize + 1)),
                     (stepY - (squareSize + 1)) + (blockSize * i));
-            engineCritArea[i].translate(10 + pilotCritLabel[0].width + (armorCols * (squareSize + 1)),
+            engineCritArea[i].translate(10 + pilotCritLabel[0].getWidth() + (armorCols * (squareSize + 1)),
                     ((2 * stepY) - (squareSize + 1)) + (blockSize * i));
-            fcsCritArea[i].translate(10 + pilotCritLabel[0].width + (armorCols * (squareSize + 1)),
+            fcsCritArea[i].translate(10 + pilotCritLabel[0].getWidth() + (armorCols * (squareSize + 1)),
                     ((3 * stepY) - (squareSize + 1)) + (blockSize * i));
-            sensorCritArea[i].translate(10 + pilotCritLabel[0].width + (armorCols * (squareSize + 1)),
+            sensorCritArea[i].translate(10 + pilotCritLabel[0].getWidth() + (armorCols * (squareSize + 1)),
                     ((4 * stepY) - (squareSize + 1)) + (blockSize * i));
-            pilotCritArea[i].translate(10 + pilotCritLabel[0].width + (armorCols * (squareSize + 1)),
+            pilotCritArea[i].translate(10 + pilotCritLabel[0].getWidth() + (armorCols * (squareSize + 1)),
                     ((5 * stepY) - (squareSize + 1)) + (blockSize * i));
         }
     }

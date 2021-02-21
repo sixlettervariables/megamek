@@ -27,6 +27,9 @@ import java.awt.event.MouseEvent;
 import java.util.Enumeration;
 import java.util.Vector;
 
+import javax.accessibility.Accessible;
+import javax.accessibility.AccessibleContext;
+import javax.accessibility.AccessibleRole;
 import javax.swing.JComponent;
 
 /**
@@ -49,7 +52,7 @@ import javax.swing.JComponent;
  * </ul>
  * Within single layer elements are drawing in the order they added to PicMap.
  */
-public abstract class PicMap extends JComponent {
+public abstract class PicMap extends JComponent implements Accessible {
     /**
      * 
      */
@@ -95,6 +98,7 @@ public abstract class PicMap extends JComponent {
         enableEvents(AWTEvent.MOUSE_EVENT_MASK
                 | AWTEvent.MOUSE_MOTION_EVENT_MASK
                 | AWTEvent.COMPONENT_EVENT_MASK);
+        setFocusable(true);
     }
 
     /**
@@ -373,6 +377,44 @@ public abstract class PicMap extends JComponent {
                 onResize();
                 update();
                 break;
+        }
+    }
+    
+    @Override
+    public AccessibleContext getAccessibleContext() {
+        if (accessibleContext == null) {
+            accessibleContext = new AccessiblePicMap();
+        }
+
+        return accessibleContext;
+    }
+
+    protected class AccessiblePicMap extends AccessibleJComponent {
+        private static final long serialVersionUID = -6306988669279748431L;
+
+        @Override
+        public AccessibleRole getAccessibleRole() {
+            return AccessibleRole.PANEL;
+        }
+
+        @Override
+        public int getAccessibleChildrenCount() {
+            // labels, hotAreas, and otherAreas
+            return 3;
+        }
+
+        @Override
+        public Accessible getAccessibleChild(int i) {
+            switch (i) {
+                case 0:
+                    return labels;
+                case 1:
+                    return hotAreas;
+                case 2:
+                    return otherAreas;
+                default:
+                    return null;
+            }
         }
     }
 }
