@@ -188,26 +188,33 @@ public class MechMapSet implements DisplayMapSet {
         for (int i = 0; i < m.locations(); i++) {
             a = m.getArmor(i);
             a0 = m.getOArmor(i);
+            labels[i].getAccessibleContext().setAccessibleName(m.getLocationName(i) + " Armor");
             vLabels[i].setValue(m.getArmorString(i));
+            vLabels[i].getAccessibleContext().setAccessibleName(m.getArmorDescription(i));
             WidgetUtils.setAreaColor(areas[i], vLabels[i], (double) a
                     / (double) a0);
             if (m.hasRearArmor(i)) {
                 a = m.getArmor(i, true);
                 a0 = m.getOArmor(i, true);
+                labels[i + REAR_AREA_OFFSET].getAccessibleContext().setAccessibleName("Rear " + m.getLocationName(i) + " Armor");
                 vLabels[i + REAR_AREA_OFFSET].setValue(m
                         .getArmorString(i, true));
+                vLabels[i + REAR_AREA_OFFSET].getAccessibleContext().setAccessibleName(m.getArmorDescription(i, true));
                 WidgetUtils.setAreaColor(areas[i + REAR_AREA_OFFSET], vLabels[i
                         + REAR_AREA_OFFSET], (double) a / (double) a0);
             }
             a = m.getInternal(i);
             a0 = m.getOInternal(i);
+            labels[i + INT_STRUCTURE_OFFSET].getAccessibleContext().setAccessibleName("Internals " + m.getLocationName(i));
             vLabels[i + INT_STRUCTURE_OFFSET].setValue(m.getInternalString(i));
+            vLabels[i + INT_STRUCTURE_OFFSET].getAccessibleContext().setAccessibleName(m.getInternalDescription(i));
             WidgetUtils.setAreaColor(areas[i + INT_STRUCTURE_OFFSET], vLabels[i
                     + INT_STRUCTURE_OFFSET], (double) a / (double) a0);
         }
 
         // heat
         vLabels[19].setValue(Integer.toString(m.heat));
+        vLabels[19].getAccessibleContext().setAccessibleDescription("Heat Level");
         drawHeatControl(m.heat, mtHeat);
         //TODO: this messes up the layout a bit, but only for industrial
         // mechs FIXME
@@ -363,6 +370,10 @@ public class MechMapSet implements DisplayMapSet {
         vLabels[19] = WidgetUtils.createValueLabel(155, 90, "", fm); //$NON-NLS-1$
         // BAR rating
         vLabels[20] = WidgetUtils.createValueLabel(100, 345, "", fm); //$NON-NLS-1$
+
+        for (int ii = 0; ii < 20; ++ii) {
+            labels[ii].setLabelFor(vLabels[ii]);
+        }
     }
 
     private void setGroups() {

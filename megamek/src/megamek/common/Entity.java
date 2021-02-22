@@ -3472,6 +3472,42 @@ public abstract class Entity extends TurnOrdered implements Transporter, Targeta
     }
 
     /**
+     * Returns a string representing the armor in the location
+     */
+    public String getArmorDescription(int loc) {
+        return getArmorDescription(loc, false);
+    }
+
+    /**
+     * Returns a string representing the armor in the location
+     */
+    public String getArmorDescription(int loc, boolean rear) {
+        return Entity.armorDescriptionFor(getArmor(loc, rear));
+    }
+
+    /**
+     * Returns a string representing the internal structure in the location
+     */
+    public String getInternalDescription(int loc) {
+        return Entity.armorDescriptionFor(getInternal(loc));
+    }
+
+    /**
+     * Gets a description of an armor value.
+     * @param value The armor amount.
+     */
+    public static String armorDescriptionFor(int value) {
+        if (value == IArmorState.ARMOR_NA) {
+            return "N/A";
+        } else if ((value == IArmorState.ARMOR_DOOMED)
+                   || (value == IArmorState.ARMOR_DESTROYED)) {
+            return "Destroyed";
+        } else {
+            return String.format("%d points", value);
+        }
+    }
+
+    /**
      * Returns the modifier to weapons fire due to heat.
      */
     public int getHeatFiringModifier() {
