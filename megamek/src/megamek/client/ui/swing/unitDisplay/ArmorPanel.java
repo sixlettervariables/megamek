@@ -95,6 +95,8 @@ class ArmorPanel extends PicMap {
     ArmorPanel(IGame g, UnitDisplay unitDisplay) {
         game = g;
         this.unitDisplay = unitDisplay;
+
+        setLayout(null);
     }
 
     @Override
