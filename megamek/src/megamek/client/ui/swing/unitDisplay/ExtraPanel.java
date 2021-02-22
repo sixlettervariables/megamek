@@ -12,6 +12,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.util.Enumeration;
 
+import javax.accessibility.AccessibleRelation;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -104,16 +105,16 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
         narcLabel.setOpaque(false);
         narcLabel.setForeground(Color.WHITE);
 
-        narcList = new JList<String>(new DefaultListModel<String>());
+        narcList = new JList<>(new DefaultListModel<>());
+        narcLabel.setLabelFor(narcList);
 
         // transport stuff
-        // unusedL = new JLabel( "Unused Space:", JLabel.CENTER );
-
         unusedL = new JLabel(
                 Messages.getString("MechDisplay.UnusedSpace"), SwingConstants.CENTER); //$NON-NLS-1$
         unusedL.setOpaque(false);
         unusedL.setForeground(Color.WHITE);
         unusedR = new JTextArea("", 2, 25); //$NON-NLS-1$
+        unusedL.setLabelFor(unusedR);
         unusedR.setEditable(false);
         unusedR.setOpaque(false);
         unusedR.setForeground(Color.WHITE);
@@ -123,6 +124,7 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
         carrysL.setOpaque(false);
         carrysL.setForeground(Color.WHITE);
         carrysR = new JTextArea("", 4, 25); //$NON-NLS-1$
+        carrysL.setLabelFor(carrysR);
         carrysR.setEditable(false);
         carrysR.setOpaque(false);
         carrysR.setForeground(Color.WHITE);
@@ -133,6 +135,7 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
         sinksL.setOpaque(false);
         sinksL.setForeground(Color.WHITE);
         sinksR = new JTextArea("", 1, 25);
+        sinksL.setLabelFor(sinksR);
         sinksR.setEditable(false);
         sinksR.setOpaque(false);
         sinksR.setForeground(Color.WHITE);
@@ -152,6 +155,7 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
         heatL.setOpaque(false);
         heatL.setForeground(Color.WHITE);
         heatR = new JTextArea("", 4, 25); //$NON-NLS-1$
+        heatL.setLabelFor(heatR);
         heatR.setEditable(false);
         heatR.setOpaque(false);
         heatR.setForeground(Color.WHITE);
@@ -162,18 +166,19 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
         lblLastTarget.setForeground(Color.WHITE);
         lblLastTarget.setOpaque(false);
         lastTargetR = new JTextArea("", 4, 25); //$NON-NLS-1$
+        lblLastTarget.setLabelFor(lastTargetR);
         lastTargetR.setEditable(false);
         lastTargetR.setOpaque(false);
         lastTargetR.setForeground(Color.WHITE);
 
         curSensorsL = new JLabel(
-                (Messages.getString("MechDisplay.CurrentSensors"))
-                        .concat(" "),
+                Messages.getString("MechDisplay.CurrentSensors") + " ",
                 SwingConstants.CENTER);
         curSensorsL.setForeground(Color.WHITE);
         curSensorsL.setOpaque(false);
 
-        chSensors = new JComboBox<String>();
+        chSensors = new JComboBox<>();
+        curSensorsL.setLabelFor(chSensors);
         chSensors.addItemListener(this);
 
         activateHidden.setToolTipText(Messages
@@ -189,6 +194,11 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
                 .getDisplayableName(IGame.Phase.PHASE_PHYSICAL));
         activateHiddenPhase.addItem(Messages
                 .getString("MechDisplay.ActivateHidden.StopActivating"));
+
+        activateHiddenPhase.getAccessibleContext().getAccessibleRelationSet().add(new AccessibleRelation(AccessibleRelation.CONTROLLED_BY, activateHidden));
+        activateHiddenPhase.getAccessibleContext().getAccessibleRelationSet().add(new AccessibleRelation(AccessibleRelation.FLOWS_TO, activateHidden));
+        activateHidden.getAccessibleContext().getAccessibleRelationSet().add(new AccessibleRelation(AccessibleRelation.CONTROLLER_FOR, activateHiddenPhase));
+        activateHidden.getAccessibleContext().getAccessibleRelationSet().add(new AccessibleRelation(AccessibleRelation.FLOWS_FROM, activateHiddenPhase));
 
         // layout choice panel
         GridBagLayout gridbag;
@@ -215,8 +225,7 @@ class ExtraPanel extends PicMap implements ActionListener, ItemListener {
 
         c.insets = new Insets(1, 9, 1, 9);
         JScrollPane scrollPane = new JScrollPane(narcList);
-        scrollPane
-                .setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         gridbag.setConstraints(scrollPane, c);
         add(scrollPane);
 
