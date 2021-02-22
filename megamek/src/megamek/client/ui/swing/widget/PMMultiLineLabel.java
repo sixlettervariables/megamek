@@ -7,21 +7,29 @@ import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.BoxLayout;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+
 /**
  * This is a label that can stretch across multiple lines
  * @author NickAragua
  *
  */
-public class PMMultiLineLabel extends PMSimpleLabel {
+public class PMMultiLineLabel extends JPanel {
     private List<String> labels = new ArrayList<>();
-    
+
     /**
      * Constructs a new multi-line label
      * @param fm Font metrics object
      * @param c Color for the text on this label
      */
-    public PMMultiLineLabel(FontMetrics fm, Color c) {
-        super("", fm, c);
+    public PMMultiLineLabel(Font f, Color c) {
+        setFont(f);
+        setForeground(c);
+
+        BoxLayout layout = new BoxLayout(this, BoxLayout.PAGE_AXIS);
+        setLayout(layout);
     }
     
     /**
@@ -29,7 +37,7 @@ public class PMMultiLineLabel extends PMSimpleLabel {
      */
     public void clear() {
         labels.clear();
-        setSize(0, 0);
+        super.removeAll();
     }
     
     /**
@@ -38,37 +46,6 @@ public class PMMultiLineLabel extends PMSimpleLabel {
      */
     public void addString(String s) {
         labels.add(s);
-        
-        int width = getWidth();
-        int newWidth = fm.stringWidth(s);
-        if(newWidth > getWidth()) {
-            width = newWidth;
-        }
-        
-        setSize(width, getHeight() + fm.getHeight());
+        add(new JLabel(s));
     }
-    
-    /*
-     * Draw the label.
-     */
-    @Override
-    public void drawInto(Graphics g) {
-        if (!isVisible())
-            return;
-        Font font = g.getFont();
-        Color temp = g.getColor();
-        g.setColor(color);
-        g.setFont(fm.getFont());
-        
-        int currentY = getY();
-
-        for(String s : labels) {
-            g.drawString(s, getX(), currentY);
-            currentY += fm.getHeight();
-        }
-        
-        g.setColor(temp);
-        g.setFont(font);
-    }
-    
 }
