@@ -145,7 +145,7 @@ public class CapitalFighterMapSet implements DisplayMapSet {
     }
 
     private void setLabels() {
-        FontMetrics fm = comp.getFontMetrics(FONT_LABEL);
+        Font fm = FONT_LABEL;
         armorLabel = new PMSimpleLabel("Armor:", fm, Color.white);
         armorVLabel = new PMValueLabel(fm, Color.red.brighter());
 

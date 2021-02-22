@@ -17,7 +17,6 @@ package megamek.client.ui.swing.widget;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Polygon;
@@ -225,7 +224,7 @@ public class QuadMapSet implements DisplayMapSet {
     }
 
     private void setLabels() {
-        FontMetrics fm = comp.getFontMetrics(FONT_LABEL);
+        Font fm = FONT_LABEL;
 
         // Labels for Front view
         labels[Mech.LOC_HEAD] = WidgetUtils.createLabel(Messages
@@ -281,7 +280,7 @@ public class QuadMapSet implements DisplayMapSet {
 
         // Value labels for all parts of mek
         // front
-        fm = comp.getFontMetrics(FONT_VALUE);
+        fm = FONT_VALUE;
         vLabels[Mech.LOC_HEAD] = WidgetUtils.createValueLabel(68, 30, "", fm); //$NON-NLS-1$
         vLabels[Mech.LOC_LARM] = WidgetUtils.createValueLabel(13, 82, "", fm); //$NON-NLS-1$
         vLabels[Mech.LOC_LT] = WidgetUtils.createValueLabel(40, 66, "", fm); //$NON-NLS-1$

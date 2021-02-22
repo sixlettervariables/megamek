@@ -17,7 +17,6 @@ package megamek.client.ui.swing.widget;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Image;
 import java.awt.Polygon;
 import java.util.Vector;
@@ -130,7 +129,6 @@ public class VTOLMapSet implements DisplayMapSet {
         setAreas();
         setLabels();
         setBackGround();
-        translateAreas();
         setContent();
     }
 
@@ -248,7 +246,7 @@ public class VTOLMapSet implements DisplayMapSet {
     }
 
     private void setLabels() {
-        FontMetrics fm = comp.getFontMetrics(FONT_LABEL);
+        Font fm = FONT_LABEL;
         int mod = 1;
         
         // Labels for Front view
@@ -306,7 +304,7 @@ public class VTOLMapSet implements DisplayMapSet {
 
         // Value labels for all parts of mek
         // front
-        fm = comp.getFontMetrics(FONT_VALUE);
+        fm = FONT_VALUE;
         vLabels[LABEL_CHIN_TU_ARMOR] = WidgetUtils.createValueLabel(92, -36, "", fm); //$NON-NLS-1$ Chin TU
         vLabels[LABEL_FRONT_ARMOR] = WidgetUtils.createValueLabel(101, 22, "", fm); //$NON-NLS-1$ Front
         vLabels[LABEL_RIGHT_ARMOR_1] = WidgetUtils.createValueLabel(105, 65, "", fm); //$NON-NLS-1$ RS
@@ -400,8 +398,4 @@ public class VTOLMapSet implements DisplayMapSet {
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
     }
-
-    private void translateAreas() {
-    }
-
 }

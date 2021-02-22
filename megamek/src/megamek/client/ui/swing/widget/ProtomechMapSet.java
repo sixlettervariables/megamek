@@ -17,7 +17,6 @@ package megamek.client.ui.swing.widget;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Image;
 import java.awt.Polygon;
 import java.util.Vector;
@@ -97,7 +96,7 @@ public class ProtomechMapSet implements DisplayMapSet {
             content.addArea(areas[i]);
         }
 
-        FontMetrics fm = comp.getFontMetrics(FONT_VALUE);
+        Font fm = FONT_VALUE;
 
         for (int i = 0; i < Protomech.NUM_PMECH_LOCATIONS; i++) {
             sectionLabels[i] = new PMValueLabel(fm, Color.black);

@@ -17,7 +17,6 @@ package megamek.client.ui.swing.widget;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.util.Collections;
@@ -222,7 +221,7 @@ public class SquadronMapSet implements DisplayMapSet {
     }
 
     private void setLabels() {
-        FontMetrics fm = comp.getFontMetrics(FONT_LABEL);
+        Font fm = FONT_LABEL;
         for (int i = 0; i < max_size; i++) {
             nameLabel[i] = new PMSimpleLabel("Unknown", fm, Color.white); //$NON-NLS-1$
             armorVLabel[i] = new PMValueLabel(fm, Color.red.brighter());

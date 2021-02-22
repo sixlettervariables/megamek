@@ -29,20 +29,21 @@ public class PMSimpleLabel extends JLabel implements PMLabel {
     // The descent of the label
     int descent;
     // Color to draw the label with.
-    Color color;
     // Font and Fontmetrics for the label
-    Font f;
     FontMetrics fm;
 
     /*
      * Create the label with the specified string, font and color
      */
-    public PMSimpleLabel(String s, FontMetrics fm, Color c) {
+    public PMSimpleLabel(String s, Font f, Color c) {
         super(s);
-        this.fm = fm;
+        super.setFont(f);
+        super.setForeground(c);
+
+        fm = getFontMetrics(f);
+
         super.setSize(fm.stringWidth(s), fm.getHeight());
         descent = fm.getMaxDescent();
-        color = c;
         setFocusable(true);
     }
 
@@ -58,13 +59,6 @@ public class PMSimpleLabel extends JLabel implements PMLabel {
         int height = fm.getHeight();
         setSize(width, height);
         descent = fm.getMaxDescent();
-    }
-
-    /*
-     * Set the color of the label of the font.
-     */
-    public void setColor(Color c) {
-        color = c;
     }
 
     /*
@@ -86,8 +80,8 @@ public class PMSimpleLabel extends JLabel implements PMLabel {
             return;
         Font font = g.getFont();
         Color temp = g.getColor();
-        g.setColor(color);
-        g.setFont(fm.getFont());
+        g.setColor(getForeground());
+        g.setFont(getFont());
         g.drawString(getText(), getX(), getY());
         g.setColor(temp);
         g.setFont(font);
@@ -102,5 +96,10 @@ public class PMSimpleLabel extends JLabel implements PMLabel {
      */
     public int getDescent() {
         return descent;
+    }
+
+    @Override
+    public void setColor(Color c) {
+        super.setForeground(c);
     }
 }

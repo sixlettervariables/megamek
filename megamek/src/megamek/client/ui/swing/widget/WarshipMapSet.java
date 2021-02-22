@@ -17,7 +17,6 @@ package megamek.client.ui.swing.widget;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Image;
 import java.awt.Polygon;
 import java.util.Vector;
@@ -81,7 +80,6 @@ public class WarshipMapSet implements DisplayMapSet{
         setAreas();
         setLabels();
         setBackGround();
-        translateAreas();
         setContent();
     }
 
@@ -193,7 +191,7 @@ public class WarshipMapSet implements DisplayMapSet{
     }
 
     private void setLabels(){
-        FontMetrics fm = comp.getFontMetrics(FONT_LABEL);
+        Font fm = FONT_LABEL;
 
         //Labels for Front view
         //Prefer to use message thingy but don't know how
@@ -219,7 +217,7 @@ public class WarshipMapSet implements DisplayMapSet{
 
         //Value labels for all parts of mek
         //front
-        fm =  comp.getFontMetrics(FONT_VALUE);   
+        fm =  FONT_VALUE;
         vLabels[Jumpship.LOC_NOSE] = WidgetUtils.createValueLabel(50, 30, "", fm); //$NON-NLS-1$
         //   vLabels[Aero.LOC_NOSE + INT_STR_OFFSET] = WidgetUtils.createValueLabel(10, 58, "", fm); //$NON-NLS-1$
         vLabels[Jumpship.LOC_FLS] = WidgetUtils.createValueLabel(17, 85, "", fm); //$NON-NLS-1$
@@ -315,10 +313,6 @@ public class WarshipMapSet implements DisplayMapSet{
                         .getBottomRightCorner()).toString());
         PMUtil.setImage(tile, comp);
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
-    }
-
-    private void translateAreas(){
-
     }
 
     private String getCriticalHitTally(int tally, int max) {

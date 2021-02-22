@@ -16,7 +16,6 @@ package megamek.client.ui.swing.widget;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.util.Enumeration;
@@ -78,12 +77,12 @@ public class PilotMapSet implements DisplayMapSet {
         portraitArea = new PMPicArea(new BufferedImage(72, 72, BufferedImage.TYPE_BYTE_INDEXED));
         content.addArea(portraitArea);
         yCoord = 6;
-        FontMetrics fm = comp.getFontMetrics(FONT_TITLE);
+        Font fm = FONT_TITLE;
         nameL = createLabel(Messages.getString("GeneralInfoMapSet.LocOstLCT"), fm, 0, getYCoord()); //$NON-NLS-1$
         nameL.setColor(Color.yellow);
         content.addArea(nameL);
 
-        fm = comp.getFontMetrics(FONT_VALUE);
+        fm = FONT_VALUE;
         nickL = createLabel(Messages.getString("GeneralInfoMapSet.LocOstLCT"), fm, 0, getNewYCoord()); //$NON-NLS-1$
         content.addArea(nickL);
 
@@ -322,8 +321,8 @@ public class PilotMapSet implements DisplayMapSet {
         bgDrawers.addElement(new BackGroundDrawer(tile, b));
     }
 
-    private PMSimpleLabel createLabel(String s, FontMetrics fm, int x, int y) {
-        PMSimpleLabel l = new PMSimpleLabel(s, fm, Color.white);
+    private PMSimpleLabel createLabel(String s, Font f, int x, int y) {
+        PMSimpleLabel l = new PMSimpleLabel(s, f, Color.white);
         l.moveTo(x, y);
         return l;
     }

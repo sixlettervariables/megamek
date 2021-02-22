@@ -17,7 +17,6 @@ package megamek.client.ui.swing.widget;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Image;
 import java.awt.Polygon;
 import java.util.Vector;
@@ -132,7 +131,6 @@ public class LargeSupportTankMapSet implements DisplayMapSet {
         setAreas();
         setLabels();
         setBackGround();
-        //translateAreas();
         setContent();
     }
 
@@ -196,7 +194,7 @@ public class LargeSupportTankMapSet implements DisplayMapSet {
     }
 
     private void setLabels() {
-        FontMetrics fm = comp.getFontMetrics(FONT_LABEL);
+        Font fm = FONT_LABEL;
 
         // Labels for Front view
         labels[1] = WidgetUtils.createLabel(Messages
@@ -235,7 +233,7 @@ public class LargeSupportTankMapSet implements DisplayMapSet {
 
         // Value labels for all parts of mek
         // front
-        fm = comp.getFontMetrics(FONT_VALUE);
+        fm = FONT_VALUE;
         vLabels[1] = WidgetUtils.createValueLabel(115, 17, "", fm); //$NON-NLS-1$
         vLabels[2] = WidgetUtils
         .createValueLabel(164, 70, "", fm); //$NON-NLS-1$

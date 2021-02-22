@@ -276,7 +276,7 @@ public abstract class PicMap extends JPanel {
         hotAreas.drawInto(g);
         if (activeHotArea != null)
             activeHotArea.drawInto(g);
-        labels.drawInto(g);
+        //labels.drawInto(g);
         g.setClip(oldClip);
 
     }

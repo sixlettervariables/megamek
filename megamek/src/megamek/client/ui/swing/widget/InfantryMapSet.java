@@ -18,7 +18,6 @@ package megamek.client.ui.swing.widget;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Image;
 import java.util.Vector;
 
@@ -112,7 +111,7 @@ public class InfantryMapSet implements DisplayMapSet {
             content.addArea(areas[i]);
         }
 
-        FontMetrics fm = comp.getFontMetrics(FONT_VALUE);
+        Font fm = FONT_VALUE;
         armorLabel = new PMValueLabel(fm, Color.white);
         armorLabel.setValue(Messages.getString(
                 "InfantryMapSet.Armor") + "XXXXXXXXXXXX"); //$NON-NLS-1$//$NON-NLS-2$

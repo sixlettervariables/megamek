@@ -71,7 +71,7 @@ public class BattleArmorMapSet implements DisplayMapSet {
     }
 
     private void setAreas() {
-        FontMetrics fm = comp.getFontMetrics(FONT_VALUE);
+        Font fm = FONT_VALUE;
 
         battleArmorImage = comp.getToolkit().getImage(
                 new MegaMekFile(Configuration.widgetsDir(), "battle_armor.gif").toString()); //$NON-NLS-1$

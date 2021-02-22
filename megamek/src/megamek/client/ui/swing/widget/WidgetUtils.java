@@ -15,7 +15,7 @@ package megamek.client.ui.swing.widget;
 
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FontMetrics;
+import java.awt.Font;
 
 public class WidgetUtils {
     public static void setAreaColor(PMSimplePolygonArea ha, PMValueLabel l,
@@ -39,16 +39,16 @@ public class WidgetUtils {
         }
     }
 
-    public static PMSimpleLabel createLabel(String s, FontMetrics fm,
+    public static PMSimpleLabel createLabel(String s, Font f,
             Color color, int x, int y) {
-        PMSimpleLabel l = new PMSimpleLabel(s, fm, color);
+        PMSimpleLabel l = new PMSimpleLabel(s, f, color);
         centerLabelAt(l, x, y);
         return l;
     }
 
     public static PMValueLabel createValueLabel(int x, int y, String v,
-            FontMetrics fm) {
-        PMValueLabel l = new PMValueLabel(fm, Color.red);
+            Font f) {
+        PMValueLabel l = new PMValueLabel(f, Color.red);
         centerLabelAt(l, x, y);
         l.setValue(v);
         return l;

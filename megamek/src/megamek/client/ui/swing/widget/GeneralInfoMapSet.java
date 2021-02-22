@@ -19,12 +19,13 @@ package megamek.client.ui.swing.widget;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Image;
 import java.util.Enumeration;
 import java.util.Vector;
 
 import java.awt.GridLayout;
+
+import javax.accessibility.AccessibleContext;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -64,7 +65,7 @@ public class GeneralInfoMapSet {
     private JPanel content = new JPanel();
     private JLabel mechTypeL0, mechTypeL1, statusL, pilotL, playerL, teamL, weightL, bvL, mpL0, mpL1, mpL2, mpL3, mpL4,
             curMoveL, heatL, movementTypeL, ejectL, elevationL, fuelL, curSensorsL, visualRangeL;
-    private JLabel statusR, pilotR, playerR, teamR, weightR, bvR, mpR0, mpR1, mpR2, mpR3, mpR4, curMoveR, heatR,
+    private JValueLabel statusR, pilotR, playerR, teamR, weightR, bvR, mpR0, mpR1, mpR2, mpR3, mpR4, curMoveR, heatR,
             movementTypeR, ejectR, elevationR, fuelR, curSensorsR, visualRangeR;
     private PMMultiLineLabel quirksAndPartReps;
     private Vector<BackGroundDrawer> bgDrawers = new Vector<BackGroundDrawer>();
@@ -119,7 +120,7 @@ public class GeneralInfoMapSet {
                 Messages.getString("GeneralInfoMapSet.pilotL"), fm, 0, getNewYCoord());
         content.add(pilotL);
 
-        pilotR = createLabel(
+        pilotR = createValueLabel(
                 Messages.getString("GeneralInfoMapSet.playerR"), fm, pilotL.getSize().width + 10, getYCoord());
         pilotL.setLabelFor(pilotR);
         content.add(pilotR);
@@ -128,7 +129,7 @@ public class GeneralInfoMapSet {
                 Messages.getString("GeneralInfoMapSet.playerL"), fm, 0, getNewYCoord());
         content.add(playerL);
 
-        playerR = createLabel(
+        playerR = createValueLabel(
                 Messages.getString("GeneralInfoMapSet.playerR"), fm, playerL.getSize().width + 10, getYCoord());
         playerL.setLabelFor(playerR);
         content.add(playerR);
@@ -137,7 +138,7 @@ public class GeneralInfoMapSet {
                 Messages.getString("GeneralInfoMapSet.teamL"), fm, 0, getNewYCoord());
         content.add(teamL);
 
-        teamR = createLabel(
+        teamR = createValueLabel(
                 Messages.getString("GeneralInfoMapSet.teamR"), fm, teamL.getSize().width + 10, getYCoord());
         teamL.setLabelFor(teamR);
         content.add(teamR);
@@ -146,7 +147,7 @@ public class GeneralInfoMapSet {
                 Messages.getString("GeneralInfoMapSet.statusL"), fm, 0, getNewYCoord());
         content.add(statusL);
 
-        statusR = createLabel(STAR3, fm, statusL.getSize().width + 10,
+        statusR = createValueLabel(STAR3, fm, statusL.getSize().width + 10,
                 getYCoord());
         statusL.setLabelFor(statusR);
         content.add(statusR);
@@ -155,7 +156,7 @@ public class GeneralInfoMapSet {
                 Messages.getString("GeneralInfoMapSet.weightL"), fm, 0, getNewYCoord());
         content.add(weightL);
 
-        weightR = createLabel(STAR3, fm, weightL.getSize().width + 10,
+        weightR = createValueLabel(STAR3, fm, weightL.getSize().width + 10,
                 getYCoord());
         weightL.setLabelFor(weightR);
         content.add(weightR);
@@ -164,7 +165,7 @@ public class GeneralInfoMapSet {
                 Messages.getString("GeneralInfoMapSet.bvL"), fm, 0, getNewYCoord());
         content.add(bvL);
 
-        bvR = createLabel(STAR3, fm, bvL.getSize().width + 10, getYCoord());
+        bvR = createValueLabel(STAR3, fm, bvL.getSize().width + 10, getYCoord());
         bvL.setLabelFor(bvR);
         content.add(bvR);
 
@@ -172,7 +173,7 @@ public class GeneralInfoMapSet {
                 Messages.getString("GeneralInfoMapSet.mpL0"), fm, 0, getNewYCoord());
         content.add(mpL0);
 
-        mpR0 = createLabel("", fm, mpL0.getSize().width + 10, getYCoord());
+        mpR0 = createValueLabel("", fm, mpL0.getSize().width + 10, getYCoord());
         mpL0.setLabelFor(mpR0);
         content.add(mpR0);
 
@@ -181,7 +182,7 @@ public class GeneralInfoMapSet {
         mpL1.setLocation(mpL0.getSize().width - mpL1.getSize().width, getYCoord());
         content.add(mpL1);
 
-        mpR1 = createLabel(STAR3, fm, mpL0.getSize().width + 10, getYCoord());
+        mpR1 = createValueLabel(STAR3, fm, mpL0.getSize().width + 10, getYCoord());
         mpL1.setLabelFor(mpR1);
         content.add(mpR1);
 
@@ -190,7 +191,7 @@ public class GeneralInfoMapSet {
         mpL2.setLocation(mpL0.getSize().width - mpL2.getSize().width, getYCoord());
         content.add(mpL2);
 
-        mpR2 = createLabel(STAR3, fm, mpL0.getSize().width + 10, getYCoord());
+        mpR2 = createValueLabel(STAR3, fm, mpL0.getSize().width + 10, getYCoord());
         mpL2.setLabelFor(mpR2);
         content.add(mpR2);
 
@@ -199,7 +200,7 @@ public class GeneralInfoMapSet {
         mpL3.setLocation(mpL0.getSize().width - mpL3.getSize().width, getYCoord());
         content.add(mpL3);
 
-        mpR3 = createLabel(STAR3, fm, mpL0.getSize().width + 10, getYCoord());
+        mpR3 = createValueLabel(STAR3, fm, mpL0.getSize().width + 10, getYCoord());
         mpL3.setLabelFor(mpR3);
         content.add(mpR3);
 
@@ -208,7 +209,7 @@ public class GeneralInfoMapSet {
         mpL4.setLocation(mpL0.getSize().width - mpL3.getSize().width, getYCoord());
         content.add(mpL4);
 
-        mpR4 = createLabel("", fm, mpL0.getSize().width + 10, getYCoord());
+        mpR4 = createValueLabel("", fm, mpL0.getSize().width + 10, getYCoord());
         mpL4.setLabelFor(mpR4);
         content.add(mpR4);
 
@@ -216,7 +217,7 @@ public class GeneralInfoMapSet {
                 Messages.getString("GeneralInfoMapSet.curMoveL"), fm, 0, getNewYCoord());
         content.add(curMoveL);
 
-        curMoveR = createLabel(STAR3, fm, curMoveL.getSize().width + 10,
+        curMoveR = createValueLabel(STAR3, fm, curMoveL.getSize().width + 10,
                 getYCoord());
         curMoveL.setLabelFor(curMoveR);
         content.add(curMoveR);
@@ -225,21 +226,21 @@ public class GeneralInfoMapSet {
                 Messages.getString("GeneralInfoMapSet.heatL"), fm, 0, getNewYCoord());
         content.add(heatL);
 
-        heatR = createLabel(STAR3, fm, heatL.getSize().width + 10, getYCoord());
+        heatR = createValueLabel(STAR3, fm, heatL.getSize().width + 10, getYCoord());
         heatL.setLabelFor(heatR);
         content.add(heatR);
 
         fuelL = createLabel(
                 Messages.getString("GeneralInfoMapSet.fuelL"), fm, 0, getNewYCoord());
         content.add(fuelL);
-        fuelR = createLabel(STAR3, fm, fuelL.getSize().width + 10, getYCoord());
+        fuelR = createValueLabel(STAR3, fm, fuelL.getSize().width + 10, getYCoord());
         fuelL.setLabelFor(fuelR);
         content.add(fuelR);
 
         movementTypeL = createLabel(
                 Messages.getString("GeneralInfoMapSet.movementTypeL"), fm, 0, getNewYCoord());
         content.add(movementTypeL);
-        movementTypeR = createLabel(STAR3, fm,
+        movementTypeR = createValueLabel(STAR3, fm,
                 movementTypeL.getSize().width + 10, getYCoord());
         movementTypeL.setLabelFor(movementTypeR);
         content.add(movementTypeR);
@@ -247,7 +248,7 @@ public class GeneralInfoMapSet {
         ejectL = createLabel(
                 Messages.getString("GeneralInfoMapSet.ejectL"), fm, 0, getNewYCoord());
         content.add(ejectL);
-        ejectR = createLabel(STAR3, fm, ejectL.getSize().width + 10,
+        ejectR = createValueLabel(STAR3, fm, ejectL.getSize().width + 10,
                 getYCoord());
         ejectL.setLabelFor(ejectR);
         content.add(ejectR);
@@ -255,7 +256,7 @@ public class GeneralInfoMapSet {
         elevationL = createLabel(
                 Messages.getString("GeneralInfoMapSet.elevationL"), fm, 0, getNewYCoord());
         content.add(elevationL);
-        elevationR = createLabel(STAR3, fm, elevationL.getSize().width + 10,
+        elevationR = createValueLabel(STAR3, fm, elevationL.getSize().width + 10,
                 getYCoord());
         elevationL.setLabelFor(elevationR);
         content.add(elevationR);
@@ -263,7 +264,7 @@ public class GeneralInfoMapSet {
         curSensorsL = createLabel(
                 Messages.getString("GeneralInfoMapSet.currentSensorsL"), fm, 0, getNewYCoord());
         content.add(curSensorsL);
-        curSensorsR = createLabel(STAR3, fm, curSensorsL.getSize().width + 10,
+        curSensorsR = createValueLabel(STAR3, fm, curSensorsL.getSize().width + 10,
                 getYCoord());
         curSensorsL.setLabelFor(curSensorsR);
         content.add(curSensorsR);
@@ -271,7 +272,7 @@ public class GeneralInfoMapSet {
         visualRangeL = createLabel(
                 Messages.getString("GeneralInfoMapSet.visualRangeL"), fm, 0, getNewYCoord());
         content.add(visualRangeL);
-        visualRangeR = createLabel(STAR3, fm,
+        visualRangeR = createValueLabel(STAR3, fm,
                 visualRangeL.getSize().width + 10, getYCoord());
         visualRangeL.setLabelFor(visualRangeR);
         content.add(visualRangeR);
@@ -289,7 +290,6 @@ public class GeneralInfoMapSet {
     public void setEntity(Entity en) {
 
         String s = en.getShortName();
-        mechTypeL1.setVisible(false);
 
         if (s.length() > GUIPreferences.getInstance().getInt(
                 "AdvancedMechDisplayWrapLength")) {
@@ -303,6 +303,7 @@ public class GeneralInfoMapSet {
         } else {
             mechTypeL0.setText(s);
             mechTypeL1.setText("");
+            mechTypeL1.setVisible(false);
         }
 
         if (!en.isDesignValid()) {
@@ -692,11 +693,45 @@ public class GeneralInfoMapSet {
 
     private JLabel createLabel(String s, Font f, int x, int y) {
         JLabel l = new JLabel(s);
-        l.setFocusable(true);
         l.setFont(f);
         l.setLocation(x, y);
         l.setForeground(Color.WHITE);
         return l;
+    }
+
+    private JValueLabel createValueLabel(String s, Font f, int x, int y) {
+        JValueLabel l = new JValueLabel(s);
+        l.setFont(f);
+        l.setLocation(x, y);
+        l.setForeground(Color.WHITE);
+        return l;
+    }
+
+    private class JValueLabel extends JLabel {
+        private static final long serialVersionUID = 8797533707872937311L;
+
+        public JValueLabel(String s) {
+            super(s);
+
+            setFocusable(true);
+        }
+
+        @Override
+        public AccessibleContext getAccessibleContext() {
+            if (accessibleContext == null) {
+                accessibleContext = new AccessibleJValueLabel();
+            }
+
+            return accessibleContext;
+        }
+
+        class AccessibleJValueLabel extends AccessibleJLabel {
+            @Override
+            public String getAccessibleName() {
+                String name = super.getAccessibleName();
+                return STAR3.equals(name) ? "N/A" : name;
+            }
+        }
     }
 
 }

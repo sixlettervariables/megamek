@@ -15,7 +15,7 @@
 package megamek.client.ui.swing.widget;
 
 import java.awt.Color;
-import java.awt.FontMetrics;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
@@ -28,8 +28,8 @@ public class PMValueLabel extends PMSimpleLabel {
     /*
      * Create the label.
      */
-    PMValueLabel(FontMetrics fm, Color c) {
-        super("", fm, c); //$NON-NLS-1$
+    PMValueLabel(Font f, Color c) {
+        super("", f, c); //$NON-NLS-1$
     }
 
     /*
@@ -48,7 +48,7 @@ public class PMValueLabel extends PMSimpleLabel {
         if (!isVisible())
             return;
         Color temp = g.getColor();
-        g.setColor(color);
+        g.setColor(getForeground());
         g.drawString(getText(), getX() - getWidth() / 2, getY() - fm.getMaxDescent());
         g.setColor(temp);
     }

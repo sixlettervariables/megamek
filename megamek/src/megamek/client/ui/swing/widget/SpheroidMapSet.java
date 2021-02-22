@@ -17,7 +17,6 @@ package megamek.client.ui.swing.widget;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Image;
 import java.awt.Polygon;
 import java.util.Vector;
@@ -179,7 +178,7 @@ public class SpheroidMapSet implements DisplayMapSet{
     }
 
     private void setLabels(){
-        FontMetrics fm = comp.getFontMetrics(FONT_LABEL);
+        Font fm = FONT_LABEL;
 
         //Labels for Front view
         //Prefer to use message thingy but don't know how
@@ -202,7 +201,7 @@ public class SpheroidMapSet implements DisplayMapSet{
 
         //Value labels for all parts of mek
         //front
-        fm =  comp.getFontMetrics(FONT_VALUE);   
+        fm =  FONT_VALUE;
         vLabels[Aero.LOC_NOSE] = WidgetUtils.createValueLabel(50, 35, "", fm); //$NON-NLS-1$
         //   vLabels[Aero.LOC_NOSE + INT_STR_OFFSET] = WidgetUtils.createValueLabel(10, 58, "", fm); //$NON-NLS-1$
         vLabels[Aero.LOC_LWING] = WidgetUtils.createValueLabel(20, 105, "", fm); //$NON-NLS-1$
