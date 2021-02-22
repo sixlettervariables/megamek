@@ -17,42 +17,32 @@ package megamek.client.ui.swing.widget;
 import java.awt.AWTEventMulticaster;
 import java.awt.Cursor;
 import java.awt.Graphics;
-import java.awt.IllegalComponentStateException;
 import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
-import java.util.Locale;
 
-import javax.accessibility.Accessible;
-import javax.accessibility.AccessibleContext;
-import javax.accessibility.AccessibleRole;
-import javax.accessibility.AccessibleState;
-import javax.accessibility.AccessibleStateSet;
+import javax.swing.JLabel;
 
 /**
  * Simple rectangle hot are for PicMap component. Show single image when idle
  * and "hoghlite" image when mouse is over this area.
  */
 
-public class PMPicArea implements PMHotArea {
-    private int x = 0;
-    private int y = 0;
+public class PMPicArea extends JLabel implements PMHotArea {
     private Rectangle areaShape;
     private ActionListener actionListener = null;
     private Image idleImage;
     private Image activeImage;
     private boolean highlight = true;
     private boolean selected = false;
-    private boolean visible = true;
-    private Cursor cursor = new Cursor(Cursor.HAND_CURSOR);
-    private AccessiblePMPicArea accessibleContext;
 
     public PMPicArea(Image idle, Image active) {
         this.idleImage = idle;
         this.activeImage = active;
-        areaShape = new Rectangle(x, y, idle.getWidth(null), idle.getHeight(null));
+        setCursor(new Cursor(Cursor.HAND_CURSOR));
+        areaShape = new Rectangle(getX(), getY(), idle.getWidth(null), idle.getHeight(null));
     }
 
     public PMPicArea(Image im) {
@@ -63,8 +53,7 @@ public class PMPicArea implements PMHotArea {
     // PMElement interface methods
     public void translate(int x, int y) {
         areaShape.translate(x, y);
-        this.x = this.x + x;
-        this.y = this.y + y;
+        setLocation(getX() + x, getY() + y);
     }
 
     public Rectangle getBounds() {
@@ -72,22 +61,22 @@ public class PMPicArea implements PMHotArea {
     }
 
     public void drawInto(Graphics g) {
-        if ((g == null) || (!visible))
+        if ((g == null) || (!isVisible()))
             return;
         if (selected) {
-            g.drawImage(activeImage, x, y, null);
+            g.drawImage(activeImage, getX(), getY(), null);
         } else {
-            g.drawImage(idleImage, x, y, null);
+            g.drawImage(idleImage, getX(), getY(), null);
         }
+    }
 
+    @Override
+    protected void paintComponent(Graphics g) {
+        drawInto(g);
     }
 
     public void setIdleImage(Image idle) {
         this.idleImage = idle;
-    }
-
-    public void setVisible(boolean v) {
-        visible = v;
     }
 
     public synchronized void addActionListener(ActionListener l) {
@@ -101,14 +90,6 @@ public class PMPicArea implements PMHotArea {
     // PMHotArea interface methods
     public Shape getAreaShape() {
         return this.areaShape;
-    }
-
-    public Cursor getCursor() {
-        return cursor;
-    }
-
-    public void setCursor(Cursor c) {
-        cursor = c;
     }
 
     public void onMouseClick(MouseEvent e) {
@@ -131,56 +112,5 @@ public class PMPicArea implements PMHotArea {
 
     public void onMouseUp(MouseEvent e) {
         // Override
-    }
-
-    @Override
-    public AccessibleContext getAccessibleContext() {
-        if (accessibleContext == null) {
-            accessibleContext = new AccessiblePMPicArea();
-        }
-
-        return accessibleContext;
-    }
-
-    protected class AccessiblePMPicArea extends AccessibleContext {
-
-        @Override
-        public AccessibleRole getAccessibleRole() {
-            return AccessibleRole.CANVAS;
-        }
-
-        @Override
-        public AccessibleStateSet getAccessibleStateSet() {
-            AccessibleStateSet stateSet = new AccessibleStateSet();
-            if (PMPicArea.this.highlight) {
-                stateSet.add(AccessibleState.SELECTABLE);
-            }
-            if (PMPicArea.this.selected) {
-                stateSet.add(AccessibleState.SELECTED);
-            }
-            return stateSet;
-        }
-
-        @Override
-        public int getAccessibleIndexInParent() {
-            // TODO Auto-generated method stub
-            return 0;
-        }
-
-        @Override
-        public int getAccessibleChildrenCount() {
-            return 0;
-        }
-
-        @Override
-        public Accessible getAccessibleChild(int i) {
-            return null;
-        }
-
-        @Override
-        public Locale getLocale() throws IllegalComponentStateException {
-            return Locale.getDefault();
-        }
-        
     }
 }

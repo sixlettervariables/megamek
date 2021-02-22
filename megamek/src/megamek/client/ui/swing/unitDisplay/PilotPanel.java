@@ -1,18 +1,18 @@
 package megamek.client.ui.swing.unitDisplay;
 
+import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.Rectangle;
-import java.util.Enumeration;
+import java.util.Vector;
 
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 
 import megamek.client.ui.Messages;
 import megamek.client.ui.swing.widget.BackGroundDrawer;
-import megamek.client.ui.swing.widget.PicMap;
 import megamek.client.ui.swing.widget.PilotMapSet;
 import megamek.common.CrewType;
 import megamek.common.Entity;
@@ -21,7 +21,7 @@ import megamek.common.Entity;
  * The pilot panel contains all the information about the pilot/crew of this
  * unit.
  */
-class PilotPanel extends PicMap {
+class PilotPanel extends JPanel {
 
     /**
      *
@@ -37,6 +37,8 @@ class PilotPanel extends PicMap {
     
     //We need to hold onto the entity in case the crew slot changes.
     private Entity entity;
+
+    private transient Vector<BackGroundDrawer> bgDrawers;
 
     PilotPanel(final UnitDisplay unitDisplay) {
         setLayout(new GridBagLayout());
@@ -67,31 +69,9 @@ class PilotPanel extends PicMap {
         add(new JLabel(), gbc);
         
         pi = new PilotMapSet(this);
-        addElement(pi.getContentGroup());
-        Enumeration<BackGroundDrawer> iter = pi.getBackgroundDrawers()
-                                               .elements();
-        while (iter.hasMoreElements()) {
-            addBgDrawer(iter.nextElement());
-        }
-        onResize();
-    }
+        add(pi.getContent());
 
-    @Override
-    public void addNotify() {
-        super.addNotify();
-        update();
-    }
-
-    @Override
-    public void onResize() {
-        int w = getSize().width;
-        Rectangle r = getContentBounds();
-        int dx = Math.round(((w - r.width) / 2));
-        if (dx < minLeftMargin) {
-            dx = minLeftMargin;
-        }
-        int dy = minTopMargin;
-        setContentMargins(dx, dy, dx, dy);
+        bgDrawers = new Vector<>(pi.getBackgroundDrawers());
     }
 
     /**
@@ -117,16 +97,11 @@ class PilotPanel extends PicMap {
         } else {
             btnSwapRoles.setVisible(false);
         }
-        
-        onResize();
-        update();
     }
     
     private void selectCrewSlot() {
         if (null != entity && cbCrewSlot.getSelectedIndex() >= 0) {
             pi.setEntity(entity, cbCrewSlot.getSelectedIndex());
-            onResize();
-            update();
         }
     }
     
@@ -136,6 +111,15 @@ class PilotPanel extends PicMap {
         } else {
             btnSwapRoles.setText(Messages.getString("PilotMapSet.swapRoles.text"));
         }        
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+
+        for (BackGroundDrawer bgDrawer : bgDrawers) {
+            bgDrawer.drawInto(g, getWidth(), getHeight());
+        }
     }
     
 }
