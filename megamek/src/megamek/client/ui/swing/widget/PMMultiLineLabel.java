@@ -17,6 +17,7 @@ import javax.swing.JPanel;
  *
  */
 public class PMMultiLineLabel extends JPanel {
+    private static final long serialVersionUID = -4127169830422462490L;
     private List<String> labels = new ArrayList<>();
 
     /**
@@ -25,6 +26,8 @@ public class PMMultiLineLabel extends JPanel {
      * @param c Color for the text on this label
      */
     public PMMultiLineLabel(Font f, Color c) {
+        setOpaque(false);
+        setBackground(null);
         setFont(f);
         setForeground(c);
 

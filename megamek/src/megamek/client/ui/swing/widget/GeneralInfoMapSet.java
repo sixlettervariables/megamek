@@ -99,7 +99,7 @@ public class GeneralInfoMapSet {
     }
 
     private void setAreas() {
-        FontMetrics fm = comp.getFontMetrics(FONT_TITLE);
+        Font fm = FONT_TITLE;
 
         content.setLayout(new GridLayout(0, 2));
 
@@ -113,7 +113,7 @@ public class GeneralInfoMapSet {
         mechTypeL1.setForeground(Color.yellow);
         content.add(mechTypeL1);
 
-        fm = comp.getFontMetrics(FONT_VALUE);
+        fm = FONT_VALUE;
 
         pilotL = createLabel(
                 Messages.getString("GeneralInfoMapSet.pilotL"), fm, 0, getNewYCoord());
@@ -690,9 +690,10 @@ public class GeneralInfoMapSet {
 
     }
 
-    private JLabel createLabel(String s, FontMetrics fm, int x, int y) {
+    private JLabel createLabel(String s, Font f, int x, int y) {
         JLabel l = new JLabel(s);
         l.setFocusable(true);
+        l.setFont(f);
         l.setLocation(x, y);
         l.setForeground(Color.WHITE);
         return l;
