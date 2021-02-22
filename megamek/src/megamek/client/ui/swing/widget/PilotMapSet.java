@@ -201,6 +201,7 @@ public class PilotMapSet {
         } else {
             nameL.setText(en.getCrew().getName(slot));
             nickL.setText(en.getCrew().getNickname(slot));
+            nickL.setVisible(nickL.getText() != null && nickL.getText().length() > 0);
             pilotR.setText(Integer.toString(en.getCrew().getPiloting(slot)));
             gunneryR.setText(Integer.toString(en.getCrew().getGunnery(slot)));
             pilotL.setVisible(true);
