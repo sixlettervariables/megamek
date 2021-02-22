@@ -1,7 +1,9 @@
 package megamek.client.ui.swing.unitDisplay;
 
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
@@ -11,15 +13,19 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Vector;
 
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.DefaultListCellRenderer;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
@@ -56,7 +62,7 @@ import megamek.common.util.fileUtils.MegaMekFile;
 /**
  * This class shows the critical hits and systems for a mech
  */
-class SystemPanel extends PicMap implements ItemListener, ActionListener,
+class SystemPanel extends JPanel implements ItemListener, ActionListener,
         ListSelectionListener {
     
     private static int LOC_ALL_EQUIP = 0;
@@ -107,18 +113,37 @@ class SystemPanel extends PicMap implements ItemListener, ActionListener,
         unitLabel.setOpaque(false);
         unitLabel.setForeground(Color.WHITE);
 
-        locList = new JList<String>(new DefaultListModel<String>());
+        locList = new JList<>(new DefaultListModel<>());
+        locList.setCellRenderer(new AccessibleListCellRenderer() {
+            private static final long serialVersionUID = 1L;
+            @Override
+            public String getAccessibleDescription(Object value, int index, boolean isSelected) {
+                String string = (String)value;
+                return string.startsWith("--") ? "Separator" : null;
+            }
+        });
+        locLabel.setLabelFor(locList);
         locList.setOpaque(false);
         locList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        slotList = new JList<String>(new DefaultListModel<String>());
+        slotList = new JList<>(new DefaultListModel<>());
+        slotList.setCellRenderer(new AccessibleListCellRenderer() {
+            private static final long serialVersionUID = 1L;
+            @Override
+            public String getAccessibleDescription(Object value, int index, boolean isSelected) {
+                String string = (String)value;
+                return string.startsWith("--") ? "Empty" : null;
+            }
+        });
+        slotLabel.setLabelFor(slotList);
         slotList.setOpaque(false);
         slotList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        unitList = new JList<String>(new DefaultListModel<String>());
+        unitList = new JList<>(new DefaultListModel<>());
+        unitLabel.setLabelFor(unitList);
         unitList.setOpaque(false);
 
-        m_chMode = new JComboBox<String>();
+        m_chMode = new JComboBox<>();
         m_chMode.addItem("   "); //$NON-NLS-1$
         m_chMode.setEnabled(false);
 
@@ -129,6 +154,7 @@ class SystemPanel extends PicMap implements ItemListener, ActionListener,
 
         modeLabel = new JLabel(
                 Messages.getString("MechDisplay.modeLabel"), SwingConstants.RIGHT); //$NON-NLS-1$
+        modeLabel.setLabelFor(m_chMode);
         modeLabel.setOpaque(false);
         modeLabel.setForeground(Color.WHITE);
         // modeLabel.setEnabled(false);
@@ -231,10 +257,24 @@ class SystemPanel extends PicMap implements ItemListener, ActionListener,
         addListeners();
     }
 
-    @Override
+    abstract class AccessibleListCellRenderer extends DefaultListCellRenderer {
+
+        public abstract String getAccessibleDescription(Object value, int index, boolean isSelected);
+
+        @Override
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected,
+                boolean cellHasFocus) {
+            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+
+            getAccessibleContext().setAccessibleDescription(getAccessibleDescription(value, index, isSelected));
+
+            return this;
+        }
+    }
+
     public void onResize() {
         int w = getSize().width;
-        Rectangle r = getContentBounds();
+        Rectangle r = null; //getContentBounds();
         if (r == null) {
             return;
         }
@@ -243,7 +283,7 @@ class SystemPanel extends PicMap implements ItemListener, ActionListener,
             dx = minLeftMargin;
         }
         int dy = minTopMargin;
-        setContentMargins(dx, dy, dx, dy);
+        //setContentMargins(dx, dy, dx, dy);
     }
 
     private CriticalSlot getSelectedCritical() {
@@ -757,6 +797,20 @@ class SystemPanel extends PicMap implements ItemListener, ActionListener,
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
+    }
+    
+    private transient List<BackGroundDrawer> bgDrawers = new ArrayList<>();
+    private void addBgDrawer(BackGroundDrawer backGroundDrawer) {
+        bgDrawers.add(backGroundDrawer);
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+
+        for (BackGroundDrawer bgDrawer : bgDrawers) {
+            bgDrawer.drawInto(g, getWidth(), getHeight());
+        }
     }
 
     public void valueChanged(ListSelectionEvent event) {
