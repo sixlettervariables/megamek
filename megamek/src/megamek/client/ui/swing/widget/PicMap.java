@@ -15,6 +15,7 @@
 package megamek.client.ui.swing.widget;
 
 import java.awt.AWTEvent;
+import java.awt.Component;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -27,10 +28,8 @@ import java.awt.event.MouseEvent;
 import java.util.Enumeration;
 import java.util.Vector;
 
-import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
-import javax.accessibility.AccessibleRole;
-import javax.swing.JComponent;
+import javax.swing.JPanel;
 
 /**
  * PicMap is a lightweight component, which area is composed by the set of cutom
@@ -52,7 +51,7 @@ import javax.swing.JComponent;
  * </ul>
  * Within single layer elements are drawing in the order they added to PicMap.
  */
-public abstract class PicMap extends JComponent implements Accessible {
+public abstract class PicMap extends JPanel {
     /**
      * 
      */
@@ -131,6 +130,9 @@ public abstract class PicMap extends JComponent implements Accessible {
             otherAreas.addArea(e);
         }
 
+        if (e instanceof Component) {
+            super.add((Component) e);
+        }
     }
 
     /**
@@ -147,6 +149,9 @@ public abstract class PicMap extends JComponent implements Accessible {
             otherAreas.removeArea(e);
         }
 
+        if (e instanceof Component) {
+            super.remove((Component) e);
+        }
     }
 
     /**
@@ -161,6 +166,8 @@ public abstract class PicMap extends JComponent implements Accessible {
         bgDrawers.removeAllElements();
         areascount = 0;
         activeHotArea = null;
+
+        super.removeAll();
     }
 
     /**
@@ -389,32 +396,7 @@ public abstract class PicMap extends JComponent implements Accessible {
         return accessibleContext;
     }
 
-    protected class AccessiblePicMap extends AccessibleJComponent {
+    protected class AccessiblePicMap extends AccessibleJPanel {
         private static final long serialVersionUID = -6306988669279748431L;
-
-        @Override
-        public AccessibleRole getAccessibleRole() {
-            return AccessibleRole.PANEL;
-        }
-
-        @Override
-        public int getAccessibleChildrenCount() {
-            // labels, hotAreas, and otherAreas
-            return 3;
-        }
-
-        @Override
-        public Accessible getAccessibleChild(int i) {
-            switch (i) {
-                case 0:
-                    return labels;
-                case 1:
-                    return hotAreas;
-                case 2:
-                    return otherAreas;
-                default:
-                    return null;
-            }
-        }
     }
 }
