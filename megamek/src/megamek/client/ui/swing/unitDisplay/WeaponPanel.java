@@ -3,6 +3,7 @@ package megamek.client.ui.swing.unitDisplay;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Image;
@@ -24,6 +25,7 @@ import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingConstants;
@@ -79,7 +81,7 @@ import megamek.common.weapons.infantry.InfantryWeapon;
 /**
  * This class contains the all the gizmos for firing the mech's weapons.
  */
-public class WeaponPanel extends PicMap implements ListSelectionListener,
+public class WeaponPanel extends JPanel implements ListSelectionListener,
         ActionListener {
     
     /**
@@ -436,7 +438,8 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         wSortOrder.setForeground(Color.WHITE);
         add(wSortOrder, GBC.std().fill(GridBagConstraints.HORIZONTAL)
                .insets(15, 9, 1, 1).gridy(gridy).gridx(0));
-        weapSortOrder = new JComboBox<String>();
+        weapSortOrder = new JComboBox<>();
+        wSortOrder.setLabelFor(weapSortOrder);
         for (Entity.WeaponSortOrder s : Entity.WeaponSortOrder.values()) {
             String entry = "MechDisplay.WeaponSortOrder." + s.i18nEntry;
             weapSortOrder.addItem(Messages.getString(entry));
@@ -450,6 +453,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
 
         // weapon list
         weaponList = new JList<String>(new DefaultListModel<String>());
+        weaponList.getAccessibleContext().setAccessibleName("Wepaon List");
         WeaponListMouseAdapter mouseAdapter = new WeaponListMouseAdapter();
         weaponList.addMouseListener(mouseAdapter);
         weaponList.addMouseMotionListener(mouseAdapter);
@@ -473,13 +477,15 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
                 Messages.getString("MechDisplay.Ammo"), SwingConstants.LEFT); //$NON-NLS-1$
         wAmmo.setOpaque(false);
         wAmmo.setForeground(Color.WHITE);
-        m_chAmmo = new JComboBox<String>();
+        m_chAmmo = new JComboBox<>();
+        wAmmo.setLabelFor(m_chAmmo);
 
         wBayWeapon = new JLabel(
                 Messages.getString("MechDisplay.Weapon"), SwingConstants.LEFT); //$NON-NLS-1$
         wBayWeapon.setOpaque(false);
         wBayWeapon.setForeground(Color.WHITE);
-        m_chBayWeapon = new JComboBox<String>();
+        m_chBayWeapon = new JComboBox<>();
+        wBayWeapon.setLabelFor(m_chBayWeapon);
 
         add(wBayWeapon, GBC.std().insets(15, 1, 1, 1).gridy(gridy).gridx(0));
 
@@ -499,6 +505,8 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         currentHeatBuildupL.setOpaque(false);
         currentHeatBuildupL.setForeground(Color.WHITE);
         currentHeatBuildupR = new JLabel("--", SwingConstants.LEFT); //$NON-NLS-1$
+        currentHeatBuildupL.setLabelFor(currentHeatBuildupR);
+        currentHeatBuildupR.setFocusable(true);
         currentHeatBuildupR.setOpaque(false);
         currentHeatBuildupR.setForeground(Color.WHITE);
 
@@ -530,15 +538,23 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         wArcHeatL.setOpaque(false);
         wArcHeatL.setForeground(Color.WHITE);
         wNameR = new JLabel("", SwingConstants.CENTER); //$NON-NLS-1$
+        wNameL.setLabelFor(wNameR);
+        wNameR.setFocusable(true);
         wNameR.setOpaque(false);
         wNameR.setForeground(Color.WHITE);
         wHeatR = new JLabel("--", SwingConstants.CENTER); //$NON-NLS-1$
+        wHeatL.setLabelFor(wHeatR);
+        wHeatR.setFocusable(true);
         wHeatR.setOpaque(false);
         wHeatR.setForeground(Color.WHITE);
         wDamR = new JLabel("--", SwingConstants.CENTER); //$NON-NLS-1$
+        wDamL.setLabelFor(wDamR);
+        wDamR.setFocusable(true);
         wDamR.setOpaque(false);
         wDamR.setForeground(Color.WHITE);
         wArcHeatR = new JLabel("--", SwingConstants.CENTER); //$NON-NLS-1$
+        wArcHeatL.setLabelFor(wArcHeatR);
+        wArcHeatR.setFocusable(true);
         wArcHeatR.setOpaque(false);
         wArcHeatR.setForeground(Color.WHITE);
 
@@ -547,6 +563,8 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         wDamageTrooperL.setOpaque(false);
         wDamageTrooperL.setForeground(Color.WHITE);
         wDamageTrooperR = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
+        wDamageTrooperL.setLabelFor(wDamageTrooperR);
+        wDamageTrooperR.setFocusCycleRoot(true);
         wDamageTrooperR.setOpaque(false);
         wDamageTrooperR.setForeground(Color.WHITE);
 
@@ -608,18 +626,28 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         wExtL.setOpaque(false);
         wExtL.setForeground(Color.WHITE);
         wMinR = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
+        wMinL.setLabelFor(wMinR);
+        wMinR.setFocusable(true);
         wMinR.setOpaque(false);
         wMinR.setForeground(Color.WHITE);
         wShortR = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
+        wShortL.setLabelFor(wShortR);
+        wShortR.setFocusable(true);
         wShortR.setOpaque(false);
         wShortR.setForeground(Color.WHITE);
         wMedR = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
+        wMedL.setLabelFor(wMedR);
+        wMedR.setFocusable(true);
         wMedR.setOpaque(false);
         wMedR.setForeground(Color.WHITE);
         wLongR = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
+        wLongL.setLabelFor(wLongR);
+        wLongR.setFocusable(true);
         wLongR.setOpaque(false);
         wLongR.setForeground(Color.WHITE);
         wExtR = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
+        wExtL.setLabelFor(wExtR);
+        wExtR.setFocusable(true);
         wExtR.setOpaque(false);
         wExtR.setForeground(Color.WHITE);
         wAVL = new JLabel(
@@ -795,12 +823,18 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         wToHitL.setForeground(Color.WHITE);
 
         wTargetR = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
+        wTargetL.setLabelFor(wTargetR);
+        wTargetR.setFocusable(true);
         wTargetR.setOpaque(false);
         wTargetR.setForeground(Color.WHITE);
         wRangeR = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
+        wRangeL.setLabelFor(wRangeR);
+        wRangeR.setFocusable(true);
         wRangeR.setOpaque(false);
         wRangeR.setForeground(Color.WHITE);
         wToHitR = new JLabel("---", SwingConstants.CENTER); //$NON-NLS-1$
+        wToHitL.setLabelFor(wToHitR);
+        wToHitR.setFocusable(true);
         wToHitR.setOpaque(false);
         wToHitR.setForeground(Color.WHITE);
 
@@ -848,10 +882,9 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         onResize();
     }
 
-    @Override
     public void onResize() {
         int w = getSize().width;
-        Rectangle r = getContentBounds();
+        Rectangle r = null; //getContentBounds();
         if (r == null) {
             return;
         }
@@ -860,7 +893,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
             dx = minLeftMargin;
         }
         int dy = minTopMargin;
-        setContentMargins(dx, dy, dx, dy);
+        //setContentMargins(dx, dy, dx, dy);
     }
 
     private void setBackGround() {
@@ -937,6 +970,11 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
         PMUtil.setImage(tile, this);
         addBgDrawer(new BackGroundDrawer(tile, b));
 
+    }
+
+    private transient List<BackGroundDrawer> bgDrawers = new ArrayList<>();
+    private void addBgDrawer(BackGroundDrawer backGroundDrawer) {
+        bgDrawers.add(backGroundDrawer);
     }
 
     /**
@@ -2153,9 +2191,7 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
     }
 
     private String formatBayWeapon(Mounted m) {
-        StringBuffer sb = new StringBuffer(64);
-        sb.append(m.getDesc());
-        return sb.toString();
+        return m.getDesc();
     }
 
     /**
@@ -2782,5 +2818,14 @@ public class WeaponPanel extends PicMap implements ListSelectionListener,
 
     public void setPrevTarget(Targetable prevTarget) {
         this.prevTarget = prevTarget;
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+
+        for (BackGroundDrawer bgDrawer : bgDrawers) {
+            bgDrawer.drawInto(g, getWidth(), getHeight());
+        }
     }
 }
