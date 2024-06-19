@@ -74,7 +74,8 @@ public class OptionsConstants {
     // TODO Game Rules
     public static final String QUIRK_POS_VESTIGIAL_HANDS_LA = "vestigial_hands_la";
     public static final String QUIRK_POS_VESTIGIAL_HANDS_RA = "vestigial_hands_ra";
-    public static final String QUIRK_POS_VTOL_ROTOR = "vtol_rotor";
+    public static final String QUIRK_POS_VTOL_ROTOR_COAXIAL = "vtol_rotor_coaxial";
+    public static final String QUIRK_POS_VTOL_ROTOR_DUAL = "vtol_rotor_dual";
 
     public static final String QUIRK_WEAP_POS_ACCURATE = "accurate";
     public static final String QUIRK_WEAP_POS_IMP_COOLING = "imp_cooling";
@@ -267,6 +268,11 @@ public class OptionsConstants {
     // GAME OPTIONS TO BE MOVED.
     public static final String BASE_FRIENDLY_FIRE = "friendly_fire";
     public static final String BASE_TURN_TIMER = "turn_timer";
+    public static final String BASE_TURN_TIMER_TARGETING = "turn_timer_targeting";
+    public static final String BASE_TURN_TIMER_MOVEMENT = "turn_timer_movement";
+    public static final String BASE_TURN_TIMER_FIRING = "turn_timer_firing";
+    public static final String BASE_TURN_TIMER_PHYSICAL = "turn_timer_physical";
+    public static final String BASE_TURN_TIMER_ALLOW_EXTENSION = "turn_timer_allow_extension";
     public static final String BASE_SKIP_INELIGABLE_MOVEMENT = "skip_ineligable_movement";
     public static final String BASE_SKIP_INELIGABLE_FIRING = "skip_ineligable_firing";
     public static final String BASE_SKIP_INELIGABLE_PHYSICAL = "skip_ineligable_physical";
@@ -274,12 +280,15 @@ public class OptionsConstants {
     public static final String BASE_TEAM_INITIATIVE = "team_initiative";
     public static final String BASE_AUTOSAVE_MSG = "autosave_msg";
     public static final String BASE_PARANOID_AUTOSAVE = "paranoid_autosave";
+    public static final String BASE_MAX_NUMBER_ROUND_SAVES = "max_rotating_round_saves";
     public static final String BASE_EXCLUSIVE_DB_DEPLOYMENT = "exclusive_db_deployment";
     public static final String BASE_BLIND_DROP = "blind_drop";
     public static final String BASE_REAL_BLIND_DROP = "real_blind_drop";
     public static final String BASE_LOBBY_AMMO_DUMP = "lobby_ammo_dump";
     public static final String BASE_DUMPING_FROM_ROUND = "dumping_from_round";
     public static final String BASE_SET_ARTY_PLAYER_HOMEEDGE = "set_arty_player_homeedge";
+    public static final String BASE_SET_DEFAULT_TEAM_1 = "set_default_team_1";
+    public static final String BASE_SET_PLAYER_DEPLOYMENT_TO_PLAYER0 = "set_player_deployment_to_player0";
     public static final String BASE_RESTRICT_GAME_COMMANDS = "restrict_game_commands";
     public static final String BASE_DISABLE_LOCAL_SAVE = "disable_local_save";
     public static final String BASE_BRIDGECF = "bridgeCF";
@@ -287,11 +296,13 @@ public class OptionsConstants {
     public static final String BASE_RNG_TYPE = "rng_type";
     public static final String BASE_RNG_LOG = "rng_log";
     public static final String BASE_FLAMER_HEAT = "flamer_heat";
+    public static final String BASE_INFANTRY_DAMAGE_HEAT = "infantry_damage_heat";
     public static final String BASE_INDIRECT_FIRE = "indirect_fire";
     public static final String BASE_BREEZE = "breeze";
     public static final String BASE_RANDOM_BASEMENTS = "random_basements";
     public static final String BASE_AUTO_AMS = "auto_ams";
     public static final String BASE_SUPPRESS_UNIT_TOOLTIP_IN_REPORT_LOG = "suppress_unit_tooltip_in_report_log";
+    public static final String BASE_GM_CONTROLS_DONE_REPORT_PHASE = "gm_controls_done_report_phase";
     public static final String BASE_HIDE_UNOFFICIAL = "hide_unofficial";
     public static final String BASE_HIDE_LEGACY = "hide_legacy";
 
@@ -320,6 +331,7 @@ public class OptionsConstants {
     public static final String ALLOWED_REALLY_ALLOW_NUKES = "really_allow_nukes";
     public static final String ADVANCED_MINEFIELDS = "minefields";
     public static final String ADVANCED_HIDDEN_UNITS = "hidden_units";
+    public static final String ADVANCED_BLACK_ICE= "black_ice";
     public static final String ADVANCED_DOUBLE_BLIND = "double_blind";
     public static final String ADVANCED_SINGLE_BLIND_BOTS = "single_blind_bots";
     public static final String ADVANCED_TACOPS_SENSORS = "tacops_sensors";
@@ -396,6 +408,7 @@ public class OptionsConstants {
     public static final String ADVCOMBAT_TACOPS_WOODS_COVER = "tacops_woods_cover";
     public static final String ADVCOMBAT_TACOPS_VEHICLE_EFFECTIVE = "tacops_vehicle_effective";
     public static final String ADVCOMBAT_TACOPS_VEHICLE_ARCS = "tacops_vehicle_arcs";
+
     public static final String ADVCOMBAT_TACOPS_VTOL_ATTACKS = "tacops_vtol_attacks";
     public static final String ADVCOMBAT_TACOPS_ADVANCED_MECH_HIT_LOCATIONS = "tacops_advanced_mech_hit_locations";
     public static final String ADVCOMBAT_TACOPS_COOLANT_FAILURE = "tacops_coolant_failure";
@@ -493,7 +506,6 @@ public class OptionsConstants {
     public static final String INIT_INF_MOVE_LATER = "inf_move_later";
     public static final String INIT_INF_MOVE_MULTI = "inf_move_multi";
     public static final String INIT_PROTOS_MOVE_EVEN = "protos_move_even";
-    public static final String INIT_PROTOS_DEPLOY_EVEN = "protos_deploy_even";
     public static final String INIT_PROTOS_MOVE_LATER = "protos_move_later";
     public static final String INIT_PROTOS_MOVE_MULTI = "protos_move_multi";
     public static final String INIT_INF_PROTO_MOVE_MULTI = "inf_proto_move_multi";
@@ -514,4 +526,6 @@ public class OptionsConstants {
     public static final String RPG_CONDITIONAL_EJECTION = "conditional_ejection";
     public static final String RPG_MANUAL_SHUTDOWN = "manual_shutdown";
     public static final String RPG_BEGIN_SHUTDOWN = "begin_shutdown";
+
+    private OptionsConstants() { }
 }

@@ -152,12 +152,16 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
         setInfernoEnabled(p.getNbrMFInferno());
         setRemoveMineEnabled(true);
         butDone.setEnabled(true);
+
+        startTimer();
     }
 
     /**
      * Clears out old deployment data and disables relevant buttons.
      */
     private void endMyTurn() {
+        stopTimer();
+
         // end my turn, then.
         disableButtons();
         clientgui.getBoardView().select(null);
@@ -514,9 +518,6 @@ public class DeployMinefieldDisplay extends StatusBarPhaseDisplay {
         buttons.get(DeployMinefieldCommand.REMOVE_MINES).setEnabled(enable);
     }
 
-    /**
-     * Stop just ignoring events and actually stop listening to them.
-     */
     @Override
     public void removeAllListeners() {
         clientgui.getClient().getGame().removeGameListener(this);

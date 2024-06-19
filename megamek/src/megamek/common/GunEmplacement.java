@@ -326,6 +326,11 @@ public class GunEmplacement extends Tank {
         // this is a hack to get around the fact that gun emplacements don't even have armor
         return 0;
     }
+
+    @Override
+    public int getArmorTechLevel(int loc) {
+        return TechConstants.T_INTRO_BOXSET;
+    }
     
     @Override
     public boolean hasStealth() {
@@ -388,5 +393,11 @@ public class GunEmplacement extends Tank {
         }
         
         return 0;
+    }
+
+    @Override
+    public int getGenericBattleValue() {
+        // they have no weight so we use the mean across all GEs
+        return 205;
     }
 }

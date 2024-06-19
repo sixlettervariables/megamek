@@ -1,6 +1,5 @@
-Version:1.0
-Jade Phoenix
-E
+chassis:Jade Phoenix
+model:E
 mul id:8403
 
 Config:Biped Omnimech
@@ -8,6 +7,7 @@ techbase:Mixed (Clan Chassis)
 era:3148
 source:Rec Guide:ilClan #22
 rules level:3
+role:Sniper
 
 mass:85
 engine:340 XL (Clan) Engine
@@ -149,7 +149,7 @@ Jump Jet (OMNIPOD)
 -Empty-
 -Empty-
 
-overview:The Jade Phoenix is a workhorse OmniMech with astraightforward armament intended for clean and honorable fights.
+overview:The Jade Phoenix is a workhorse OmniMech with a straightforward armament intended for clean and honorable fights.
 manufacturer:CJF Factory Zone 4
 primaryfactory:Alyina
 systemmanufacturer:CHASSIS:JF 8 Light Endo-Composite

@@ -3,6 +3,7 @@
  * Copyright (C) 2000-2005 Ben Mazur (bmazur@sev.org)
  * Copyright © 2013 Edward Cullen (eddy@obsessedcomputers.co.uk)
  * Copyright (c) 2020 - The MegaMek Team. All Rights Reserved.
+ * Copyright (c) 2024 - The MegaMek Team. All Rights Reserved.
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -20,8 +21,9 @@ import megamek.MMConstants;
 import megamek.MegaMek;
 import megamek.Version;
 import megamek.client.Client;
+import megamek.client.IClient;
+import megamek.client.SBFClient;
 import megamek.client.bot.BotClient;
-import megamek.client.bot.TestBot;
 import megamek.client.bot.princess.Princess;
 import megamek.client.bot.ui.swing.BotGUI;
 import megamek.client.ui.Messages;
@@ -31,6 +33,7 @@ import megamek.client.ui.enums.DialogResult;
 import megamek.client.ui.swing.dialog.MainMenuUnitBrowserDialog;
 import megamek.client.ui.swing.gameConnectionDialogs.ConnectDialog;
 import megamek.client.ui.swing.gameConnectionDialogs.HostDialog;
+import megamek.client.ui.swing.scenario.ScenarioChooser;
 import megamek.client.ui.swing.skinEditor.SkinEditorMainGUI;
 import megamek.client.ui.swing.tooltip.PilotToolTip;
 import megamek.client.ui.swing.util.MegaMekController;
@@ -43,17 +46,19 @@ import megamek.client.ui.swing.widget.SkinnedJPanel;
 import megamek.codeUtilities.StringUtility;
 import megamek.common.*;
 import megamek.common.annotations.Nullable;
-import megamek.common.enums.GamePhase;
 import megamek.common.options.IBasicOption;
 import megamek.common.options.IOption;
 import megamek.common.preference.IPreferenceChangeListener;
 import megamek.common.preference.PreferenceChangeEvent;
 import megamek.common.preference.PreferenceManager;
+import megamek.common.scenario.Scenario;
+import megamek.common.scenario.ScenarioLoader;
+import megamek.server.SBFGameManager;
 import megamek.common.util.EmailService;
 import megamek.common.util.ImageUtil;
 import megamek.common.util.fileUtils.MegaMekFile;
 import megamek.server.GameManager;
-import megamek.server.ScenarioLoader;
+import megamek.server.IGameManager;
 import megamek.server.Server;
 import megamek.utilities.xml.MMXMLUtility;
 import org.apache.logging.log4j.LogManager;
@@ -88,12 +93,12 @@ public class MegaMekGUI implements IPreferenceChangeListener {
     private static final String FILENAME_ICON_256X256 = "megamek-icon-256x256.png";
 
     private JFrame frame;
-    private Client client;
+    private IClient client;
     private Server server;
-    private GameManager gameManager;
+    private IGameManager gameManager;
     private CommonSettingsDialog settingsDialog;
 
-    private MegaMekController controller;
+    private static MegaMekController controller;
 
     public void start(boolean show) {
         createGUI(show);
@@ -102,12 +107,13 @@ public class MegaMekGUI implements IPreferenceChangeListener {
     /**
      * Construct a MegaMek, and display the main menu in the specified frame.
      */
-    private void createGUI(boolean show ) {
+    private void createGUI(boolean show) {
         createController();
 
         GUIPreferences.getInstance().addPreferenceChangeListener(this);
 
-        // TODO : Move Theme setup to MegaMek::initializeSuiteSetups as part of implementing it in
+        // TODO : Move Theme setup to MegaMek::initializeSuiteSetups as part of
+        // implementing it in
         // TODO : SuiteOptions
         try {
             UIManager.setLookAndFeel(GUIPreferences.getInstance().getUITheme());
@@ -115,7 +121,8 @@ public class MegaMekGUI implements IPreferenceChangeListener {
             LogManager.getLogger().error("Failed to set look and feel!", ex);
         }
 
-        // TODO : Move ToolTip setup to MegaMek::initializeSuiteSetups as part of implementing them
+        // TODO : Move ToolTip setup to MegaMek::initializeSuiteSetups as part of
+        // implementing them
         // TODO : in SuiteOptions
         ToolTipManager.sharedInstance().setInitialDelay(
                 GUIPreferences.getInstance().getTooltipDelay());
@@ -145,7 +152,7 @@ public class MegaMekGUI implements IPreferenceChangeListener {
                 new MegaMekFile(Configuration.miscImagesDir(), FILENAME_ICON_256X256).toString()));
         frame.setIconImages(iconList);
 
-        CommonMenuBar menuBar = new CommonMenuBar(this);
+        CommonMenuBar menuBar = CommonMenuBar.getMenuBarForMainMenu();
         menuBar.addActionListener(actionListener);
         frame.setJMenuBar(menuBar);
         showMainMenu();
@@ -177,8 +184,11 @@ public class MegaMekGUI implements IPreferenceChangeListener {
         controller = new MegaMekController();
         KeyboardFocusManager kbfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
         kbfm.addKeyEventDispatcher(controller);
-
         KeyBindParser.parseKeyBindings(controller);
+    }
+
+    public static MegaMekController getKeyDispatcher() {
+        return controller;
     }
 
     /**
@@ -276,20 +286,26 @@ public class MegaMekGUI implements IPreferenceChangeListener {
         // Left Column
         c.anchor = GridBagConstraints.WEST;
         c.insets = new Insets(10, 5, 10, 10);
-        c.ipadx = 10; c.ipady = 5;
-        c.gridx = 0;  c.gridy = 0;
+        c.ipadx = 10;
+        c.ipady = 5;
+        c.gridx = 0;
+        c.gridy = 0;
         c.fill = GridBagConstraints.NONE;
-        c.weightx = 0.0; c.weighty = 0.0;
+        c.weightx = 0.0;
+        c.weighty = 0.0;
         c.gridwidth = 1;
         c.gridheight = 9;
         addBag(splash, gridbag, c);
         // Right Column
         c.insets = new Insets(4, 4, 1, 12);
         c.fill = GridBagConstraints.BOTH;
-        c.weightx = 1.0; c.weighty = 1.0;
-        c.ipadx = 0; c.ipady = 0;
+        c.weightx = 1.0;
+        c.weighty = 1.0;
+        c.ipadx = 0;
+        c.ipady = 0;
         c.gridheight = 1;
-        c.gridx = 1; c.gridy = 0;
+        c.gridx = 1;
+        c.gridy = 0;
         addBag(labVersion, gridbag, c);
         c.gridy++;
         addBag(hostB, gridbag, c);
@@ -327,15 +343,15 @@ public class MegaMekGUI implements IPreferenceChangeListener {
     void showSkinEditor() {
         int response = JOptionPane.showConfirmDialog(frame,
                 "The skin editor is currently "
-                + "in beta and is a work in progress.  There are likely to "
-                + "be issues. \nContinue?", "Continue?",
+                        + "in beta and is a work in progress.  There are likely to "
+                        + "be issues. \nContinue?",
+                "Continue?",
                 JOptionPane.OK_CANCEL_OPTION);
         if (response == JOptionPane.CANCEL_OPTION) {
             return;
         }
         SkinEditorMainGUI skinEditor = new SkinEditorMainGUI();
         skinEditor.initialize();
-        skinEditor.switchPanel(GamePhase.MOVEMENT);
         launch(skinEditor.getFrame());
     }
 
@@ -360,14 +376,14 @@ public class MegaMekGUI implements IPreferenceChangeListener {
             return;
         }
 
-        startHost(hd.getServerPass(), hd.getPort(),  hd.isRegister(),
+        startHost(hd.getServerPass(), hd.getPort(), hd.isRegister(),
                 hd.isRegister() ? hd.getMetaserver() : "", null, null,
                 hd.getPlayerName());
     }
 
     public void startHost(@Nullable String serverPassword, int port, boolean isRegister,
-                          @Nullable String metaServer, @Nullable String mailPropertiesFileName,
-                          @Nullable File savegame, String playerName) {
+            @Nullable String metaServer, @Nullable String mailPropertiesFileName,
+            @Nullable File savegame, String playerName) {
         if (!startServer(serverPassword, port, isRegister, metaServer, mailPropertiesFileName, savegame)) {
             return;
         }
@@ -378,6 +394,12 @@ public class MegaMekGUI implements IPreferenceChangeListener {
     public boolean startServer(@Nullable String serverPassword, int port, boolean isRegister,
                                @Nullable String metaServer, @Nullable String mailPropertiesFileName,
                                @Nullable File saveGameFile) {
+        return startServer(serverPassword, port, isRegister, metaServer, mailPropertiesFileName, saveGameFile, GameType.TW);
+    }
+
+    public boolean startServer(@Nullable String serverPassword, int port, boolean isRegister,
+            @Nullable String metaServer, @Nullable String mailPropertiesFileName,
+            @Nullable File saveGameFile, GameType gameType) {
         try {
             serverPassword = Server.validatePassword(serverPassword);
             port = Server.validatePort(port);
@@ -397,7 +419,8 @@ public class MegaMekGUI implements IPreferenceChangeListener {
             } catch (Exception ex) {
                 LogManager.getLogger().error(
                         "Error: could not load mail properties file \"" +
-                                propsFile.getAbsolutePath() + "\"", ex);
+                                propsFile.getAbsolutePath() + "\"",
+                        ex);
                 JOptionPane.showMessageDialog(frame,
                         Messages.getFormattedString("MegaMek.StartServerError", port, ex.getMessage()),
                         Messages.getString("MegaMek.LoadGameAlert.title"), JOptionPane.ERROR_MESSAGE);
@@ -411,7 +434,7 @@ public class MegaMekGUI implements IPreferenceChangeListener {
 
         // start server
         try {
-            gameManager = new GameManager();
+            gameManager = getGameManager(gameType);
             server = new Server(serverPassword, port, gameManager, isRegister, metaServer, mailer, false);
         } catch (IOException ex) {
             LogManager.getLogger().error("Could not create server socket on port " + port, ex);
@@ -444,7 +467,59 @@ public class MegaMekGUI implements IPreferenceChangeListener {
         return true;
     }
 
+    private IGameManager getGameManager(GameType gameType) {
+        switch (gameType) {
+            /*
+            Not implemented:
+            case AS:
+                return new ASGameManager();
+            case BF:
+                return new BFGameManager();
+             */
+            case SBF:
+                return new SBFGameManager();
+            default:
+                return new GameManager();
+        }
+    }
+
+    private IClientGUI getClientGUI(GameType gameType, IClient client, MegaMekController controller) {
+        switch (gameType) {
+            /*
+            Not implemented:
+            case AS:
+                return new ASGameManager();
+            case BF:
+                return new BFGameManager();
+             */
+            case SBF:
+                return new SBFClientGUI((SBFClient) client, controller);
+            default:
+                return new ClientGUI((Client) client, controller);
+        }
+    }
+
+    private IClient getClient(GameType gameType, String playerName, String host, int port) {
+        switch (gameType) {
+            /*
+            Not implemented:
+            case AS:
+                return new ASGameManager();
+            case BF:
+                return new BFGameManager();
+             */
+            case SBF:
+                return new SBFClient(playerName, host, port);
+            default:
+                return new Client(playerName, host, port);
+        }
+    }
+
     public void startClient(String playerName, String serverAddress, int port) {
+        startClient(playerName, serverAddress, port, GameType.TW);
+    }
+
+    public void startClient(String playerName, String serverAddress, int port, GameType gameType) {
         try {
             playerName = Server.validatePlayerName(playerName);
             serverAddress = Server.validateServerAddress(serverAddress);
@@ -460,9 +535,8 @@ public class MegaMekGUI implements IPreferenceChangeListener {
 
         // delete PilotToolTip cache
         PilotToolTip.deleteImageCache();
-
-        client = new Client(playerName, serverAddress, port);
-        ClientGUI gui = new ClientGUI(client, controller);
+        client = getClient(gameType, playerName, serverAddress, port);
+        IClientGUI gui = getClientGUI(gameType, client, controller);
         controller.clientgui = gui;
         frame.setCursor(new Cursor(Cursor.WAIT_CURSOR));
         gui.initialize();
@@ -628,34 +702,46 @@ public class MegaMekGUI implements IPreferenceChangeListener {
         }
     }
 
-    private void parsePlayerNames(final Node n, final Vector<String> playerNames) {
-        if (!n.hasChildNodes()) {
+    private void parsePlayerNames(final Node nodePlayers, final Vector<String> playerNames) {
+        if (!nodePlayers.hasChildNodes()) {
             return;
         }
 
-        final NodeList nl = n.getChildNodes();
-        for (int i = 0; i < nl.getLength(); i++) {
-            final Node n2 = nl.item(i);
-            if ((n2.getNodeType() != Node.ELEMENT_NODE) || !n2.hasChildNodes()
-                    || !Player.class.getName().equals(n2.getNodeName())) {
+        final NodeList nodePlayersChildren = nodePlayers.getChildNodes();
+        for (int i = 0; i < nodePlayersChildren.getLength(); i++) {
+            final Node nodeEntry = nodePlayersChildren.item(i);
+            if ((nodeEntry.getNodeType() != Node.ELEMENT_NODE) || !nodeEntry.hasChildNodes()
+                    || !"entry".equals(nodeEntry.getNodeName())) {
                 continue;
             }
 
-            final NodeList nl2 = n2.getChildNodes();
-            for (int j = 0; j < nl2.getLength(); j++) {
-                final Node n3 = nl2.item(j);
-                if (n3.getNodeType() != Node.ELEMENT_NODE) {
+            final NodeList nodeEntryChildren = nodeEntry.getChildNodes();
+            for (int k = 0; k < nodeEntryChildren.getLength(); k++) {
+                final Node nodePlayerClass = nodeEntryChildren.item(k);
+                if ((nodePlayerClass.getNodeType() != Node.ELEMENT_NODE) || !nodePlayerClass.hasChildNodes()
+                        || !Player.class.getName().equals(nodePlayerClass.getNodeName())) {
                     continue;
                 }
 
-                if ("name".equals(n3.getNodeName())) {
-                    playerNames.add(n3.getTextContent());
+                final NodeList nodePlayerClassChildren = nodePlayerClass.getChildNodes();
+                for (int j = 0; j < nodePlayerClassChildren.getLength(); j++) {
+                    final Node n3 = nodePlayerClassChildren.item(j);
+                    if (n3.getNodeType() != Node.ELEMENT_NODE) {
+                        continue;
+                    }
+
+                    if ("name".equals(n3.getNodeName())) {
+                        playerNames.add(n3.getTextContent());
+                    }
                 }
             }
         }
     }
 
-    /** Developer Utility: Loads "quicksave.sav.gz" with the last used connection settings. */
+    /**
+     * Developer Utility: Loads "quicksave.sav.gz" with the last used connection
+     * settings.
+     */
     public void quickLoadGame() {
         File file = MegaMek.getQuickSaveFile();
         if (!file.exists() || !file.canRead()) {
@@ -674,51 +760,18 @@ public class MegaMekGUI implements IPreferenceChangeListener {
      * Host a game constructed from a scenario file
      */
     void scenario() {
-        JFileChooser fc = new JFileChooser("data" + File.separatorChar + "scenarios");
-        fc.setLocation(frame.getLocation().x + 150, frame.getLocation().y + 100);
-        fc.setDialogTitle(Messages.getString("MegaMek.SelectScenarioDialog.title"));
-
-        FileFilter filter = new FileFilter() {
-
-            @Override
-            public boolean accept(File f) {
-                if (f.isDirectory()) {
-                    return true;
-                }
-
-                String ext = null;
-                String s = f.getName();
-                int i = s.lastIndexOf('.');
-
-                if ((i > 0) && (i < (s.length() - 1))) {
-                    ext = s.substring(i + 1).toLowerCase();
-                }
-
-                if (ext != null) {
-                    return ext.equalsIgnoreCase("mms");
-                }
-
-                return false;
-            }
-
-            @Override
-            public String getDescription() {
-                return "MegaMek Scenario Files";
-            }
-
-        };
-        fc.setFileFilter(filter);
-
-        int returnVal = fc.showOpenDialog(frame);
-        if ((returnVal != JFileChooser.APPROVE_OPTION) || (fc.getSelectedFile() == null)) {
-            // I want a file, y'know!
+        ScenarioChooser scenarioChooser = new ScenarioChooser(frame);
+        scenarioChooser.setVisible(true);
+        if (scenarioChooser.getSelectedScenarioFilename() == null) {
             return;
         }
 
-        ScenarioLoader sl = new ScenarioLoader(fc.getSelectedFile());
-        Game g;
+        Scenario scenario;
+        IGame game;
         try {
-            g = sl.createGame();
+            ScenarioLoader sl = new ScenarioLoader(new File(scenarioChooser.getSelectedScenarioFilename()));
+            scenario = sl.load();
+            game = scenario.createGame();
         } catch (Exception e) {
             LogManager.getLogger().error("", e);
             JOptionPane.showMessageDialog(frame,
@@ -729,36 +782,36 @@ public class MegaMekGUI implements IPreferenceChangeListener {
         }
 
         // popup options dialog
-        if (!sl.hasFixedGameOptions()) {
-            GameOptionsDialog god = new GameOptionsDialog(frame, g.getOptions(), false);
-            god.update(g.getOptions());
+        if (!scenario.hasFixedGameOptions()) {
+            GameOptionsDialog god = new GameOptionsDialog(frame, game.getOptions(), false);
+            god.update(game.getOptions());
             god.setEditable(true);
             god.setVisible(true);
             for (IBasicOption opt : god.getOptions()) {
-                IOption orig = g.getOptions().getOption(opt.getName());
+                IOption orig = game.getOptions().getOption(opt.getName());
                 orig.setValue(opt.getValue());
             }
         }
 
         // popup planetary conditions dialog
-        if (!sl.hasFixedPlanetCond()) {
-            PlanetaryConditionsDialog pcd = new PlanetaryConditionsDialog(frame, g.getPlanetaryConditions());
-            pcd.update(g.getPlanetaryConditions());
+        if ((game instanceof PlanetaryConditionsUsing) && !scenario.hasFixedPlanetaryConditions()) {
+            PlanetaryConditionsUsing plGame = (PlanetaryConditionsUsing) game;
+            PlanetaryConditionsDialog pcd = new PlanetaryConditionsDialog(frame, plGame.getPlanetaryConditions());
+            pcd.update(plGame.getPlanetaryConditions());
             pcd.setVisible(true);
-            g.setPlanetaryConditions(pcd.getConditions());
+            plGame.setPlanetaryConditions(pcd.getConditions());
         }
 
-        String playerName;
-        int port;
-        String serverPW;
-        String localName;
-        Player[] pa = new Player[g.getPlayersVector().size()];
+        int port = MMConstants.DEFAULT_PORT;
+        String serverPW = "";
+        Player[] pa = game.getPlayersList().toArray(new Player[0]);
         int[] playerTypes = new int[pa.length];
-        g.getPlayersVector().copyInto(pa);
-        boolean hasSlot = false;
+        String playerName = pa[0].getName();
+        String localName = playerName;
+        boolean hasSlot = scenario.isSinglePlayer();
 
         // get player types and colors set
-        if (!sl.isSinglePlayer()) {
+        if (!scenario.isSinglePlayer()) {
             ScenarioDialog sd = new ScenarioDialog(frame, pa);
             sd.setVisible(true);
             if (!sd.bSet) {
@@ -784,11 +837,6 @@ public class MegaMekGUI implements IPreferenceChangeListener {
             playerTypes = Arrays.copyOf(sd.playerTypes, playerTypes.length);
 
         } else {
-            hasSlot = true;
-            playerName = pa[0].getName();
-            localName = playerName;
-            port = MMConstants.DEFAULT_PORT;
-            serverPW = "";
             playerTypes[0] = 0;
             for (int i = 1; i < playerTypes.length; i++) {
                 playerTypes[i] = ScenarioDialog.T_BOT;
@@ -799,67 +847,59 @@ public class MegaMekGUI implements IPreferenceChangeListener {
         Compute.d6();
 
         // start server
-        if (!startServer(serverPW, port, false, null, null, null)) {
+        if (!startServer(serverPW, port, false, null,
+                null, null, scenario.getGameType())) {
             return;
         }
-        server.setGame(g);
-
-        // apply any scenario damage
-        sl.applyDamage(gameManager);
+        server.setGame(game);
+        scenario.applyDamage(gameManager);
 
         if (!localName.isBlank()) {
-            startClient(playerName, MMConstants.LOCALHOST, port);
+            startClient(playerName, MMConstants.LOCALHOST, port, scenario.getGameType());
         }
 
-        // calculate initial BV
         gameManager.calculatePlayerInitialCounts();
 
-        // setup any bots
-        for (int x = 0; x < pa.length; x++) {
-            if (playerTypes[x] == ScenarioDialog.T_BOT) {
-                LogManager.getLogger().info("Adding bot "  + pa[x].getName() + " as Princess");
-                BotClient c = new Princess(pa[x].getName(), MMConstants.LOCALHOST, port);
-                c.getGame().addGameListener(new BotGUI(frame, c));
-                c.connect();
-            } else if (playerTypes[x] == ScenarioDialog.T_OBOT) {
-                LogManager.getLogger().info("Adding bot "  + pa[x].getName() + " as TestBot");
-                BotClient c = new TestBot(pa[x].getName(), MMConstants.LOCALHOST, port);
-                c.getGame().addGameListener(new BotGUI(frame, c));
-                c.connect();
+        // Setup bots; currently, we have no bot that supports anything other than TW
+        if (scenario.getGameType() == GameType.TW) {
+            for (int x = 0; x < pa.length; x++) {
+                if (playerTypes[x] == ScenarioDialog.T_BOT) {
+                    LogManager.getLogger().info("Adding bot " + pa[x].getName() + " as Princess");
+                    BotClient c = new Princess(pa[x].getName(), MMConstants.LOCALHOST, port);
+                    c.getGame().addGameListener(new BotGUI(frame, c));
+                    c.connect();
+                }
             }
         }
 
-        // If he didn't have a name when hasSlot was set, then the host should
-        // be an observer.
+        // If he didn't have a name when hasSlot was set, then the host should be an observer.
         if (!hasSlot) {
-            Enumeration<Player> pE = server.getGame().getPlayers();
-            while (pE.hasMoreElements()) {
-                Player tmpP = pE.nextElement();
-                if (tmpP.getName().equals(localName)) {
-                    tmpP.setObserver(true);
+            for (Player player : server.getGame().getPlayersList()) {
+                if (player.getName().equals(localName)) {
+                    player.setObserver(true);
                 }
             }
         }
     }
 
     /**
-     * Connect to a game and then launch the chat lounge.
+     * Connect to an existing game
      */
     void connect() {
-        ConnectDialog cd = new ConnectDialog(frame);
+        var cd = new ConnectDialog(frame);
         cd.setVisible(true);
-
-        if (!cd.dataValidation("MegaMek.ConnectDialog.title")) {
-            return;
+        if (cd.isConfirmed() && cd.dataValidation("MegaMek.ConnectDialog.title")) {
+            startClient(cd.getPlayerName(), cd.getServerAddress(), cd.getPort());
         }
-
-        startClient(cd.getPlayerName(), cd.getServerAddress(), cd.getPort());
     }
 
+    /**
+     * Connect to a game as Princess
+     */
     void connectBot() {
         var cd = new ConnectDialog(frame);
         cd.setVisible(true);
-        if (!cd.dataValidation("MegaMek.ConnectDialog.title")) {
+        if (!cd.isConfirmed() || !cd.dataValidation("MegaMek.ConnectDialog.title")) {
             return;
         }
 
@@ -869,9 +909,10 @@ public class MegaMekGUI implements IPreferenceChangeListener {
         if (bcd.getResult() == DialogResult.CANCELLED) {
             return;
         }
-        client = Princess.createPrincess(bcd.getBotName(), cd.getServerAddress(), cd.getPort(), bcd.getBehaviorSettings());
+        client = Princess.createPrincess(bcd.getBotName(), cd.getServerAddress(), cd.getPort(),
+                bcd.getBehaviorSettings());
         client.getGame().addGameListener(new BotGUI(frame, (BotClient) client));
-        ClientGUI gui = new ClientGUI(client, controller);
+        ClientGUI gui = new ClientGUI((Client) client, controller);
         controller.clientgui = gui;
         gui.initialize();
         if (!client.connect()) {
@@ -903,7 +944,7 @@ public class MegaMekGUI implements IPreferenceChangeListener {
             // Launch the help dialog.
             HelpDialog helpDialog = new HelpDialog(
                     Messages.getString("ClientGUI.skinningHelpPath.title"),
-                    helpUrl);
+                    helpUrl, frame);
             helpDialog.setVisible(true);
         } catch (MalformedURLException e) {
             LogManager.getLogger().error("", e);
@@ -935,7 +976,6 @@ public class MegaMekGUI implements IPreferenceChangeListener {
         } catch (IOException e) {
             LogManager.getLogger().error("Error saving custom weapon orders!", e);
         }
-        QuirksHandler.saveCustomQuirksList();
         System.exit(0);
     }
 
@@ -1056,17 +1096,19 @@ public class MegaMekGUI implements IPreferenceChangeListener {
     }
 
     /**
-     * Method used to determine the appropriate splash screen to use. This method looks
+     * Method used to determine the appropriate splash screen to use. This method
+     * looks
      * at both the height and the width of the main monitor.
      *
      * @param splashScreens List of available splash screens.
-     * @param screenWidth Width of the current monitor.
-     * @param screenHeight Height of the current monitor.
+     * @param screenWidth   Width of the current monitor.
+     * @param screenHeight  Height of the current monitor.
      * @return String that represents the splash screen that should be displayed.
      */
     private String determineSplashScreen(final List<String> splashScreens,
-                                         final int screenWidth, final int screenHeight) {
-        // Ensure that the list is of appropriate size to contain HD, FHD, and UHD splash screens.
+            final int screenWidth, final int screenHeight) {
+        // Ensure that the list is of appropriate size to contain HD, FHD, and UHD
+        // splash screens.
         if (splashScreens.size() > 3) {
             // Default to the HD splash screen.
             String splashFileName = splashScreens.get(3);
@@ -1084,8 +1126,8 @@ public class MegaMekGUI implements IPreferenceChangeListener {
     }
 
     private @Nullable Image getSplashScreen(final List<String> splashScreens,
-                          final int screenWidth, final int screenHeight) {
-        String filename = determineSplashScreen(splashScreens,screenWidth,screenHeight);
+            final int screenWidth, final int screenHeight) {
+        String filename = determineSplashScreen(splashScreens, screenWidth, screenHeight);
         File file = new MegaMekFile(Configuration.widgetsDir(), filename).getFile();
         if (!file.exists()) {
             LogManager.getLogger().error("MainMenu Error: Splash screen doesn't exist: " + file.getAbsolutePath());
@@ -1093,7 +1135,8 @@ public class MegaMekGUI implements IPreferenceChangeListener {
         }
 
         if (!file.exists()) {
-            LogManager.getLogger().error("MainMenu Error: Backup splash screen doesn't exist: " + file.getAbsolutePath());
+            LogManager.getLogger()
+                    .error("MainMenu Error: Backup splash screen doesn't exist: " + file.getAbsolutePath());
             return null;
         }
 
@@ -1111,8 +1154,10 @@ public class MegaMekGUI implements IPreferenceChangeListener {
     }
 
     /**
-     * MultiResolutionImage is supposed to allow Swing to choose the right res to display based
+     * MultiResolutionImage is supposed to allow Swing to choose the right res to
+     * display based
      * on DPI, but does not work as expected for ImageIcon
+     *
      * @param splashScreens
      * @return
      */
@@ -1131,7 +1176,8 @@ public class MegaMekGUI implements IPreferenceChangeListener {
         for (String filename : filenames) {
             File file = new MegaMekFile(Configuration.widgetsDir(), filename).getFile();
             if (!file.exists()) {
-                LogManager.getLogger().error("MainMenu Error: background icon doesn't exist: " + file.getAbsolutePath());
+                LogManager.getLogger()
+                        .error("MainMenu Error: background icon doesn't exist: " + file.getAbsolutePath());
             } else {
                 BufferedImage img = (BufferedImage) ImageUtil.loadImageFromFile(file.toString());
                 images.add(img);
@@ -1147,6 +1193,6 @@ public class MegaMekGUI implements IPreferenceChangeListener {
         }
         BaseMultiResolutionImage multiResolutionImage = new BaseMultiResolutionImage(images.toArray(new Image[0]));
 
-        return  multiResolutionImage;
+        return multiResolutionImage;
     }
 }

@@ -21,11 +21,8 @@ package megamek.client.ui.swing;
 import megamek.client.ui.swing.tooltip.EntityActionLog;
 import megamek.common.actions.*;
 
-import java.util.*;
-
-import static megamek.client.ui.swing.util.UIUtil.guiScaledFontHTML;
-
 public abstract class AttackPhaseDisplay extends ActionPhaseDisplay {
+
     // client list of attacks user has input
     protected EntityActionLog attacks;
 
@@ -48,11 +45,9 @@ public abstract class AttackPhaseDisplay extends ActionPhaseDisplay {
      */
     abstract protected String getSkipTurnButtonLabel();
 
-
     @Override
-    protected void updateDonePanel()
-    {
-        if (attacks.isEmpty() || (attacks.size() == 1 && attacks.firstElement() instanceof TorsoTwistAction)){
+    protected void updateDonePanel() {
+        if (attacks.isEmpty() || ((attacks.size() == 1) && (attacks.firstElement() instanceof TorsoTwistAction))) {
             // a torso twist alone should not trigger Done button
             updateDonePanelButtons(getDoneButtonLabel(), getSkipTurnButtonLabel(), false, null);
         } else {
@@ -60,29 +55,25 @@ public abstract class AttackPhaseDisplay extends ActionPhaseDisplay {
         }
     }
 
-    protected void removeAttack(Object o)
-    {
+    protected void removeAttack(EntityAction o) {
         attacks.remove(o);
         updateDonePanel();
     }
 
     /** removes all elements from the local temporary attack list */
-    protected void removeAllAttacks()
-    {
+    protected void removeAllAttacks() {
         attacks.clear();
         updateDonePanel();
     }
 
     /** add an attack at the given index to the local temporary attack list */
-    protected void addAttack(int index, EntityAction entityAction)
-    {
+    protected void addAttack(int index, EntityAction entityAction) {
         attacks.add(index, entityAction);
         updateDonePanel();
     }
 
     /** add an attack to the end of the local temporary attack list */
-    protected void addAttack(EntityAction entityAction)
-    {
+    protected void addAttack(EntityAction entityAction) {
         attacks.add(entityAction);
         updateDonePanel();
     }

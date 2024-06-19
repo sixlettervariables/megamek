@@ -356,6 +356,7 @@ public class GameOptionsDialog extends AbstractButtonDialog implements ActionLis
         lblSearch.setLabelFor(txtSearch);
         lblSearch.setToolTipText(Messages.getString("GameOptionsDialog.SearchToolTip"));
         txtSearch.setToolTipText(Messages.getString("GameOptionsDialog.SearchToolTip"));
+        txtSearch.setColumns(20);
         txtSearch.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void changedUpdate(DocumentEvent e) {
@@ -764,6 +765,11 @@ public class GameOptionsDialog extends AbstractButtonDialog implements ActionLis
                 }
             }
         }
+    }
+
+    @Override
+    public void optionSwitched(DialogOptionComponent clickedComp, IOption option, int i) {
+        // tracks changes to a combobox option - nothing implemented yet
     }
 
     @Override

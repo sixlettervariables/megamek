@@ -87,22 +87,22 @@ public class InfantryBVCalculator extends BVCalculator {
         // Damage dealt by the troopers is averaged over primary and secondary weapons; therefore calculate
         // weapon damage at full strength and then multiply by the surviving trooper ratio
         if (primaryWeapon != null) {
-            Mounted primaryWeaponMounted = new Mounted(infantry, primaryWeapon);
+            Mounted<?> primaryWeaponMounted = Mounted.createMounted(infantry, primaryWeapon);
             processWeapon(primaryWeaponMounted, true, true, primaryShooterCount);
         }
         if (secondaryWeapon != null) {
-            Mounted secondaryWeaponMounted = new Mounted(infantry, secondaryWeapon);
+            Mounted<?> secondaryWeaponMounted = Mounted.createMounted(infantry, secondaryWeapon);
             processWeapon(secondaryWeaponMounted, true, true, secondaryShooterCount);
         }
 
         if (infantry.canMakeAntiMekAttacks()) {
             bvReport.addLine("Anti-Mek:", "", "");
             if (primaryWeapon != null && !primaryWeapon.hasFlag(InfantryWeapon.F_INF_ARCHAIC)) {
-                Mounted primaryWeaponMounted = new Mounted(infantry, primaryWeapon);
+                Mounted<?> primaryWeaponMounted = Mounted.createMounted(infantry, primaryWeapon);
                 processWeapon(primaryWeaponMounted, true, true, primaryShooterCount);
             }
             if (secondaryWeapon != null && !secondaryWeapon.hasFlag(InfantryWeapon.F_INF_ARCHAIC)) {
-                Mounted secondaryWeaponMounted = new Mounted(infantry, secondaryWeapon);
+                Mounted<?> secondaryWeaponMounted = Mounted.createMounted(infantry, secondaryWeapon);
                 processWeapon(secondaryWeaponMounted, true, true, secondaryShooterCount);
             }
         }
@@ -137,22 +137,6 @@ public class InfantryBVCalculator extends BVCalculator {
 
         List<String> modifierList = new ArrayList<>();
         double typeModifier = 1;
-        switch (infantry.getMovementMode()) {
-            case INF_MOTORIZED:
-            case WHEELED:
-                typeModifier = 0.8;
-                break;
-            case TRACKED:
-                typeModifier = 0.9;
-                break;
-            case HOVER:
-            case VTOL:
-                typeModifier = 0.7;
-                break;
-            case SUBMARINE:
-                typeModifier = 0.6;
-                break;
-        }
 
         if (infantry.hasSpecialization(Infantry.COMBAT_ENGINEERS)) {
             typeModifier += 0.1;
@@ -184,14 +168,13 @@ public class InfantryBVCalculator extends BVCalculator {
             modifierList.add("XCT");
         }
 
-        String calculation = formatForReport(baseBV) + " x " + formatForReport(typeModifier);
-        if (!modifierList.isEmpty()) {
+        if (typeModifier != 1) {
+            String calculation = formatForReport(baseBV) + " x " + formatForReport(typeModifier);
             calculation += " (" + String.join(", ", modifierList) + ")";
+            bvReport.addLine("Type Modifier:", calculation,
+                    "= " + formatForReport(baseBV * typeModifier));
+            baseBV *= typeModifier;
         }
-
-        bvReport.addLine("Type Modifier:", calculation,
-                "= " + formatForReport(baseBV * typeModifier));
-        baseBV *= typeModifier;
         bvReport.addLine("--- Base Unit BV:", "" + (int) Math.round(baseBV));
     }
 

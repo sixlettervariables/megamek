@@ -21,7 +21,7 @@ Galaport Ground Trailer
 </model>
 
 <mul id:>
-4195
+4196
 </mul id:>
 
 <year>
@@ -35,6 +35,10 @@ Galaport Ground Trailer
 <type>
 IS Level 2
 </type>
+
+<role>
+None
+</role>
 
 <motion_type>
 Tracked

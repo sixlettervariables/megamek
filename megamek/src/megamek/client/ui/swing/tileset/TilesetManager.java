@@ -34,6 +34,7 @@ import megamek.common.util.ImageUtil;
 import megamek.common.util.fileUtils.MegaMekFile;
 import org.apache.logging.log4j.LogManager;
 
+import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.FilteredImageSource;
@@ -113,7 +114,7 @@ public class TilesetManager implements IPreferenceChangeListener, ITilesetManage
     public TilesetManager(BoardView bv) throws IOException {
         boardview = bv;
         hexTileset = new HexTileset(boardview.game);
-        tracker = new MediaTracker(boardview);
+        tracker = new MediaTracker(boardview.getPanel());
         wreckageDecalCount = new HashMap<>();
         wreckageDecalCount.put(FILENAME_SUFFIX_WRECKS_ULTRALIGHT, getULightDecalCount());
         wreckageDecalCount.put(FILENAME_SUFFIX_WRECKS_ASSAULTPLUS, getUHeavyDecalCount());
@@ -350,21 +351,21 @@ public class TilesetManager implements IPreferenceChangeListener, ITilesetManage
      * Return the base image for the hex
      */
     public Image baseFor(Hex hex) {
-        return hexTileset.getBase(hex, boardview);
+        return hexTileset.getBase(hex, boardview.getPanel());
     }
 
     /**
      * Return a list of superimposed images for the hex
      */
     public List<Image> supersFor(Hex hex) {
-        return hexTileset.getSupers(hex, boardview);
+        return hexTileset.getSupers(hex, boardview.getPanel());
     }
 
     /**
      * Return a list of orthographic images for the hex
      */
     public List<Image> orthoFor(Hex hex) {
-        return hexTileset.getOrtho(hex, boardview);
+        return hexTileset.getOrtho(hex, boardview.getPanel());
     }
 
     public Image getMinefieldSign() {
@@ -519,7 +520,7 @@ public class TilesetManager implements IPreferenceChangeListener, ITilesetManage
      * @param hex the hex to load
      */
     private synchronized void loadHexImage(Hex hex) {
-        hexTileset.assignMatch(hex, boardview);
+        hexTileset.assignMatch(hex, boardview.getPanel());
         hexTileset.trackHexImages(hex, tracker);
     }
 
@@ -550,7 +551,7 @@ public class TilesetManager implements IPreferenceChangeListener, ITilesetManage
      * Loads all the hex tileset images
      */
     public synchronized void loadAllHexes() {
-        hexTileset.loadAllImages(boardview, tracker);
+        hexTileset.loadAllImages(boardview.getPanel(), tracker);
     }
 
     /**
@@ -559,11 +560,11 @@ public class TilesetManager implements IPreferenceChangeListener, ITilesetManage
     @Override
     public Image loadPreviewImage(Entity entity, Camouflage camouflage, Component bp) {
         Image base = MMStaticDirectoryManager.getMechTileset().imageFor(entity);
-        EntityImage entityImage = new EntityImage(base, camouflage, bp, entity);
+        EntityImage entityImage = EntityImage.createIcon(base, camouflage, bp, entity);
         entityImage.loadFacings();
         Image preview = entityImage.getFacing(entity.getFacing());
 
-        MediaTracker loadTracker = new MediaTracker(boardview);
+        MediaTracker loadTracker = new MediaTracker(boardview.getPanel());
         loadTracker.addImage(preview, 0);
         try {
             loadTracker.waitForID(0);
@@ -582,14 +583,13 @@ public class TilesetManager implements IPreferenceChangeListener, ITilesetManage
         Image wreck = wreckTileset.imageFor(entity, secondaryPos);
 
         Player player = entity.getOwner();
-
         Camouflage camouflage = (player == null) ? new Camouflage()
                 : entity.getCamouflageOrElse(player.getCamouflage());
+
         EntityImage entityImage = null;
 
         // check if we have a duplicate image already loaded
-        for (Iterator<EntityImage> j = mechImageList.iterator(); j.hasNext();) {
-            EntityImage onList = j.next();
+        for (EntityImage onList : mechImageList) {
             if ((onList.getBase() != null) && onList.getBase().equals(base)
                     && onList.getCamouflage().equals(camouflage)
                     && (onList.getDmgLvl() == entity.getDamageLevel(false))) {
@@ -600,7 +600,7 @@ public class TilesetManager implements IPreferenceChangeListener, ITilesetManage
 
         // if we don't have a cached image, make a new one
         if (entityImage == null) {
-            entityImage = new EntityImage(base, wreck, camouflage, boardview, entity, secondaryPos);
+            entityImage = EntityImage.createIcon(base, wreck, camouflage, boardview.getPanel(), entity, secondaryPos);
             mechImageList.add(entityImage);
             entityImage.loadFacings();
             for (int j = 0; j < 6; j++) {
@@ -623,7 +623,7 @@ public class TilesetManager implements IPreferenceChangeListener, ITilesetManage
         loaded = false;
         started = false;
 
-        tracker = new MediaTracker(boardview);
+        tracker = new MediaTracker(boardview.getPanel());
         mechImageList.clear();
         mechImages.clear();
         hexTileset.clearAllHexes();

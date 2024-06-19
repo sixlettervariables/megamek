@@ -67,6 +67,7 @@ public class ASCard {
     private static final String FILENAME_BT_LOGO = "BT_Logo_BW.png";
     private static final Image btLogo = ImageUtil.loadImageFromFile(
             new MegaMekFile(Configuration.miscImagesDir(), FILENAME_BT_LOGO).toString());
+    private static ImageIcon scaledBtLogo;
 
     protected final ASCardDisplayable element;
     protected final Image fluffImage;
@@ -251,17 +252,9 @@ public class ASCard {
     /** Scales the fluff image according to control variables which may be set in overriden initialize(). */
     private void drawFluffImage(Graphics2D g) {
         if (fluffImage != null) {
-            int width = fluffWidth;
-            int height = fluffHeight;
-            if ((float) fluffImage.getWidth(null) / fluffWidth >
-                    (float) fluffImage.getHeight(null) / fluffHeight) {
-                height = fluffImage.getHeight(null) * fluffWidth / fluffImage.getWidth(null);
-            } else {
-                width = fluffImage.getWidth(null) * fluffHeight / fluffImage.getHeight(null);
-            }
-            int posX = fluffXCenter - width / 2;
-            int posY = fluffYCenter - height / 2;
-            ImageIcon icon = new ImageIcon(fluffImage.getScaledInstance(width, height, Image.SCALE_AREA_AVERAGING));
+            ImageIcon icon = new ImageIcon(ImageUtil.fitImage(fluffImage, fluffWidth, fluffHeight, ImageUtil.IMAGE_SCALE_BICUBIC));
+            int posX = fluffXCenter - icon.getIconWidth() / 2;
+            int posY = fluffYCenter - icon.getIconHeight() / 2;
             g.drawImage(icon.getImage(), posX, posY, null);
         }
     }
@@ -275,11 +268,11 @@ public class ASCard {
         }
         new StringDrawer(model).at(36, 44).font(modelFont).centerY()
                 .maxWidth(750).scaleX(1.3f).draw(g);
-        new StringDrawer(element.getChassis().toUpperCase(Locale.ROOT)).at(36, 89)
+        new StringDrawer(element.getFullChassis().toUpperCase(Locale.ROOT)).at(36, 89)
                 .font(chassisFont).centerY().maxWidth(770).scaleX(0.8f).draw(g);
 
         // Add BA Squad Size
-        if (element.getASUnitType().isBattleArmor()) {
+        if (element.isBattleArmor() && element.getSquadSize() != 0) {
             new StringDrawer("Squad " + element.getSquadSize()).at(36, 137).maxWidth(500).scaleX(1.3f)
                     .font(modelFont).centerY().draw(g);
         }
@@ -511,8 +504,10 @@ public class ASCard {
             g.drawPolyline(pointsX, pointsY, 3);
 
             // Logo
-            ImageIcon icon = new ImageIcon(btLogo.getScaledInstance(445, 77, Image.SCALE_AREA_AVERAGING));
-            g.drawImage(icon.getImage(), 568, 646, null);
+            if (scaledBtLogo == null) {
+                scaledBtLogo = new ImageIcon(btLogo.getScaledInstance(445, 77, Image.SCALE_AREA_AVERAGING));
+            }
+            g.drawImage(scaledBtLogo.getImage(), 568, 646, null);
         }
 
         new StringDrawer("(C) " + LocalDate.now().getYear() + " The Topps Company. All rights reserved.").at(1014, copyrightY).rotate(-Math.PI / 2)
@@ -546,11 +541,7 @@ public class ASCard {
     }
 
     /** Get the fluff image for the given element. */
-    private Image getFluffImage(ASCardDisplayable element) {
-        if (element != null) {
-            return FluffImageHelper.loadFluffImageHeuristic(element);
-        } else {
-            return null;
-        }
+    private @Nullable Image getFluffImage(ASCardDisplayable element) {
+        return FluffImageHelper.getFluffImage(element);
     }
 }

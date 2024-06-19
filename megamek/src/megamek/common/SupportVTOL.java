@@ -19,6 +19,8 @@
  */
 package megamek.common;
 
+import megamek.common.equipment.ArmorType;
+
 /**
  * This is a support vehicle VTOL
  * @author beerockxs
@@ -33,6 +35,7 @@ public class SupportVTOL extends VTOL {
         barRating = new int[locations()];
     }
 
+    @Override
     public void setBARRating(int rating, int loc) {
         barRating[loc] = rating;
     }
@@ -46,12 +49,12 @@ public class SupportVTOL extends VTOL {
 
     @Override
     public int getBARRating(int loc) {
-        return barRating[loc];
+        return (barRating == null) ? 0 : barRating[loc];
     }
 
     @Override
     public boolean hasBARArmor(int loc) {
-        return true;
+        return ArmorType.forEntity(this, loc).hasFlag(MiscType.F_SUPPORT_VEE_BAR_ARMOR);
     }
 
     @Override
@@ -134,5 +137,10 @@ public class SupportVTOL extends VTOL {
     @Override
     public boolean isSupportVehicle() {
         return true;
+    }
+
+    @Override
+    public int getGenericBattleValue() {
+        return (int) Math.round(Math.exp(3.336 + 0.451*Math.log(getWeight())));
     }
 }

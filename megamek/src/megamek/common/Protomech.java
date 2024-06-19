@@ -16,11 +16,15 @@ package megamek.common;
 import megamek.client.ui.swing.calculationReport.CalculationReport;
 import megamek.common.cost.ProtoMekCostCalculator;
 import megamek.common.enums.AimingMode;
+import megamek.common.equipment.AmmoMounted;
+import megamek.common.equipment.ArmorType;
+import megamek.common.planetaryconditions.Atmosphere;
 import megamek.common.preference.PreferenceManager;
 import org.apache.logging.log4j.LogManager;
 
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Vector;
 import java.util.stream.Collectors;
@@ -90,19 +94,19 @@ public class Protomech extends Entity {
     private int grappled_id = Entity.NONE;
 
     private boolean isGrappleAttacker = false;
-    
+
     private boolean grappledThisRound = false;
 
     private boolean edpCharged = true;
 
     private int edpChargeTurns = 0;
-    
+
     // jump types
     public static final int JUMP_UNKNOWN = -1;
     public static final int JUMP_NONE = 0;
     public static final int JUMP_STANDARD = 1;
     public static final int JUMP_IMPROVED = 2;
-    
+
     private int jumpType = JUMP_UNKNOWN;
 
     private boolean isQuad = false;
@@ -300,7 +304,7 @@ public class Protomech extends Entity {
     public PilotingRollData addEntityBonuses(PilotingRollData roll) {
         return roll;
     }
-    
+
     /**
      * Returns the number of total critical slots in a location
      */
@@ -322,7 +326,7 @@ public class Protomech extends Entity {
         }
         return 0;
     }
-    
+
     public static final TechAdvancement TA_STANDARD_PROTOMECH = new TechAdvancement(TECH_BASE_CLAN)
             .setClanAdvancement(3055, 3059, 3060).setClanApproximate(true, false, false)
             .setPrototypeFactions(F_CSJ).setProductionFactions(F_CSJ)
@@ -393,9 +397,9 @@ public class Protomech extends Entity {
             }
         }
         setSecondaryFacing(getFacing());
-        
+
         grappledThisRound = false;
-        
+
         super.newRound(roundNumber);
 
     } // End public void newRound()
@@ -420,22 +424,23 @@ public class Protomech extends Entity {
                 break;
         }
         if (!mpCalculationSetting.ignoreWeather && hasWorkingMisc(MiscType.F_PARTIAL_WING)) {
-            int atmo = PlanetaryConditions.ATMO_STANDARD;
+            Atmosphere atmo = Atmosphere.STANDARD;
             if (game != null) {
                 atmo = game.getPlanetaryConditions().getAtmosphere();
             }
             switch (atmo) {
-                case PlanetaryConditions.ATMO_VHIGH:
-                case PlanetaryConditions.ATMO_HIGH:
+                case VERY_HIGH:
+                case HIGH:
                     jump += 3;
                     break;
-                case PlanetaryConditions.ATMO_STANDARD:
-                case PlanetaryConditions.ATMO_THIN:
+                case STANDARD:
+                case THIN:
                     jump += 2;
                     break;
-                case PlanetaryConditions.ATMO_TRACE:
+                case TRACE:
                     jump += 1;
                     break;
+                default:
             }
         }
 
@@ -506,7 +511,7 @@ public class Protomech extends Entity {
 
     @Override
     public boolean canChangeSecondaryFacing() {
-        return !(getCritsHit(LOC_LEG) > 2) && !isBracing();
+        return !((getCritsHit(LOC_LEG) > 2) || isBracing() || getAlreadyTwisted());
     }
 
     @Override
@@ -545,8 +550,7 @@ public class Protomech extends Entity {
 
     @Override
     public double getArmorWeight() {
-        return RoundWeight.standard(EquipmentType.getProtomechArmorWeightPerPoint(getArmorType(LOC_TORSO))
-                * getTotalOArmor(), this);
+        return RoundWeight.standard(ArmorType.forEntity(this).getWeightPerPoint() * getTotalOArmor(), this);
     }
 
     @Override
@@ -748,7 +752,7 @@ public class Protomech extends Entity {
 
         return LOC_NONE;
     }
-    
+
     @Override
     public int firstArmorIndex() {
         return LOC_HEAD;
@@ -856,17 +860,17 @@ public class Protomech extends Entity {
     }
 
     @Override
-    public Mounted addEquipment(EquipmentType etype, int loc,
+    public Mounted<?> addEquipment(EquipmentType etype, int loc,
             boolean rearMounted) throws LocationFullException {
-        Mounted mounted = new Mounted(this, etype);
+        Mounted<?> mounted = Mounted.createMounted(this, etype);
         addEquipment(mounted, loc, rearMounted, -1);
         return mounted;
     }
 
     @Override
-    public Mounted addEquipment(EquipmentType etype, int loc,
+    public Mounted<?> addEquipment(EquipmentType etype, int loc,
             boolean rearMounted, int shots) throws LocationFullException {
-        Mounted mounted = new Mounted(this, etype);
+        Mounted<?> mounted = Mounted.createMounted(this, etype);
         addEquipment(mounted, loc, rearMounted, shots);
         return mounted;
 
@@ -876,14 +880,14 @@ public class Protomech extends Entity {
      * Mounts the specified weapon in the specified location.
      */
     @Override
-    protected void addEquipment(Mounted mounted, int loc, boolean rearMounted,
+    protected void addEquipment(Mounted<?> mounted, int loc, boolean rearMounted,
             int shots) throws LocationFullException {
-        if (mounted.getType() instanceof AmmoType) {
+        if (mounted instanceof AmmoMounted) {
             // Damn protomech ammo; nasty hack, should be cleaner
             if (-1 != shots) {
                 mounted.setShotsLeft(shots);
                 mounted.setOriginalShots(shots);
-                mounted.setAmmoCapacity(shots * ((AmmoType) mounted.getType()).getKgPerShot() / 1000);
+                ((AmmoMounted) mounted).setAmmoCapacity(shots * ((AmmoMounted) mounted).getType().getKgPerShot() / 1000);
                 super.addEquipment(mounted, loc, rearMounted);
                 return;
             }
@@ -1170,12 +1174,12 @@ public class Protomech extends Entity {
     public int getGrappled() {
         return grappled_id;
     }
-    
+
     @Override
     public boolean isGrappledThisRound() {
         return grappledThisRound;
     }
-    
+
     @Override
     public void setGrappledThisRound(boolean grappled) {
         grappledThisRound = grappled;
@@ -1246,11 +1250,11 @@ public class Protomech extends Entity {
         }
         return 0;
     }
-    
+
     public int getWingHits() {
         return wingHits;
     }
-    
+
     public void setWingHits(int hits) {
         wingHits = hits;
     }
@@ -1281,29 +1285,29 @@ public class Protomech extends Entity {
     public void setIsQuad(boolean isQuad) {
         this.isQuad = isQuad;
     }
-    
+
     public boolean isGlider() {
         return isGlider;
     }
-    
+
     public void setIsGlider(boolean isGlider) {
         this.isGlider = isGlider;
     }
-    
+
     /**
      * WoB protomech interface allows it to be piloted by a quadruple amputee with a VDNI implant.
      * No effect on game play.
-     * 
+     *
      * @return Whether the protomech is equipped with an Inner Sphere Protomech Interface.
      */
     public boolean hasInterfaceCockpit() {
         return interfaceCockpit;
     }
-    
+
     /**
      * Sets whether the protomech has an Inner Sphere Protomech Interface. This will also determine
      * whether it is a mixed tech unit.
-     * 
+     *
      * @param interfaceCockpit Whether the protomech has an IS interface
      */
     public void setInterfaceCockpit(boolean interfaceCockpit) {
@@ -1331,7 +1335,7 @@ public class Protomech extends Entity {
         }
         return true;
     }
-    
+
     @Override
     public boolean isCrippled(boolean checkCrew) {
         return isCrippled();
@@ -1422,7 +1426,7 @@ public class Protomech extends Entity {
     public long getEntityType() {
         return Entity.ETYPE_PROTOMECH;
     }
-    
+
     @Override
     public PilotingRollData checkLandingInHeavyWoods(EntityMovementType overallMoveType,
                                                      Hex curHex) {
@@ -1430,21 +1434,21 @@ public class Protomech extends Entity {
         roll.addModifier(TargetRoll.CHECK_FALSE, "ProtoMeks cannot fall");
         return roll;
     }
-    
+
     /**
      * Based on the ProtoMek's current damage status, return valid brace locations.
      */
     @Override
     public List<Integer> getValidBraceLocations() {
         List<Integer> validLocations = new ArrayList<>();
-        
+
         if (!isLocationBad(Protomech.LOC_MAINGUN)) {
             validLocations.add(Protomech.LOC_MAINGUN);
         }
-        
+
         return validLocations;
     }
-    
+
     /**
      * Protomechs can brace if not prone, crew conscious and have a main gun
      */
@@ -1454,7 +1458,7 @@ public class Protomech extends Entity {
                 getCrew().isActive() &&
                 !isLocationBad(Protomech.LOC_MAINGUN);
     }
-    
+
     @Override
     public int getBraceMPCost() {
         return 0;
@@ -1465,7 +1469,7 @@ public class Protomech extends Entity {
         return true;
     }
 
-    
+
     /**
      * Returns the type of jump jet system the Protomech has.
      */
@@ -1483,6 +1487,45 @@ public class Protomech extends Entity {
 
         }
         return jumpType;
-    }    
-  
+    }
+
+    @Override
+    public int getGenericBattleValue() {
+        return (int) Math.round(Math.exp(3.385 + 1.093*Math.log(getWeight())));
+    }
+
+    @Override
+    public int slotNumber(Mounted<?> mounted) {
+        int location = mounted.getLocation();
+        if (location != Entity.LOC_NONE) {
+            int slot = 0;
+            for (Mounted<?> equipment : getEquipment()) {
+                if (equipment.getLocation() == location) {
+                    if (equipment == mounted) {
+                        return slot;
+                    } else {
+                        slot++;
+                    }
+                }
+            }
+        }
+        return -1;
+    }
+
+    @Override
+    protected Mounted<?> getEquipmentForWeaponQuirk(QuirkEntry quirkEntry) {
+        int location = getLocationFromAbbr(quirkEntry.getLocation());
+        int slot = quirkEntry.getSlot();
+        for (Mounted<?> equipment : getEquipment()) {
+            if (equipment.getLocation() == location) {
+                if (slot == 0) {
+                    return equipment;
+                } else {
+                    slot--;
+                }
+            }
+        }
+        return null;
+
+    }
 }

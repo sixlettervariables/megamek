@@ -20,7 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import megamek.common.enums.AimingMode;
+import megamek.common.equipment.MiscMounted;
 import megamek.common.options.OptionsConstants;
+import megamek.common.planetaryconditions.PlanetaryConditions;
 import megamek.common.preference.PreferenceManager;
 import org.apache.logging.log4j.LogManager;
 
@@ -100,6 +102,11 @@ public class TripodMech extends Mech {
         return true;
     }
 
+    @Override
+    public CrewType defaultCrewType() {
+        return isSuperHeavy() ? CrewType.SUPERHEAVY_TRIPOD : CrewType.TRIPOD;
+    }
+
     /**
      * Returns true if the entity can flip its arms
      */
@@ -137,7 +144,7 @@ public class TripodMech extends Mech {
 
         //A Mech using tracks has its movement reduced by 1/3 per leg or track destroyed, based
         //on analogy with biped and quad mechs.
-        if (getMovementMode() == EntityMovementMode.TRACKED) {
+        if (getMovementMode().isTracked()) {
             for (Mounted m : getMisc()) {
                 if (m.getType().hasFlag(MiscType.F_TRACKS)) {
                     if (m.isHit() || isLocationBad(m.getLocation())) {
@@ -221,11 +228,12 @@ public class TripodMech extends Mech {
         }
 
         if (!mpCalculationSetting.ignoreWeather && (null != game)) {
-            int weatherMod = game.getPlanetaryConditions().getMovementMods(this);
+            PlanetaryConditions conditions = game.getPlanetaryConditions();
+            int weatherMod = conditions.getMovementMods(this);
             mp = Math.max(mp + weatherMod, 0);
             if (getCrew().getOptions().stringOption(OptionsConstants.MISC_ENV_SPECIALIST).equals(Crew.ENVSPC_WIND)
-                    && (game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_NONE)
-                    && (game.getPlanetaryConditions().getWindStrength() == PlanetaryConditions.WI_TORNADO_F13)) {
+                    && conditions.getWeather().isClear()
+                    && conditions.getWind().isTornadoF1ToF3()) {
                 mp += 1;
             }
         }
@@ -676,11 +684,10 @@ public class TripodMech extends Mech {
                 continue;
             }
 
-            Mounted m = cs.getMount();
-            EquipmentType type = m.getType();
-            if ((type instanceof MiscType) && ((MiscType) type).isShield()
+            Mounted<?> m = cs.getMount();
+            if ((m instanceof MiscMounted) && ((MiscMounted) m).getType().isShield()
                 && m.curMode().equals(MiscType.S_ACTIVE_SHIELD)) {
-                return m.getCurrentDamageCapacity(this, m.getLocation()) > 0;
+                return ((MiscMounted) m).getCurrentDamageCapacity(this, m.getLocation()) > 0;
             }
         }
         return false;
@@ -748,11 +755,10 @@ public class TripodMech extends Mech {
                 continue;
             }
 
-            Mounted m = cs.getMount();
-            EquipmentType type = m.getType();
-            if ((type instanceof MiscType) && ((MiscType) type).isShield()
+            Mounted<?> m = cs.getMount();
+            if ((m instanceof MiscMounted) && ((MiscMounted) m).getType().isShield()
                 && m.curMode().equals(MiscType.S_PASSIVE_SHIELD)) {
-                return m.getCurrentDamageCapacity(this, m.getLocation()) > 0;
+                return ((MiscMounted) m).getCurrentDamageCapacity(this, m.getLocation()) > 0;
             }
         }
         return false;
@@ -783,10 +789,9 @@ public class TripodMech extends Mech {
                 continue;
             }
 
-            Mounted m = cs.getMount();
-            EquipmentType type = m.getType();
-            if ((type instanceof MiscType)
-                && ((MiscType) type).isShield()
+            Mounted<?> m = cs.getMount();
+            if ((m instanceof MiscMounted)
+                && ((MiscMounted) m).getType().isShield()
                 && (m.curMode().equals(MiscType.S_NO_SHIELD)
                     || isShutDown() || // if
                     // he
@@ -799,7 +804,7 @@ public class TripodMech extends Mech {
                     // defense mode
                     getCrew().isKoThisRound() || getCrew()
                     .isUnconscious())) {
-                return m.getCurrentDamageCapacity(this, m.getLocation()) > 0;
+                return ((MiscMounted) m).getCurrentDamageCapacity(this, m.getLocation()) > 0;
             }
         }
         return false;

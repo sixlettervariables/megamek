@@ -29,24 +29,31 @@ import megamek.common.alphaStrike.AlphaStrikeElement;
 import megamek.common.alphaStrike.AlphaStrikeHelper;
 import megamek.common.alphaStrike.cardDrawer.ASCardPrinter;
 import megamek.common.alphaStrike.conversion.ASConverter;
+import megamek.common.jacksonadapters.MMUWriter;
 
+import java.util.List;
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 /**
  * This non-modal dialog shows stats of one or more AlphaStrike elements in the form of a table.
  * It also allows export of the table data (optimized for import into Excel).
  */
 public class ASStatsDialog extends AbstractDialog {
-    
+
     private final Collection<Entity> entities;
     private final JButton clipBoardButton = new JButton(Messages.getString("CASCardPanel.copyCard"));
     private final JButton copyStatsButton = new JButton(Messages.getString("CASCardPanel.copyStats"));
     private final JButton printButton = new JButton(Messages.getString("CASCardPanel.printCard"));
+    private final JButton saveButton = new JButton(Messages.getString("Save.text"));
     private final JScrollPane scrollPane = new JScrollPane();
     private final JPanel centerPanel = new JPanel();
     private ASStatsTablePanel tablePanel;
@@ -71,16 +78,19 @@ public class ASStatsDialog extends AbstractDialog {
     @Override
     protected Container createCenterPane() {
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.PAGE_AXIS));
-        
+
         var optionsPanel = new UIUtil.FixedYPanel(new FlowLayout(FlowLayout.LEFT));
         optionsPanel.add(Box.createVerticalStrut(25));
         optionsPanel.add(clipBoardButton);
         optionsPanel.add(copyStatsButton);
         optionsPanel.add(printButton);
+        optionsPanel.add(saveButton);
+        saveButton.addActionListener(e -> save());
+        saveButton.setFont(UIUtil.getScaledFont());
         clipBoardButton.addActionListener(e -> copyToClipboard());
         copyStatsButton.addActionListener(e -> copyStats());
         printButton.addActionListener(ev -> printCards());
-        
+
         scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
         centerPanel.add(Box.createVerticalStrut(15));
@@ -89,7 +99,7 @@ public class ASStatsDialog extends AbstractDialog {
         setupTable();
         return centerPanel;
     }
-    
+
     private void setupTable() {
         centerPanel.remove(scrollPane);
         tablePanel = new ASStatsTablePanel(getFrame()).add(entities, "Selected Units");
@@ -97,7 +107,7 @@ public class ASStatsDialog extends AbstractDialog {
         centerPanel.add(scrollPane);
         adaptToGUIScale();
     }
-    
+
     private void copyToClipboard() {
         StringSelection stringSelection = new StringSelection(clipboardString(entities));
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -106,7 +116,7 @@ public class ASStatsDialog extends AbstractDialog {
 
     private void copyStats() {
         StringBuilder allStats = new StringBuilder();
-        for (ASCardDisplayable element : tablePanel.getElements()) {
+        for (ASCardDisplayable element : tablePanel.getSortedElements()) {
             var statsExporter = new ASStatsExporter(element);
             allStats.append(statsExporter.getStats()).append("\n");
         }
@@ -161,11 +171,37 @@ public class ASStatsDialog extends AbstractDialog {
         return dataLine;
     }
 
+    private void save() {
+        List<AlphaStrikeElement> elements = entities.stream().filter(ASConverter::canConvert)
+                .map(e -> ASConverter.convert(e, true))
+                .collect(Collectors.toList());
+        if (elements.isEmpty()) {
+            return;
+        }
+        var fileChooser = new JFileChooser(".");
+        fileChooser.setDialogTitle(Messages.getString("Save.text"));
+        fileChooser.setFileFilter(new FileNameExtensionFilter("MUL files", "mmu"));
+        fileChooser.setSelectedFile(new File(elements.get(0).generalName() + ".mmu"));
+        int returnVal = fileChooser.showSaveDialog(getParent());
+        if ((returnVal != JFileChooser.APPROVE_OPTION) || (fileChooser.getSelectedFile() == null)) {
+            return;
+        }
+
+        File unitFile = fileChooser.getSelectedFile();
+
+        try {
+            new MMUWriter().writeMMUFileFullStats(unitFile, elements);
+        } catch (IOException | IllegalArgumentException e) {
+            JOptionPane.showMessageDialog(getParent(), "The MMU file could not be written. "
+                    + e.getMessage());
+        }
+    }
+
     private void adaptToGUIScale() {
         UIUtil.adjustDialog(this,  UIUtil.FONT_SCALE1);
     }
 
     private void printCards() {
-        new ASCardPrinter(tablePanel.getElements(), getFrame()).printCards();
+        new ASCardPrinter(tablePanel.getSortedElements(), getFrame()).printCards();
     }
 }

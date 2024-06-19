@@ -584,7 +584,7 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
         if ((null != client) && (null != game) && game.getPhase().isDeployment() && (dialog != null)
                 && (bv.getDeployingEntity() != null)) {
             GameTurn turn = game.getTurn();
-            if ((turn != null) && (turn.getPlayerNum() == client.getLocalPlayer().getId())) {
+            if ((turn != null) && (turn.playerId() == client.getLocalPlayer().getId())) {
                 Entity deployingUnit = bv.getDeployingEntity();
                 
                 for (int j = 0; j < board.getWidth(); j++) {
@@ -830,18 +830,20 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
         int[] xPoints = xPoints(x);
         int[] yPoints = yPoints(x, y);
         g.fillPolygon(xPoints, yPoints, 6);
-        g.setColor(new Color(20, 20, 60));
+        // alpha to tone down borders and stars at low zoom so they don't overwhelm the image
+        int alpha = Math.min(250, 20 * HEX_SIDE[zoom]);
+        g.setColor(new Color(20, 20, 60, alpha));
         g.drawPolygon(xPoints, yPoints, 6);
         // Drop in a star
         int dx = (int) (Math.random() * HEX_SIDE[zoom]);
         int dy = (int) ((Math.random() - 0.5) * HEX_SIDE_BY_COS30[zoom]);
         int c = (int) (Math.random() * 180);
-        g.setColor(new Color(c, c, c));
+        g.setColor(new Color(c, c, c, alpha));
         if (Math.random() < 0.1) {
-            g.setColor(new Color(c, c / 10, c / 10)); // red star
+            g.setColor(new Color(c, c / 10, c / 10, alpha)); // red star
         } else if (Math.random() < 0.1) {
-            int factor = (int) (Math.random()*10) + 1;
-            g.setColor(new Color(c / factor, c / factor, c)); // blue star
+            int factor = (int) (Math.random() * 10) + 1;
+            g.setColor(new Color(c / factor, c / factor, c, alpha)); // blue star
         }
         g.fillRect(baseX + dx, baseY + dy, 1, 1);
     }
@@ -1068,7 +1070,7 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
         g2.setTransform(saveTransform);
         
         // Create a colored circle if this is the selected unit
-        Entity se = (clientGui == null) ? null : game.getEntity(clientGui.getSelectedEntityNum());
+        Entity se = (clientGui == null) ? null : clientGui.getDisplayedUnit();
         
         if (entity == se) {
             int rad = stratOpsSymbols ? 2 * unitSize - 1 : unitSize + unitSize / 2;
@@ -1489,8 +1491,7 @@ public final class Minimap extends JPanel implements IPreferenceChangeListener {
         }
 
         @Override
-        public void secondLOSHex(BoardViewEvent b, Coords c) {
-            firstLOS = c;
+        public void secondLOSHex(BoardViewEvent b) {
             secondLOS = b.getCoords();
             refreshMap();
         }

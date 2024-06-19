@@ -13,7 +13,11 @@ package megamek.common;
 
 import megamek.client.ui.swing.calculationReport.CalculationReport;
 import megamek.common.cost.DropShipCostCalculator;
+import megamek.common.equipment.AmmoMounted;
+import megamek.common.equipment.WeaponMounted;
 import megamek.common.options.OptionsConstants;
+import megamek.common.planetaryconditions.Atmosphere;
+import megamek.common.planetaryconditions.PlanetaryConditions;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,11 +29,11 @@ import java.util.Vector;
  */
 public class Dropship extends SmallCraft {
     private static final long serialVersionUID = 1528728632696989565L;
-    
+
     // ASEW Missile Effects, per location
     // Values correspond to Locations: NOS, Left, Right, AFT
     private int[] asewAffectedTurns = { 0, 0, 0, 0 };
-    
+
     /**
      * Sets the number of rounds a specified firing arc is affected by an ASEW missile
      * @param arc - integer representing the desired firing arc
@@ -41,14 +45,14 @@ public class Dropship extends SmallCraft {
             asewAffectedTurns[arc] = turns;
         }
     }
-    
+
     /**
      * Returns the number of rounds a specified firing arc is affected by an ASEW missile
      * @param arc - integer representing the desired firing arc
      */
     public int getASEWAffected(int arc) {
         if (arc < asewAffectedTurns.length) {
-            return asewAffectedTurns[arc];            
+            return asewAffectedTurns[arc];
         }
         return 0;
     }
@@ -59,15 +63,15 @@ public class Dropship extends SmallCraft {
     public static final int COLLAR_STANDARD  = 0;
     public static final int COLLAR_PROTOTYPE = 1;
     public static final int COLLAR_NO_BOOM   = 2;
-    
+
     private static final String[] COLLAR_NAMES = {
             "KF-Boom", "Prototype KF-Boom", "No Boom"
     };
-    
+
     // Likewise, you can have a prototype or standard K-F Boom
     public static final int BOOM_STANDARD  = 0;
     public static final int BOOM_PROTOTYPE = 1;
-    
+
     // what needs to go here?
     // loading and unloading of units?
     private boolean dockCollarDamaged = false;
@@ -106,39 +110,39 @@ public class Dropship extends SmallCraft {
     public boolean isDockCollarDamaged() {
         return dockCollarDamaged;
     }
-    
+
     public int getCollarType() {
         return collarType;
     }
-    
+
     public void setCollarType(int collarType) {
         this.collarType = collarType;
     }
-    
+
     public String getCollarName() {
         return COLLAR_NAMES[collarType];
     }
-    
+
     public static String getCollarName(int type) {
         return COLLAR_NAMES[type];
     }
-    
+
     public static TechAdvancement getCollarTA() {
         return new TechAdvancement(TECH_BASE_ALL).setAdvancement(2458, 2470, 2500)
                 .setPrototypeFactions(F_TH).setProductionFactions(F_TH).setTechRating(RATING_C)
                 .setAvailability(RATING_C, RATING_C, RATING_C, RATING_C)
                 .setStaticTechLevel(SimpleTechLevel.STANDARD);
     }
-    
+
     //KF Boom Stuff
     public boolean isKFBoomDamaged() {
         return kfBoomDamaged;
     }
-    
+
     public int getBoomType() {
         return boomType;
     }
-    
+
     public void setBoomType(int boomType) {
         this.boomType = boomType;
     }
@@ -257,26 +261,26 @@ public class Dropship extends SmallCraft {
 
         return isProhibited;
     }
-    
+
     /**
      * Worker function that checks if a given hex contains terrain onto which a grounded dropship
-     * cannot deploy. 
+     * cannot deploy.
      */
     private boolean hexContainsProhibitedTerrain(Hex hex) {
         return hex.containsTerrain(Terrains.WOODS) || hex.containsTerrain(Terrains.ROUGH)
                 || ((hex.terrainLevel(Terrains.WATER) > 0) && !hex.containsTerrain(Terrains.ICE))
                 || hex.containsTerrain(Terrains.RUBBLE) || hex.containsTerrain(Terrains.MAGMA)
                 || hex.containsTerrain(Terrains.JUNGLE) || (hex.terrainLevel(Terrains.SNOW) > 1)
-                || (hex.terrainLevel(Terrains.GEYSER) == 2) 
-                || hex.containsTerrain(Terrains.BUILDING) || hex.containsTerrain(Terrains.IMPASSABLE) 
+                || (hex.terrainLevel(Terrains.GEYSER) == 2)
+                || hex.containsTerrain(Terrains.BUILDING) || hex.containsTerrain(Terrains.IMPASSABLE)
                 || hex.containsTerrain(Terrains.BRIDGE);
-                
+
     }
 
     public void setDamageDockCollar(boolean b) {
         dockCollarDamaged = b;
     }
-    
+
     public void setDamageKFBoom(boolean b) {
         kfBoomDamaged = b;
     }
@@ -332,7 +336,7 @@ public class Dropship extends SmallCraft {
         }
         return fuelUse;
     }
-    
+
     @Override
     public double primitiveFuelFactor() {
         int year = getOriginalBuildYear();
@@ -364,12 +368,12 @@ public class Dropship extends SmallCraft {
             .setProductionFactions(F_TA).setTechRating(RATING_D)
             .setAvailability(RATING_D, RATING_X, RATING_X, RATING_X)
             .setStaticTechLevel(SimpleTechLevel.STANDARD);
-    
+
     @Override
     public TechAdvancement getConstructionTechAdvancement() {
         return isPrimitive() ? TA_DROPSHIP_PRIMITIVE : TA_DROPSHIP;
     }
-    
+
     @Override
     protected void addSystemTechAdvancement(CompositeTechLevel ctl) {
         super.addSystemTechAdvancement(ctl);
@@ -377,7 +381,7 @@ public class Dropship extends SmallCraft {
             ctl.addComponent(getCollarTA());
         }
     }
-    
+
     @Override
     public double getCost(CalculationReport calcReport, boolean ignoreAmmo) {
         return DropShipCostCalculator.calculateCost(this, calcReport, ignoreAmmo);
@@ -392,17 +396,17 @@ public class Dropship extends SmallCraft {
      * need to check bay location before loading ammo
      */
     @Override
-    public boolean loadWeapon(Mounted mounted, Mounted mountedAmmo) {
+    public boolean loadWeapon(WeaponMounted mounted, AmmoMounted mountedAmmo) {
         boolean success = false;
-        WeaponType wtype = (WeaponType) mounted.getType();
-        AmmoType atype = (AmmoType) mountedAmmo.getType();
+        WeaponType wtype = mounted.getType();
+        AmmoType atype = mountedAmmo.getType();
 
         if (mounted.getLocation() != mountedAmmo.getLocation()) {
             return success;
         }
 
         // for large craft, ammo must be in the same bay
-        Mounted bay = whichBay(getEquipmentNum(mounted));
+        WeaponMounted bay = whichBay(getEquipmentNum(mounted));
         if ((bay != null) && !bay.ammoInBay(getEquipmentNum(mountedAmmo))) {
             return success;
         }
@@ -472,6 +476,18 @@ public class Dropship extends SmallCraft {
             return 9;
         }
         return 4;
+    }
+
+    @Override
+    public int getWalkMP(MPCalculationSetting mpCalculationSetting) {
+        // A grounded dropship with the center hex in level 1 water is immobile.
+        if ((game != null) && !game.getBoard().inSpace() && !isAirborne()) {
+            Hex hex = game.getBoard().getHex(getPosition());
+            if ((hex != null) && (hex.containsTerrain(Terrains.WATER, 1) && !hex.containsTerrain(Terrains.ICE))) {
+                return 0;
+            }
+        }
+        return super.getWalkMP(mpCalculationSetting);
     }
 
     /*
@@ -665,11 +681,11 @@ public class Dropship extends SmallCraft {
 
     @Override
     public boolean canChangeSecondaryFacing() {
-        // flying dropships can execute the "ECHO" maneuver (stratops 113), aka a torso twist, 
+        // flying dropships can execute the "ECHO" maneuver (stratops 113), aka a torso twist,
         // if they have the MP for it
         return isAirborne() && !isEvading() && (mpUsed <= getRunMP() - 2);
     }
-    
+
     /**
      * Can this dropship "torso twist" in the given direction?
      */
@@ -682,7 +698,7 @@ public class Dropship extends SmallCraft {
         }
         return rotate == 0;
     }
-    
+
     /**
      * Return the nearest valid direction to "torso twist" in
      */
@@ -691,29 +707,29 @@ public class Dropship extends SmallCraft {
         if (isValidSecondaryFacing(dir)) {
             return dir;
         }
-        
+
         // can't twist without enough MP
         if (!canChangeSecondaryFacing()) {
             return getFacing();
         }
-        
+
         // otherwise, twist once in the appropriate direction
         final int rotate = (dir + (6 - getFacing())) % 6;
-        
+
         return rotate >= 3 ? (getFacing() + 5) % 6 : (getFacing() + 1) % 6;
     }
-    
+
     @Override
     public void newRound(int roundNumber) {
         super.newRound(roundNumber);
-        
+
         if (getGame().useVectorMove()) {
             setFacing(getSecondaryFacing());
         }
-        
+
         setSecondaryFacing(getFacing());
     }
-    
+
     /**
      * Utility function that handles situations where a facing change
      * has some kind of permanent effect on the entity.
@@ -729,7 +745,9 @@ public class Dropship extends SmallCraft {
      */
     @Override
     public boolean canLandVertically() {
-        return isSpheroid() || game.getPlanetaryConditions().isVacuum();
+        PlanetaryConditions conditions = game.getPlanetaryConditions();
+        return isSpheroid()
+                || conditions.getAtmosphere().isLighterThan(Atmosphere.THIN);
     }
 
     /**
@@ -738,6 +756,14 @@ public class Dropship extends SmallCraft {
      */
     @Override
     public boolean canTakeOffVertically() {
-        return (isSpheroid() || game.getPlanetaryConditions().isVacuum()) && (getCurrentThrust() > 2);
+        PlanetaryConditions conditions = game.getPlanetaryConditions();
+        boolean spheroidOrLessThanThin = isSpheroid()
+                || conditions.getAtmosphere().isLighterThan(Atmosphere.THIN);
+        return spheroidOrLessThanThin && (getCurrentThrust() > 2);
+    }
+
+    @Override
+    public int getGenericBattleValue() {
+        return (int) Math.round(Math.exp(6.5266 + 0.2497*Math.log(getWeight())));
     }
 }

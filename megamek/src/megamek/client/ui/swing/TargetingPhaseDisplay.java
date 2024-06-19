@@ -17,8 +17,6 @@ import megamek.client.Client;
 import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.Messages;
 import megamek.client.ui.swing.FiringDisplay.FiringCommand;
-import megamek.client.ui.swing.unitDisplay.WeaponPanel;
-import megamek.client.ui.swing.util.CommandAction;
 import megamek.client.ui.swing.util.KeyCommandBind;
 import megamek.client.ui.swing.util.MegaMekController;
 import megamek.client.ui.swing.widget.MegamekButton;
@@ -29,7 +27,6 @@ import megamek.common.enums.GamePhase;
 import megamek.common.event.GamePhaseChangeEvent;
 import megamek.common.event.GameTurnChangeEvent;
 import megamek.common.options.OptionsConstants;
-import megamek.common.util.FiringSolution;
 import megamek.common.weapons.Weapon;
 import megamek.common.weapons.artillery.ArtilleryWeapon;
 import megamek.common.weapons.bayweapons.TeleOperatedMissileBayWeapon;
@@ -41,15 +38,11 @@ import javax.swing.event.ListSelectionListener;
 import java.awt.event.*;
 import java.util.*;
 
-import static megamek.client.ui.swing.util.UIUtil.guiScaledFontHTML;
-import static megamek.client.ui.swing.util.UIUtil.uiLightViolet;
-
 /**
  * Targeting Phase Display. Breaks naming convention because TargetingDisplay is too easy to confuse
  * with something else
  */
-public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
-        KeyListener, ItemListener, ListSelectionListener {
+public class TargetingPhaseDisplay extends AttackPhaseDisplay implements ListSelectionListener {
     private static final long serialVersionUID = 3441669419807288865L;
 
     /**
@@ -62,6 +55,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
      */
     public enum TargetingCommand implements PhaseCommand {
         FIRE_NEXT("fireNext"),
+        FIRE_TWIST("fireTwist"),
         FIRE_FIRE("fireFire"),
         FIRE_SKIP("fireSkip"),
         FIRE_NEXT_TARG("fireNextTarg"),
@@ -105,6 +99,8 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
         public String getHotKeyDesc() {
             String result = "";
 
+            String msg_left = Messages.getString("Left");
+            String msg_right = Messages.getString("Right");
             String msg_next= Messages.getString("Next");
             String msg_previous = Messages.getString("Previous");
             String msg_valid = Messages.getString("TargetingPhaseDisplay.FireNextTarget.tooltip.Valid");
@@ -115,6 +111,11 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
                     result = "<BR>";
                     result += "&nbsp;&nbsp;" + msg_next + ": " + KeyCommandBind.getDesc(KeyCommandBind.NEXT_UNIT);
                     result += "&nbsp;&nbsp;" + msg_previous + ": " + KeyCommandBind.getDesc(KeyCommandBind.PREV_UNIT);
+                    break;
+                case FIRE_TWIST:
+                    result = "<BR>";
+                    result += "&nbsp;&nbsp;" + msg_left + ": " + KeyCommandBind.getDesc(KeyCommandBind.TWIST_LEFT);
+                    result += "&nbsp;&nbsp;" + msg_right + ": " + KeyCommandBind.getDesc(KeyCommandBind.TWIST_RIGHT);
                     break;
                 case FIRE_FIRE:
                     result = "<BR>";
@@ -160,12 +161,11 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
     protected Map<TargetingCommand, MegamekButton> buttons;
 
     // let's keep track of what we're shooting and at what, too
-    private int cen = Entity.NONE; // current entity number
-
     private Targetable target; // target
 
     // is the shift key held?
     private boolean shiftheld;
+    protected boolean twisting;
 
     private final GamePhase phase;
 
@@ -220,254 +220,49 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
         }
     }
 
+    protected void twistLeft() {
+        updateFlipArms(false);
+        torsoTwist(0);
+    }
+
+    protected void twistRight() {
+        updateFlipArms(false);
+        torsoTwist(1);
+    }
+
+    private boolean shouldPerformFireKeyCommand() {
+        return this.shouldReceiveKeyCommands() && buttons.get(TargetingCommand.FIRE_FIRE).isEnabled();
+    }
+
+    protected boolean shouldPerformClearKeyCommand() {
+        return !clientgui.getBoardView().getChatterBoxActive()
+                && !isIgnoringEvents()
+                && isVisible();
+    }
+
     /**
      * Register all of the <code>CommandAction</code>s for this panel display.
      */
     protected void registerKeyCommands() {
         MegaMekController controller = clientgui.controller;
-        final StatusBarPhaseDisplay display = this;
-        // Register the action for UNDO
-        controller.registerCommandAction(KeyCommandBind.UNDO_LAST_STEP.cmd,
-                new CommandAction() {
+        controller.registerCommandAction(KeyCommandBind.UNDO_LAST_STEP, this, this::removeLastFiring);
+        controller.registerCommandAction(KeyCommandBind.TWIST_LEFT, this, this::twistLeft);
+        controller.registerCommandAction(KeyCommandBind.TWIST_RIGHT, this, this::twistRight);
+        controller.registerCommandAction(KeyCommandBind.FIRE, this::shouldPerformFireKeyCommand, this::fire);
+        controller.registerCommandAction(KeyCommandBind.CANCEL, this::shouldPerformClearKeyCommand, this::clear);
+        controller.registerCommandAction(KeyCommandBind.NEXT_WEAPON, this, this::nextWeapon);
+        controller.registerCommandAction(KeyCommandBind.PREV_WEAPON, this, this::prevWeapon);
 
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || display.isIgnoringEvents()
-                                || !display.isVisible()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
+        controller.registerCommandAction(KeyCommandBind.NEXT_UNIT, this,
+                () -> selectEntity(clientgui.getClient().getNextEntityNum(currentEntity)));
+        controller.registerCommandAction(KeyCommandBind.PREV_UNIT, this,
+                () -> selectEntity(clientgui.getClient().getPrevEntityNum(currentEntity)));
 
-                    @Override
-                    public void performAction() {
-                        removeLastFiring();
-                    }
-                });
+        controller.registerCommandAction(KeyCommandBind.NEXT_TARGET, this, this::jumpToNextTarget);
+        controller.registerCommandAction(KeyCommandBind.PREV_TARGET, this, this::jumpToPrevTarget);
 
-        // Register the action for FIRE
-        controller.registerCommandAction(KeyCommandBind.FIRE.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || !display.isVisible()
-                                || display.isIgnoringEvents()
-                                || !buttons.get(TargetingCommand.FIRE_FIRE).isEnabled()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        fire();
-                    }
-                });
-
-        // Register the action for NEXT_WEAPON
-        controller.registerCommandAction(KeyCommandBind.NEXT_WEAPON.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || !display.isVisible()
-                                || display.isIgnoringEvents()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        nextWeapon();
-                    }
-                });
-
-        // Register the action for PREV_WEAPON
-        controller.registerCommandAction(KeyCommandBind.PREV_WEAPON.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || !display.isVisible()
-                                || display.isIgnoringEvents()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        prevWeapon();
-                    }
-                });
-
-        // Register the action for NEXT_UNIT
-        controller.registerCommandAction(KeyCommandBind.NEXT_UNIT.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || !display.isVisible()
-                                || display.isIgnoringEvents()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        selectEntity(clientgui.getClient()
-                                .getNextEntityNum(cen));
-                    }
-                });
-
-        // Register the action for PREV_UNIT
-        controller.registerCommandAction(KeyCommandBind.PREV_UNIT.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || !display.isVisible()
-                                || display.isIgnoringEvents()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        selectEntity(clientgui.getClient().getPrevEntityNum(cen));
-                    }
-                });
-
-        // Register the action for NEXT_TARGET
-        controller.registerCommandAction(KeyCommandBind.NEXT_TARGET.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || !display.isVisible()
-                                || display.isIgnoringEvents()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        jumpToNextTarget();
-                    }
-                });
-
-        // Register the action for PREV_TARGET
-        controller.registerCommandAction(KeyCommandBind.PREV_TARGET.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || !display.isVisible()
-                                || display.isIgnoringEvents()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        jumpToPrevTarget();
-                    }
-                });
-
-        // Register the action for NEXT_MODE
-        controller.registerCommandAction(KeyCommandBind.NEXT_MODE.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || display.isIgnoringEvents()
-                                || !display.isVisible()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        changeMode(true);
-                    }
-                });
-
-        // Register the action for PREV_MODE
-        controller.registerCommandAction(KeyCommandBind.PREV_MODE.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || display.isIgnoringEvents()
-                                || !display.isVisible()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        changeMode(false);
-                    }
-                });
-
-        // Register the action for CLEAR
-        controller.registerCommandAction(KeyCommandBind.CANCEL.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (clientgui.getBoardView().getChatterBoxActive()
-                                || !display.isVisible()
-                                || display.isIgnoringEvents()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        clear();
-                    }
-                });
+        controller.registerCommandAction(KeyCommandBind.NEXT_MODE, this, () -> changeMode(true));
+        controller.registerCommandAction(KeyCommandBind.PREV_MODE, this, () -> changeMode(false));
     }
 
     /**
@@ -484,11 +279,8 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
         clientgui.getClient().getGame().addGameListener(this);
         clientgui.getBoardView().addBoardViewListener(this);
 
-        clientgui.getBoardView().addKeyListener(this);
-
         // mech display.
         clientgui.getUnitDisplay().wPan.weaponList.addListSelectionListener(this);
-        clientgui.getUnitDisplay().wPan.weaponList.addKeyListener(this);
     }
 
     @Override
@@ -514,7 +306,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
      */
     private void selectEntity(int en) {
         // clear any previously considered attacks
-        if (en != cen) {
+        if (en != currentEntity) {
             clearAttacks();
             refreshAll();
         }
@@ -525,7 +317,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
 
         if (client.getGame().getEntity(en) != null) {
 
-            cen = en;
+            currentEntity = en;
             clientgui.setSelectedEntityNum(en);
 
             // If the selected entity is not on the board, use the next one.
@@ -534,11 +326,11 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
 
                 // Walk through the list of entities for this player.
                 for (int nextId = client.getNextEntityNum(en); nextId != en;
-                        nextId = client.getNextEntityNum(nextId)) {
+                     nextId = client.getNextEntityNum(nextId)) {
 
                     if (null != clientgui.getClient().getGame()
                             .getEntity(nextId).getPosition()) {
-                        cen = nextId;
+                        currentEntity = nextId;
                         break;
                     }
 
@@ -563,58 +355,18 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
                 clientgui.getBoardView().centerOnHex(ce().getPosition());
             }
 
+            setTwistEnabled(phase.isOffboard() && ce().canChangeSecondaryFacing() && ce().getCrew().isActive());
             setFlipArmsEnabled(ce().canFlipArms() && ce().getCrew().isActive());
             updateSearchlight();
 
             setFireModeEnabled(true);
 
-            if (GUIP.getFiringSolutions() && !ce().isOffBoard()) {
-                setFiringSolutions();
-            } else {
-                clientgui.getBoardView().clearFiringSolutionData();
+            if (!ce().isOffBoard()) {
+                clientgui.showFiringSolutions(ce());
             }
         } else {
             LogManager.getLogger().error("Tried to select non-existent entity: " + en);
         }
-    }
-
-    public void setFiringSolutions() {
-        // If no Entity is selected, exit
-        if (cen == Entity.NONE) {
-            return;
-        }
-
-        Game game = clientgui.getClient().getGame();
-        Player localPlayer = clientgui.getClient().getLocalPlayer();
-        if (!GUIP.getFiringSolutions()) {
-            return;
-        }
-
-        // Determine which entities are spotted
-        Set<Integer> spottedEntities = new HashSet<>();
-        for (Entity target : game.getEntitiesVector()) {
-            if (!target.isEnemyOf(ce()) && target.isSpotting()) {
-                spottedEntities.add(target.getSpotTargetId());
-            }
-        }
-
-        // Calculate firing solutions
-        Map<Integer, FiringSolution> fs = new HashMap<>();
-        for (Entity target : game.getEntitiesVector()) {
-            boolean friendlyFire = game.getOptions().booleanOption(OptionsConstants.BASE_FRIENDLY_FIRE);
-            boolean enemyTarget = target.getOwner().isEnemyOf(ce().getOwner());
-            if ((target.getId() != cen)
-                && (friendlyFire || enemyTarget)
-                && (!enemyTarget || target.hasSeenEntity(localPlayer)
-                    || target.hasDetectedEntity(localPlayer))
-                && target.isTargetable()) {
-                ToHitData thd = WeaponAttackAction.toHit(game, cen, target);
-                thd.setLocation(target.getPosition());
-                thd.setRange(ce().getPosition().distance(target.getPosition()));
-                fs.put(target.getId(), new FiringSolution(thd, spottedEntities.contains(target.getId())));
-            }
-        }
-        clientgui.getBoardView().setFiringSolutions(ce(), fs);
     }
 
     /**
@@ -626,30 +378,34 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
         if (!clientgui.getBoardView().isMovingUnits()) {
             clientgui.maybeShowUnitDisplay();
         }
-        clientgui.getBoardView().clearFieldOfFire();
-        clientgui.getBoardView().clearSensorsRanges();
+        clientgui.clearFieldOfFire();
+        clientgui.clearTemporarySprites();
 
-        selectEntity(clientgui.getClient().getFirstEntityNum());
+        if (GUIP.getAutoSelectNextUnit()) {
+            selectEntity(clientgui.getClient().getFirstEntityNum());
+        }
         setDisengageEnabled((ce() != null) && attacks.isEmpty() && ce().canFlee());
 
         GameTurn turn = clientgui.getClient().getMyTurn();
         // There's special processing for triggering AP Pods.
-        if ((turn instanceof GameTurn.TriggerAPPodTurn) && (null != ce())) {
+        if ((turn instanceof TriggerAPPodTurn) && (null != ce())) {
+            selectEntity(clientgui.getClient().getFirstEntityNum());
             disableButtons();
             TriggerAPPodDialog dialog = new TriggerAPPodDialog(clientgui.getFrame(), ce());
             dialog.setVisible(true);
-           removeAllAttacks();
+            removeAllAttacks();
             Enumeration<TriggerAPPodAction> actions = dialog.getActions();
             while (actions.hasMoreElements()) {
                 addAttack(actions.nextElement());
             }
             ready();
-        } else if ((turn instanceof GameTurn.TriggerBPodTurn) && (null != ce())) {
+        } else if ((turn instanceof TriggerBPodTurn) && (null != ce())) {
+            selectEntity(clientgui.getClient().getFirstEntityNum());
             disableButtons();
             TriggerBPodDialog dialog = new TriggerBPodDialog(clientgui, ce(),
-                    ((GameTurn.TriggerBPodTurn) turn).getAttackType());
+                    ((TriggerBPodTurn) turn).getAttackType());
             dialog.setVisible(true);
-           removeAllAttacks();
+            removeAllAttacks();
             Enumeration<TriggerBPodAction> actions = dialog.getActions();
             while (actions.hasMoreElements()) {
                 addAttack(actions.nextElement());
@@ -662,12 +418,16 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
             initDonePanelForNewTurn();
         }
         setupButtonPanel();
+
+        startTimer();
     }
 
     /**
      * Does end turn stuff.
      */
     private void endMyTurn() {
+        stopTimer();
+
         // end my turn, then.
         Entity next = clientgui.getClient().getGame()
                 .getNextEntity(clientgui.getClient().getGame().getTurnIndex());
@@ -676,15 +436,14 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
                 && (next.getOwnerId() != ce().getOwnerId())) {
             clientgui.maybeShowUnitDisplay();
         }
-        cen = Entity.NONE;
+        currentEntity = Entity.NONE;
         target(null);
         clientgui.getBoardView().select(null);
         clientgui.getBoardView().highlight(null);
         clientgui.getBoardView().cursor(null);
-        clientgui.getBoardView().clearFiringSolutionData();
         clientgui.getBoardView().clearMovementData();
-        clientgui.getBoardView().clearFieldOfFire();
-        clientgui.getBoardView().clearSensorsRanges();
+        clientgui.clearFieldOfFire();
+        clientgui.clearTemporarySprites();
         clientgui.setSelectedEntityNum(Entity.NONE);
         disableButtons();
     }
@@ -694,6 +453,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
      */
     private void disableButtons() {
         setFireEnabled(false);
+        setTwistEnabled(false);
         setSkipEnabled(false);
         setNextEnabled(false);
         butDone.setEnabled(false);
@@ -716,7 +476,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
 
         // If the weapon does not have modes, just exit.
         Mounted m = ce().getEquipment(wn);
-        if ((m == null) || !m.getType().hasModes()) {
+        if ((m == null) || !m.hasModes()) {
             return;
         }
 
@@ -728,7 +488,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
 
         // send change to the server
         int nMode = m.switchMode(forward);
-        clientgui.getClient().sendModeChange(cen, wn, nMode);
+        clientgui.getClient().sendModeChange(currentEntity, wn, nMode);
 
         // notify the player
         if (m.canInstantSwitch(nMode)) {
@@ -746,24 +506,29 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
         clientgui.getUnitDisplay().wPan.selectWeapon(wn);
     }
 
-    /**
-     * Called when the current entity is done firing. Send out our attack queue
-     * to the server.
-     */
+    private boolean checkNags() {
+        if (needNagForNoAction()) {
+            if (attacks.isEmpty()) {
+                // confirm this action
+                String title = Messages.getString("TargetingPhaseDisplay.DontFireDialog.title");
+                String body = Messages.getString("TargetingPhaseDisplay.DontFireDialog.message");
+                if (checkNagForNoAction(title, body)) {
+                    return true;
+                }
+            }
+        }
+
+        if (ce() == null) {
+            return true;
+        }
+
+        return false;
+    }
+
     @Override
     public void ready() {
-        if (attacks.isEmpty() && needNagForNoAction()) {
-            // confirm this action
-            String title = Messages.getString("TargetingPhaseDisplay.DontFireDialog.title");
-            String body = Messages.getString("TargetingPhaseDisplay.DontFireDialog.message");
-            ConfirmDialog response = clientgui.doYesNoBotherDialog(title, body);
-            if (!response.getShowAgain()) {
-                GUIP.setNagForNoAction(false);
-            }
-
-            if (!response.getAnswer()) {
-                return;
-            }
+        if (checkNags()) {
+            return;
         }
 
         // stop further input (hopefully)
@@ -773,10 +538,10 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
         removeTempAttacks();
 
         // send out attacks
-        clientgui.getClient().sendAttackData(cen, attacks.toVector());
+        clientgui.getClient().sendAttackData(currentEntity, attacks.toVector());
 
         // clear queue
-       removeAllAttacks();
+        removeAllAttacks();
 
         if ((ce() != null) && ce().isWeapOrderChanged()) {
             clientgui.getClient().sendEntityWeaponOrderUpdate(ce());
@@ -790,12 +555,12 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
             throw new IllegalArgumentException("current searchlight parameters are invalid");
         }
 
-        if (!SearchlightAttackAction.isPossible(clientgui.getClient().getGame(), cen, target, null)) {
+        if (!SearchlightAttackAction.isPossible(clientgui.getClient().getGame(), currentEntity, target, null)) {
             return;
         }
 
         // create and queue a searchlight action
-        SearchlightAttackAction saa = new SearchlightAttackAction(cen, target.getTargetType(), target.getId());
+        SearchlightAttackAction saa = new SearchlightAttackAction(currentEntity, target.getTargetType(), target.getId());
         addAttack(saa);
 
         // and add it into the game, temporarily
@@ -826,16 +591,16 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
             doSearchlight();
         }
 
-        WeaponAttackAction waa = new WeaponAttackAction(cen, target.getTargetType(),
+        WeaponAttackAction waa = new WeaponAttackAction(currentEntity, target.getTargetType(),
                 target.getId(), weaponNum);
         Game game = clientgui.getClient().getGame();
         int distance = Compute.effectiveDistance(game, waa.getEntity(game), waa.getTarget(game));
         if ((mounted.getType().hasFlag(WeaponType.F_ARTILLERY))
                 || (mounted.isInBearingsOnlyMode()
-                        && distance >= RangeType.RANGE_BEARINGS_ONLY_MINIMUM)
+                && distance >= RangeType.RANGE_BEARINGS_ONLY_MINIMUM)
                 || (mounted.getType() instanceof CapitalMissileWeapon
-                        && Compute.isGroundToGround(ce(), target))) {
-            waa = new ArtilleryAttackAction(cen, target.getTargetType(),
+                && Compute.isGroundToGround(ce(), target))) {
+            waa = new ArtilleryAttackAction(currentEntity, target.getTargetType(),
                     target.getId(), weaponNum, clientgui.getClient().getGame());
             // Get the launch velocity for bearings-only telemissiles
             if (mounted.getType() instanceof TeleOperatedMissileBayWeapon) {
@@ -859,10 +624,10 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
                 && (((WeaponType) mounted.getType()).getAmmoType() != AmmoType.T_NA)) {
             Mounted ammoMount = mounted.getLinked();
             waa.setAmmoId(ammoMount.getEntity().getEquipmentNum(ammoMount));
-            long ammoMunitionType = ((AmmoType) ammoMount.getType()).getMunitionType();
+            EnumSet<AmmoType.Munitions> ammoMunitionType = ((AmmoType) ammoMount.getType()).getMunitionType();
             waa.setAmmoMunitionType(ammoMunitionType);
             waa.setAmmoCarrier(ammoMount.getEntity().getId());
-            if (ammoMunitionType == AmmoType.M_VIBRABOMB_IV) {
+            if (ammoMunitionType.contains(AmmoType.Munitions.M_VIBRABOMB_IV)) {
                 VibrabombSettingDialog vsd = new VibrabombSettingDialog(clientgui.frame);
                 vsd.setVisible(true);
                 waa.setOtherAttackInfo(vsd.getSetting());
@@ -952,7 +717,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
                 ce().getEquipment(waa.getWeaponId()).setUsedThisRound(false);
             }
         }
-       removeAllAttacks();
+        removeAllAttacks();
 
         // remove temporary attacks from game & board
         removeTempAttacks();
@@ -968,7 +733,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
      */
     private void removeTempAttacks() {
         // remove temporary attacks from game & board
-        clientgui.getClient().getGame().removeActionsFor(cen);
+        clientgui.getClient().getGame().removeActionsFor(currentEntity);
         clientgui.getBoardView().removeAttacksFor(ce());
     }
 
@@ -977,7 +742,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
      */
     private void removeLastFiring() {
         if (!attacks.isEmpty()) {
-            Object o = attacks.lastElement();
+            EntityAction o = attacks.lastElement();
             if (o instanceof WeaponAttackAction) {
                 WeaponAttackAction waa = (WeaponAttackAction) o;
                 ce().getEquipment(waa.getWeaponId()).setUsedThisRound(false);
@@ -1002,6 +767,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
         clientgui.getUnitDisplay().showPanel("weapons");
         clientgui.getUnitDisplay().wPan.selectFirstWeapon();
         updateTarget();
+        clientgui.updateFiringArc(ce());
     }
 
     /**
@@ -1020,7 +786,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
 
         // update target panel
         final int weaponId = clientgui.getUnitDisplay().wPan.getSelectedWeaponNum();
-        if ( (cen != Entity.NONE) && ce().equals(clientgui.getUnitDisplay().getCurrentEntity())
+        if ( (currentEntity != Entity.NONE) && ce().equals(clientgui.getUnitDisplay().getCurrentEntity())
                 && (target != null) && (weaponId != -1)) {
             ToHitData toHit;
             Mounted m = ce().getEquipment(weaponId);
@@ -1031,7 +797,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
                     || target.getTargetType() == Targetable.TYPE_HEX_ARTILLERY;
 
             toHit = WeaponAttackAction.toHit(clientgui.getClient().getGame(),
-                    cen, target, weaponId, Entity.LOC_NONE, AimingMode.NONE, false);
+                    currentEntity, target, weaponId, Entity.LOC_NONE, AimingMode.NONE, false);
 
             String flightTimeText = "";
             if (isArtilleryAttack) {
@@ -1183,10 +949,45 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
     }
 
     /**
-     * Returns the current entity.
+     * Torso twist in the proper direction.
      */
-    Entity ce() {
-        return clientgui.getClient().getGame().getEntity(cen);
+    void torsoTwist(Coords twistTarget) {
+        int direction = ce().getFacing();
+
+        if (twistTarget != null) {
+            direction = ce().clipSecondaryFacing(ce().getPosition().direction(twistTarget));
+        }
+
+        if (direction != ce().getSecondaryFacing()) {
+            clearAttacks();
+            addAttack(new TorsoTwistAction(currentEntity, direction));
+            ce().setSecondaryFacing(direction);
+            refreshAll();
+        }
+    }
+
+    /**
+     * Torso twist to the left or right
+     *
+     * @param twistDir An <code>int</code> specifying whether we're twisting left or
+     *                 right, 0 if we're twisting to the left, 1 if to the right.
+     */
+
+    void torsoTwist(int twistDir) {
+        int direction = ce().getSecondaryFacing();
+        if (twistDir == 0) {
+            clearAttacks();
+            direction = ce().clipSecondaryFacing((direction + 5) % 6);
+            addAttack(new TorsoTwistAction(currentEntity, direction));
+            ce().setSecondaryFacing(direction);
+            refreshAll();
+        } else if (twistDir == 1) {
+            clearAttacks();
+            direction = ce().clipSecondaryFacing((direction + 7) % 6);
+            addAttack(new TorsoTwistAction(currentEntity, direction));
+            ce().setSecondaryFacing(direction);
+            refreshAll();
+        }
     }
 
     //
@@ -1201,13 +1002,13 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
 
         // ignore buttons other than 1
         if (!clientgui.getClient().isMyTurn()
-            || ((b.getButton() != MouseEvent.BUTTON1))) {
+                || ((b.getButton() != MouseEvent.BUTTON1))) {
             return;
         }
         // control pressed means a line of sight check.
         // added ALT_MASK by kenn
         if (((b.getModifiers() & InputEvent.CTRL_DOWN_MASK) != 0)
-            || ((b.getModifiers() & InputEvent.ALT_DOWN_MASK) != 0)) {
+                || ((b.getModifiers() & InputEvent.ALT_DOWN_MASK) != 0)) {
             return;
         }
         // check for shifty goodness
@@ -1216,12 +1017,18 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
         }
 
         if (b.getType() == BoardViewEvent.BOARD_HEX_DRAGGED) {
-            if (shiftheld) {
-                updateFlipArms(false);
+            if (phase.isOffboard() && (shiftheld || twisting)) {
+                if (ce() != null) {
+                    updateFlipArms(false);
+                    torsoTwist(b.getCoords());
+                }
             }
             clientgui.getBoardView().cursor(b.getCoords());
         } else if (b.getType() == BoardViewEvent.BOARD_HEX_CLICKED) {
-            clientgui.getBoardView().select(b.getCoords());
+            twisting = false;
+            if (!shiftheld) {
+                clientgui.getBoardView().select(b.getCoords());
+            }
         }
     }
 
@@ -1236,8 +1043,9 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
 
         if (client.isMyTurn() && (b.getCoords() != null)
                 && (ce() != null) && !b.getCoords().equals(ce().getPosition())) {
-            if (shiftheld) {
+            if (shiftheld && phase.isOffboard()) {
                 updateFlipArms(false);
+                torsoTwist(b.getCoords());
             } else if (phase.isTargeting()) {
                 target(new HexTarget(b.getCoords(), Targetable.TYPE_HEX_ARTILLERY));
             } else {
@@ -1300,7 +1108,7 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
         } else if (targets.size() > 1) {;
             // If we have multiple choices, display a selection dialog.
             choice = TargetChoiceDialog.showSingleChoiceDialog(clientgui.getFrame(),
-                    Messages.getString("FiringDisplay.ChooseTargetDialog.title"),
+                    "FiringDisplay.ChooseTargetDialog.title",
                     Messages.getString("FiringDisplay.ChooseTargetDialog.message", new Object[] { pos.getBoardNum() }),
                     targets, clientgui, ce());
         }
@@ -1336,11 +1144,12 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
 
         if (clientgui.getClient().getGame().getPhase() == phase) {
             if (clientgui.getClient().isMyTurn()) {
-                if (cen == Entity.NONE) {
+                if (currentEntity == Entity.NONE) {
                     beginMyTurn();
                 }
-
-                setStatusBarText(Messages.getString("TargetingPhaseDisplay.its_your_turn") + s);
+                String t = (phase.isTargeting()) ? Messages.getString("TargetingPhaseDisplay.its_your_turn") :
+                        Messages.getString("TargetingPhaseDisplay.its_your_tag_turn");
+                setStatusBarText(t + s);
                 clientgui.bingOthersTurn();
             } else {
                 endMyTurn();
@@ -1386,10 +1195,12 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
 
         if (ev.getActionCommand().equals(TargetingCommand.FIRE_FIRE.getCmd())) {
             fire();
+        } else if (ev.getActionCommand().equals(FiringCommand.FIRE_TWIST.getCmd())) {
+            twisting = true;
         } else if (ev.getActionCommand().equals(TargetingCommand.FIRE_SKIP.getCmd())) {
             nextWeapon();
         } else if (ev.getActionCommand().equals(TargetingCommand.FIRE_NEXT.getCmd())) {
-            selectEntity(clientgui.getClient().getNextEntityNum(cen));
+            selectEntity(clientgui.getClient().getNextEntityNum(currentEntity));
         } else if (ev.getActionCommand().equals(TargetingCommand.FIRE_NEXT_TARG.getCmd())) {
             jumpToNextTarget();
         } else if (ev.getActionCommand().equals(TargetingCommand.FIRE_FLIP_ARMS.getCmd())) {
@@ -1402,9 +1213,9 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
             doSearchlight();
         } else if (ev.getActionCommand().equals(TargetingCommand.FIRE_DISENGAGE.getCmd())
                 && clientgui.doYesNoDialog(Messages.getString("MovementDisplay.EscapeDialog.title"),
-                        Messages.getString("MovementDisplay.EscapeDialog.message"))) {
+                Messages.getString("MovementDisplay.EscapeDialog.message"))) {
             clear();
-            addAttack(new DisengageAction(cen));
+            addAttack(new DisengageAction(currentEntity));
             ready();
         }
     }
@@ -1414,9 +1225,13 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
             return;
         }
 
+        twisting = false;
+
+        torsoTwist(null);
+
         clearAttacks();
         ce().setArmsFlipped(armsFlipped);
-        addAttack(new FlipArmsAction(cen, armsFlipped));
+        addAttack(new FlipArmsAction(currentEntity, armsFlipped));
         updateTarget();
         refreshAll();
     }
@@ -1426,12 +1241,17 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
                 && (target != null)
                 && ce().isUsingSearchlight()
                 && ce().getCrew().isActive()
-                && SearchlightAttackAction.isPossible(clientgui.getClient().getGame(), cen, target, null));
+                && SearchlightAttackAction.isPossible(clientgui.getClient().getGame(), currentEntity, target, null));
     }
 
     private void setFireEnabled(boolean enabled) {
         buttons.get(TargetingCommand.FIRE_FIRE).setEnabled(enabled);
         clientgui.getMenuBar().setEnabled(FiringCommand.FIRE_FIRE.getCmd(), enabled);
+    }
+
+    protected void setTwistEnabled(boolean enabled) {
+        buttons.get(TargetingCommand.FIRE_TWIST).setEnabled(enabled);
+        clientgui.getMenuBar().setEnabled(FiringCommand.FIRE_TWIST.getCmd(), enabled);
     }
 
     private void setSkipEnabled(boolean enabled) {
@@ -1478,14 +1298,6 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
         refreshAll();
     }
 
-    //
-    // ItemListener
-    //
-    @Override
-    public void itemStateChanged(ItemEvent evt) {
-
-    }
-
     // board view listener
     @Override
     public void finishedMovingUnits(BoardViewEvent b) {
@@ -1522,9 +1334,6 @@ public class TargetingPhaseDisplay extends AttackPhaseDisplay implements
         }
     }
 
-    /**
-     * Stop just ignoring events and actually stop listening to them.
-     */
     @Override
     public void removeAllListeners() {
         clientgui.getClient().getGame().removeGameListener(this);

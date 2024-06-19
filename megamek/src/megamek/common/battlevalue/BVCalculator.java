@@ -22,6 +22,10 @@ import megamek.client.ui.swing.calculationReport.CalculationReport;
 import megamek.client.ui.swing.calculationReport.DummyCalculationReport;
 import megamek.codeUtilities.MathUtility;
 import megamek.common.*;
+import megamek.common.equipment.AmmoMounted;
+import megamek.common.equipment.ArmorType;
+import megamek.common.equipment.MiscMounted;
+import megamek.common.equipment.WeaponMounted;
 import megamek.common.options.OptionsConstants;
 import megamek.common.weapons.bayweapons.BayWeapon;
 
@@ -344,7 +348,7 @@ public abstract class BVCalculator {
 
                 // Modular Armor
                 int modularArmor = 0;
-                for (Mounted mounted : entity.getMisc()) {
+                for (MiscMounted mounted : entity.getMisc()) {
                     if (mounted.getType().hasFlag(MiscType.F_MODULAR_ARMOR) && (mounted.getLocation() == loc)) {
                         modularArmor += mounted.getBaseDamageCapacity() - mounted.getDamageTaken();
                     }
@@ -396,7 +400,7 @@ public abstract class BVCalculator {
             calculation += " x " + formatForReport(armorFactor());
             calculation += (armorMultiplier != 1) ?
                     " x " + formatForReport(armorMultiplier) + " ("
-                            + EquipmentType.armorNames[entity.getArmorType(0)] + ")" : "";
+                            + ArmorType.forEntity(entity).getName() + ")" : "";
             calculation += (barRating != 1) ?
                     " x " + formatForReport(barRating) + " (BAR)" : "";
             defensiveValue += totalArmorBV * armorFactor();
@@ -732,20 +736,19 @@ public abstract class BVCalculator {
      * @param addToOffensiveValue When true, will add the result to offensiveValue and show the result
      * @return The BV for this weapon
      */
-    protected double processWeapon(Mounted weapon, boolean showInReport,
+    protected double processWeapon(Mounted<?> weapon, boolean showInReport,
                                    boolean addToOffensiveValue, int weaponCount) {
         double weaponBV = weapon.getType().getBV(entity);
 
         // MG Arrays need to sum up their linked MGs
         if ((weapon.getType() instanceof WeaponType) && weapon.getType().hasFlag(WeaponType.F_MGA)) {
             double mgBV = 0;
-            for (int eqNum : weapon.getBayWeapons()) {
-                Mounted mg = entity.getEquipment(eqNum);
-                if ((mg != null) && (!mg.isDestroyed())) {
+            for (WeaponMounted mg : ((WeaponMounted) weapon).getBayWeapons()) {
+                if (!mg.isDestroyed()) {
                     mgBV += mg.getType().getBV(entity);
                 }
             }
-            weaponBV = mgBV * (weapon.getType().isClan() ? 0.1 : 0.67);
+            weaponBV = mgBV * 0.67;
         }
 
         String multiplierText = (weaponCount > 1) ? weaponCount + " x " : "";
@@ -999,7 +1002,7 @@ public abstract class BVCalculator {
         }
     }
 
-    /** @return The unit's head dissipation for BV purposes. Override as necessary. */
+    /** @return The unit's heat dissipation for BV purposes. Override as necessary. */
     protected int heatEfficiency() {
         return NO_HEAT;
     }
@@ -1032,13 +1035,13 @@ public abstract class BVCalculator {
     protected void processOffensiveTypeModifier() { }
 
     /** @return true when the given ammo (must be AmmoType) counts towards offensive ammo BV calculation. */
-    protected boolean ammoCounts(Mounted ammo) {
-        AmmoType ammoType = (AmmoType) ammo.getType();
+    protected boolean ammoCounts(AmmoMounted ammo) {
+        AmmoType ammoType = ammo.getType();
         return (ammo.getUsableShotsLeft() > 0)
                 && (ammoType.getAmmoType() != AmmoType.T_AMS)
                 && (ammoType.getAmmoType() != AmmoType.T_APDS)
                 && (ammoType.getAmmoType() != AmmoType.T_SCREEN_LAUNCHER)
-                && !ammo.isOneShotAmmo();
+                && !ammo.isOneShot();
     }
 
     /** Processes the sum of offensive and defensive battle rating and modifiers that affect this sum. */
@@ -1069,8 +1072,8 @@ public abstract class BVCalculator {
     }
 
     protected void assembleAmmo() {
-        for (Mounted ammo : entity.getAmmo()) {
-            AmmoType ammoType = (AmmoType) ammo.getType();
+        for (AmmoMounted ammo : entity.getAmmo()) {
+            AmmoType ammoType = ammo.getType();
 
             // don't count depleted ammo, AMS and oneshot ammo
             if (ammoCounts(ammo)) {
@@ -1087,8 +1090,8 @@ public abstract class BVCalculator {
             }
         }
 
-        for (Mounted weapon : entity.getTotalWeaponList()) {
-            WeaponType wtype = (WeaponType) weapon.getType();
+        for (WeaponMounted weapon : entity.getTotalWeaponList()) {
+            WeaponType wtype = weapon.getType();
 
             if (weapon.isDestroyed() //|| wtype.hasFlag(WeaponType.F_AMS)
                     || wtype.hasFlag(WeaponType.F_B_POD) || wtype.hasFlag(WeaponType.F_M_POD)
@@ -1176,7 +1179,11 @@ public abstract class BVCalculator {
      */
     public static double bvMultiplier(Entity entity, List<String> pilotModifiers) {
         if (entity.getCrew() == null) {
-            return 1;
+            if (entity.isConventionalInfantry() && !((Infantry) entity).hasAntiMekGear()) {
+                return bvSkillMultiplier(4, Infantry.ANTI_MECH_SKILL_NO_GEAR);
+            } else {
+                return bvSkillMultiplier(4, 5);
+            }
         }
         int gunnery = entity.getCrew().getGunnery();
         int piloting = entity.getCrew().getPiloting();
@@ -1184,6 +1191,8 @@ public abstract class BVCalculator {
         if (((entity instanceof Infantry) && (!((Infantry) entity).canMakeAntiMekAttacks()))
                 || (entity instanceof Protomech)) {
             piloting = 5;
+        } else if (entity.isConventionalInfantry() && !((Infantry) entity).hasAntiMekGear()) {
+            piloting = Infantry.ANTI_MECH_SKILL_NO_GEAR;
         } else if (entity.getCrew() instanceof LAMPilot) {
             LAMPilot lamPilot = (LAMPilot) entity.getCrew();
             gunnery = (lamPilot.getGunneryMech() + lamPilot.getGunneryAero()) / 2;
@@ -1272,9 +1281,10 @@ public abstract class BVCalculator {
             }
             for (Mounted mounted : otherEntity.getAmmo()) {
                 AmmoType atype = (AmmoType) mounted.getType();
-                long munitionType = atype.getMunitionType();
+                EnumSet<AmmoType.Munitions> munitionType = atype.getMunitionType();
                 if ((mounted.getUsableShotsLeft() > 0)
-                        && ((munitionType == M_SEMIGUIDED) || (munitionType == M_HOMING))) {
+                        && ((munitionType.contains(AmmoType.Munitions.M_SEMIGUIDED))
+                            || (munitionType.contains(AmmoType.Munitions.M_HOMING)))) {
                     adjustedBV += mounted.getType().getBV(entity) * tagCount;
                     bvReport.addLine("- " + equipmentDescriptor(mounted),
                             "+ " + tagCount + " x " + formatForReport(mounted.getType().getBV(entity))

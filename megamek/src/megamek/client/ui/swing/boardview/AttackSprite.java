@@ -15,7 +15,6 @@ import megamek.common.actions.*;
 import megamek.common.enums.GamePhase;
 
 import static megamek.client.ui.swing.util.UIUtil.guiScaledFontHTML;
-import static megamek.client.ui.swing.util.UIUtil.uiBlack;
 
 /**
  * Sprite and info for an attack. Does not actually use the image buffer as
@@ -186,7 +185,7 @@ class AttackSprite extends Sprite {
      * Cheking if attack is mutual and changing target arrow to half-arrow
      */
     private boolean isMutualAttack() {
-        for (AttackSprite sprite : this.boardView1.attackSprites) {
+        for (AttackSprite sprite : this.boardView1.getAttackSprites()) {
             if ((sprite.getEntityId() == targetId)
                     && (sprite.getTargetId() == entityId)) {
                 sprite.rebuildToHalvedPolygon();
@@ -252,7 +251,7 @@ class AttackSprite extends Sprite {
             for (String wpD : attacks.getDescriptions()) {
                 sAttacks += "<BR>" + wpD;
             }
-            result += guiScaledFontHTML(uiBlack()) + sAttacks + "</FONT>";
+            result += sAttacks;
         }
         return new StringBuffer().append(result);
     }

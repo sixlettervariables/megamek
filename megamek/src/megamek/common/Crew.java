@@ -1,21 +1,20 @@
 /*
-* MegaMek -
-* Copyright (C) 2000-2004 Ben Mazur (bmazur@sev.org)
-* Copyright (C) 2018 - The MegaMek Team. All Rights Reserved.
-*
-* This program is free software; you can redistribute it and/or modify it under
-* the terms of the GNU General Public License as published by the Free Software
-* Foundation; either version 2 of the License, or (at your option) any later
-* version.
-*
-* This program is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-* FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
-* details.
-*/
+ * MegaMek -
+ * Copyright (C) 2000-2004 Ben Mazur (bmazur@sev.org)
+ * Copyright (C) 2018 - The MegaMek Team. All Rights Reserved.
+ *
+ * This program is free software; you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 2 of the License, or (at your option) any later
+ * version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+ * details.
+ */
 package megamek.common;
 
-import megamek.client.generator.RandomGenderGenerator;
 import megamek.client.ui.swing.tooltip.PilotToolTip;
 import megamek.codeUtilities.MathUtility;
 import megamek.common.enums.Gender;
@@ -50,6 +49,7 @@ public class Crew implements Serializable {
     private final String[] names;
     private final String[] nicknames;
     private final Gender[] genders;
+    private final boolean[] clanPilots;
     private final Portrait[] portraits;
 
     private final int[] gunnery;
@@ -60,15 +60,15 @@ public class Crew implements Serializable {
 
     private final boolean[] unconscious;
     private final boolean[] dead;
-    //Allow for the possibility that the unit is fielded with less than full crew.
+    // Allow for the possibility that the unit is fielded with less than full crew.
     private final boolean[] missing;
 
-    //The following only apply to the entire crew.
+    // The following only apply to the entire crew.
     private boolean doomed; // scheduled to die at end of phase
     private boolean ejected;
 
     // StratOps fatigue points
-    private int fatiguePoints;
+    private final int[] fatigue;
     // also need to track turns for fatigue by pilot because some may have later deployment
     private int fatigueTurnCount;
 
@@ -145,6 +145,7 @@ public class Crew implements Serializable {
     public static final String MAP_BLOODNAME = "bloodname";
     public static final String MAP_PHENOTYPE = "phenotype";
     //endregion extraData inner map keys
+
     /**
      * The number of hits that a pilot can take before he dies.
      */
@@ -163,68 +164,7 @@ public class Crew implements Serializable {
      * @param crewType the crew type to use.
      */
     public Crew(CrewType crewType) {
-        this(crewType, "Unnamed", crewType.getCrewSlots(), 4, 5, Gender.FEMALE, null);
-    }
-
-    /**
-     * @param name     the name of the crew or commander.
-     * @param size     the crew size.
-     * @param gunnery  the crew's Gunnery skill.
-     * @param piloting the crew's Piloting or Driving skill.
-     * @deprecated by multi-crew cockpit support. Replaced by {@link #Crew(CrewType, String, int, int, int, Gender, Map)}.
-     *
-     * Creates a basic crew for a self-piloted unit. Using this constructor for a naval vessel will
-     * result in a secondary target modifier for additional targets past the first.
-     */
-    @Deprecated
-    public Crew(String name, int size, int gunnery, int piloting) {
-        this(CrewType.SINGLE, name, size, gunnery, gunnery, gunnery, piloting, null);
-    }
-
-    /**
-     * @param crewType the type of crew
-     * @param name     the name of the crew or commander.
-     * @param size     the crew size.
-     * @param gunnery  the crew's Gunnery skill.
-     * @param piloting the crew's Piloting or Driving skill.
-     * @deprecated by gender support. Replaced by {@link #Crew(CrewType, String, int, int, int, Gender, Map)}.
-     */
-    @Deprecated //18-Feb-2020 as part of the addition of gender to MegaMek
-    public Crew(CrewType crewType, String name, int size, int gunnery, int piloting) {
-        this(crewType, name, size, gunnery, gunnery, gunnery, piloting, null);
-    }
-
-    /**
-     * @param crewType the type of crew.
-     * @param name     the name of the crew or commander.
-     * @param size     the crew size.
-     * @param gunneryL the crew's "laser" Gunnery skill.
-     * @param gunneryM the crew's "missile" Gunnery skill.
-     * @param gunneryB the crew's "ballistic" Gunnery skill.
-     * @param piloting the crew's Piloting or Driving skill.
-     * @deprecated by gender support. Replaced by {@link #Crew(CrewType, String, int, int, int, int, int, Gender, Map)}.
-     */
-    @Deprecated //18-Feb-2020 as part of the addition of gender to MegaMek
-    public Crew(CrewType crewType, String name, int size, int gunneryL, int gunneryM, int gunneryB,
-                int piloting) {
-        this(crewType, name, size, gunneryL, gunneryM, gunneryB, piloting, null);
-    }
-
-    /**
-     * @param crewType  the type of crew.
-     * @param name      the name of the crew or commander.
-     * @param size      the crew size.
-     * @param gunneryL  the crew's "laser" Gunnery skill.
-     * @param gunneryM  the crew's "missile" Gunnery skill.
-     * @param gunneryB  the crew's "ballistic" Gunnery skill.
-     * @param piloting  the crew's Piloting or Driving skill.
-     * @param extraData any extra data passed to be stored with this Crew.
-     * @deprecated by gender support. Replaced by {@link #Crew(CrewType, String, int, int, int, int, int, Gender, Map)}.
-     */
-    @Deprecated //18-Feb-2020 as part of the addition of gender to MegaMek
-    public Crew(CrewType crewType, String name, int size, int gunneryL, int gunneryM, int gunneryB,
-                int piloting, Map<Integer, Map<String, String>> extraData) {
-        this(crewType, name, size, gunneryL, gunneryM, gunneryB, piloting, RandomGenderGenerator.generate(), extraData);
+        this(crewType, "Unnamed", crewType.getCrewSlots(), 4, 5, Gender.FEMALE, false, null);
     }
 
     /**
@@ -234,11 +174,12 @@ public class Crew implements Serializable {
      * @param gunnery   the crew's Gunnery skill.
      * @param piloting  the crew's Piloting or Driving skill.
      * @param gender    the gender of the crew or commander
+     * @param clanPilot   if the crew or commander is a clanPilot
      * @param extraData any extra data passed to be stored with this Crew.
      */
     public Crew(CrewType crewType, String name, int size, int gunnery, int piloting, Gender gender,
-                Map<Integer, Map<String, String>> extraData) {
-        this(crewType, name, size, gunnery, gunnery, gunnery, piloting, gender, extraData);
+                boolean clanPilot, Map<Integer, Map<String, String>> extraData) {
+        this(crewType, name, size, gunnery, gunnery, gunnery, piloting, gender, clanPilot, extraData);
     }
 
     /**
@@ -250,10 +191,12 @@ public class Crew implements Serializable {
      * @param gunneryB  the crew's "ballistic" Gunnery skill.
      * @param piloting  the crew's Piloting or Driving skill.
      * @param gender    the gender of the crew or commander
+     * @param clanPilot   if the crew or commander is a clanPilot
      * @param extraData any extra data passed to be stored with this Crew.
      */
     public Crew(CrewType crewType, String name, int size, int gunneryL, int gunneryM, int gunneryB,
-                int piloting, Gender gender, Map<Integer, Map<String, String>> extraData) {
+                int piloting, Gender gender, boolean clanPilot,
+                Map<Integer, Map<String, String>> extraData) {
         this.crewType = crewType;
         this.size = Math.max(size, crewType.getCrewSlots());
         this.currentSize = size;
@@ -268,6 +211,8 @@ public class Crew implements Serializable {
         genders = new Gender[slots];
         Arrays.fill(getGenders(), Gender.RANDOMIZE);
         setGender(gender, 0);
+        clanPilots = new boolean[slots];
+        Arrays.fill(getClanPilots(), clanPilot);
         portraits = new Portrait[slots];
         for (int i = 0; i < slots; i++) {
             setPortrait(new Portrait(), i);
@@ -294,8 +239,8 @@ public class Crew implements Serializable {
         dead = new boolean[slots];
         missing = new boolean[slots];
         koThisRound = new boolean[slots];
-        fatiguePoints = 0;
         toughness = new int[slots];
+        fatigue = new int[slots];
 
         options.initialize();
 
@@ -370,6 +315,22 @@ public class Crew implements Serializable {
         getGenders()[pos] = gender;
     }
 
+    public boolean[] getClanPilots() {
+        return clanPilots;
+    }
+
+    public boolean isClanPilot() {
+        return getClanPilots()[0];
+    }
+
+    public boolean isClanPilot(final int position) {
+        return (position < getClanPilots().length) ? getClanPilots()[position] : isClanPilot();
+    }
+
+    public void setClanPilot(final boolean clanPilot, final int position) {
+        getClanPilots()[position] = clanPilot;
+    }
+
     public Portrait[] getPortraits() {
         return portraits;
     }
@@ -405,7 +366,7 @@ public class Crew implements Serializable {
     public int getSize() {
         return size;
     }
-    
+
     /**
      * The currentsize of this crew.
      *
@@ -552,7 +513,7 @@ public class Crew implements Serializable {
     public int getHits() {
         return Arrays.stream(hits).min().orElse(0);
     }
-    
+
     /**
      * Uses the table on TO p206 to calculate the number of crew hits based on percentage
      * of total casualties. Used for ejection, boarding actions and such
@@ -601,7 +562,7 @@ public class Crew implements Serializable {
     public void setSize(int newSize) {
         size = newSize;
     }
-    
+
     /**
      * Accessor method to set the current crew size.
      *
@@ -1060,9 +1021,20 @@ public class Crew implements Serializable {
         return fatigueTurnCount >= getGunneryFatigueTurn();
     }
 
-    /** Returns the modifier for the TO:AR p.166 fatigue turn thresholds from CamOps p.219 fatigue points. */
+    /**
+     * Returns the modifier for the TO:AR p.166 fatigue turn thresholds from CamOps p.219 fatigue points.
+     * For multi-crewed Units, we average the fatigue modifier
+     *
+     * @return The fatigue modifier for the unit.
+     */
     private int CamOpsFatigueTurnModifier() {
-        return -MathUtility.clamp((fatiguePoints - 1) / 4, 0, 4);
+        int fatigueModifier = 0;
+
+        for (int i = 0; i < getSlotCount(); i++) {
+            fatigueModifier = MathUtility.clamp((fatigue[i] - 1) / 4, 0, 4);
+        }
+
+        return -(fatigueModifier / getSlotCount());
     }
 
     /** Returns the rating used for TO:AR p.166 fatigue. */
@@ -1131,12 +1103,22 @@ public class Crew implements Serializable {
         toughness[pos] = t;
     }
 
+    @Deprecated
     public int getFatigue() {
-        return fatiguePoints;
+        return fatigue[0];
     }
 
-    public void setFatigue(int i) {
-        fatiguePoints = i;
+    @Deprecated
+    public void setFatigue(int fatigue) {
+        this.fatigue[0] = fatigue;
+    }
+
+    public int getCrewFatigue(int pos) {
+        return fatigue[pos];
+    }
+
+    public void setCrewFatigue(int fatigue, int position) {
+        this.fatigue[position] = fatigue;
     }
 
     public void incrementFatigueCount() {
@@ -1157,20 +1139,20 @@ public class Crew implements Serializable {
         }
     }
 
-    public int rollGunnerySkill() {
+    public Roll rollGunnerySkill() {
         if (getOptions().booleanOption(OptionsConstants.PILOT_APTITUDE_GUNNERY)) {
-            return Compute.d6(3, 2);
+            return Compute.rollD6(3, 2);
         }
 
-        return Compute.d6(2);
+        return Compute.rollD6(2);
     }
 
-    public int rollPilotingSkill() {
+    public Roll rollPilotingSkill() {
         if (getOptions().booleanOption(OptionsConstants.PILOT_APTITUDE_PILOTING)) {
-            return Compute.d6(3, 2);
+            return Compute.rollD6(3, 2);
         }
 
-        return Compute.d6(2);
+        return Compute.rollD6(2);
     }
 
     public int getCurrentPilotIndex() {

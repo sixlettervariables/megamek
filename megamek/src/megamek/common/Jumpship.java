@@ -13,6 +13,9 @@ package megamek.common;
 
 import megamek.client.ui.swing.calculationReport.CalculationReport;
 import megamek.common.cost.JumpShipCostCalculator;
+import megamek.common.equipment.AmmoMounted;
+import megamek.common.equipment.ArmorType;
+import megamek.common.equipment.WeaponMounted;
 import megamek.common.options.OptionsConstants;
 
 import java.util.ArrayList;
@@ -45,10 +48,10 @@ public class Jumpship extends Aero {
     
     // The percentage of the total unit weight taken up by the drive core. The value
     // given for primitive assumes a 30ly range, but the final value has to be computed.
-    private static double[] DRIVE_CORE_WEIGHT_PCT = { 0.95, 0.4525, 0.5, 0.0, 0.95 };
+    private static final double[] DRIVE_CORE_WEIGHT_PCT = { 0.95, 0.4525, 0.5, 0.0, 0.95 };
 
-    private static String[] LOCATION_ABBRS = { "NOS", "FLS", "FRS", "AFT", "ALS", "ARS", "HULL" };
-    private static String[] LOCATION_NAMES = { "Nose", "Left Front Side", "Right Front Side",
+    private static final String[] LOCATION_ABBRS = { "NOS", "FLS", "FRS", "AFT", "ALS", "ARS", "HULL" };
+    private static final String[] LOCATION_NAMES = { "Nose", "Left Front Side", "Right Front Side",
             "Aft", "Aft Left Side", "Aft Right Side", "Hull" };
 
     // K-F Drive Stuff
@@ -82,9 +85,6 @@ public class Jumpship extends Aero {
     private int escapePodsLaunched = 0;
     private int lifeBoatsLaunched = 0;
 
-    // Battlestation
-    private boolean isBattleStation = false;
-
     // HPG
     private boolean hasHPG = false;
 
@@ -95,17 +95,17 @@ public class Jumpship extends Aero {
      * we just stored the number of standard, large and huge grav decks, and could not specify the exact size of the
      * deck.
      */
-    private List<Integer> gravDecks = new ArrayList<>();
+    private final List<Integer> gravDecks = new ArrayList<>();
     
     /**
      * Keep track of all of the grav decks and their damage status
      *
      * Stores the number of hits on each grav deck by the index value from the list gravDecks
      */
-    private Map<Integer,Integer> damagedGravDecks = new HashMap<>();
+    private final Map<Integer,Integer> damagedGravDecks = new HashMap<>();
 
     // station-keeping thrust and accumulated thrust
-    private double stationThrust = 0.2;
+    private final double stationThrust = 0.2;
     private double accumulatedThrust = 0.0;
 
     public Jumpship() {
@@ -127,7 +127,7 @@ public class Jumpship extends Aero {
 
     // ASEW Missile Effects, per location
     // Values correspond to Locations: NOS, FLS, FRS, AFT, ALS, ARS
-    private int[] asewAffectedTurns = { 0, 0, 0, 0, 0, 0 };
+    private final int[] asewAffectedTurns = { 0, 0, 0, 0, 0, 0 };
     
     /*
      * Accessor for the asewAffectedTurns array, which may be different for inheriting classes.
@@ -274,7 +274,6 @@ public class Jumpship extends Aero {
                 toReturn.append(", ");
             }
             toReturn.append(Messages.getString("Jumpship.lfBatteryDamageString"));
-            first = false;
         }
         return toReturn.toString();
     }
@@ -398,7 +397,7 @@ public class Jumpship extends Aero {
      * Old style for setting the number of grav decks.  This allows the user to specify N standard grav decks, which
      * will get added at a default value.
      *
-     * @param n
+     * @param n The number of grav decks
      */
     public void setGravDeck(int n) {
         for (int i = 0; i < n; i++) {
@@ -424,7 +423,7 @@ public class Jumpship extends Aero {
      * Old style method for adding N large grav decks. A default value is chosen that is half-way
      * between the standard and huge sizes.
      *
-     * @param n
+     * @param n The number of grav decks
      */
     public void setGravDeckLarge(int n) {
         for (int i = 0; i < n; i++) {
@@ -451,7 +450,7 @@ public class Jumpship extends Aero {
      * Old style method for adding N huge grav decks. A default value is chosen that is the current
      * large maximum plus half that value.
      *
-     * @param n
+     * @param n The number of grav decks
      */
     public void setGravDeckHuge(int n) {
         for (int i = 0; i < n; i++) {
@@ -482,13 +481,8 @@ public class Jumpship extends Aero {
         return hasHPG;
     }
 
-    public void setBattleStation(boolean b) {
-        isBattleStation = b;
-
-    }
-
     public boolean isBattleStation() {
-        return isBattleStation;
+        return false;
     }
 
     public void setLF(boolean b) {
@@ -595,9 +589,7 @@ public class Jumpship extends Aero {
     }
 
     /**
-     * Returns the number of marines assigned to a unit
-     * Used for abandoning a unit
-     * @return
+     * @return the number of marines assigned to a unit; Used for abandoning a unit
      */
     @Override
     public int getNMarines() {
@@ -652,10 +644,6 @@ public class Jumpship extends Aero {
         if (isPrimitive()) {
             return fuelUse * primitiveFuelFactor();
         }
-        // JS and SS (and WS without transit drives) use fuel at 10% the rate.
-        if (hasStationKeepingDrive()) {
-            fuelUse *= 0.1;
-        }
         return fuelUse;
     }
 
@@ -686,43 +674,37 @@ public class Jumpship extends Aero {
     }
     
     //Methods for dealing with the K-F Drive, Sail and L-F Battery
-    
-    //Set the current KF Drive integrity
+
     public void setKFIntegrity(int kf) {
         kf_integrity = kf;
     }
-    
-    //Return the current KF Drive integrity
+
     public int getKFIntegrity() {
         return kf_integrity;
     }
-    
-    //Set the original/undamaged KF Drive integrity
+
     public void setOKFIntegrity(int kf) {
         original_kf_integrity = kf;
     }
-    
-    //Return the original/undamaged KF Drive integrity
+
     public int getOKFIntegrity() {
         return original_kf_integrity;
     }
-    
-    //Return the damage taken to the KF Drive
+
     public int getKFDriveDamage() {
         return (getOKFIntegrity() - getKFIntegrity());
     }
     
     //Is any part of the KF Drive damaged?  Used by MHQ for repairs.
     public boolean isKFDriveDamaged() {
-        return (getKFHeliumTankHit() 
-                || getKFDriveCoilHit() 
-                || getKFDriveControllerHit() 
-                || getLFBatteryHit() 
+        return (getKFHeliumTankHit()
+                || getKFDriveCoilHit()
+                || getKFDriveControllerHit()
+                || getLFBatteryHit()
                 || getKFChargingSystemHit()
                 || getKFFieldInitiatorHit());
     }
-    
-    //Set the portion of the total drive integrity represented by the helium tanks
+
     public void setKFHeliumTankIntegrity(int ht) {
         helium_tankage = ht;
     }
@@ -731,88 +713,71 @@ public class Jumpship extends Aero {
     public int getKFHeliumTankIntegrity() {
         return helium_tankage;
     }
-    
-    //Record a hit on the KF Drive Helium Tank
+
     public void setKFHeliumTankHit(boolean hit) {
         heliumTankHit = hit;
     }
-    
-    //Return the status of the KF Drive Helium Tank
+
     public boolean getKFHeliumTankHit() {
         return heliumTankHit;
     }
-    
-    //Record a hit on the KF Drive Coil
+
     public void setKFDriveCoilHit(boolean hit) {
         driveCoilHit = hit;
     }
-    
-    //Return the status of the KF Drive Coil
+
     public boolean getKFDriveCoilHit() {
         return driveCoilHit;
     }
-    
-    //Record a hit on the KF Field Initiator
+
     public void setKFFieldInitiatorHit(boolean hit) {
         fieldInitiatorHit = hit;
     }
-    
-    //Return the status of the KF Field Initiator
+
     public boolean getKFFieldInitiatorHit() {
         return fieldInitiatorHit;
     }
-    
-    //Record a hit on the KF Charging System
+
     public void setKFChargingSystemHit(boolean hit) {
         chargingSystemHit = hit;
     }
-    
-    //Return the status of the KF Charging System
+
     public boolean getKFChargingSystemHit() {
         return chargingSystemHit;
     }
-    
-    //Record a hit on the KF Drive Controller
+
     public void setKFDriveControllerHit(boolean hit) {
         driveControllerHit = hit;
     }
-    
-    //Return the status of the KF Drive Controller
+
     public boolean getKFDriveControllerHit() {
         return driveControllerHit;
     }
-    
-    //Return the status of the LF Battery
+
     public boolean getLFBatteryHit() {
         return lfBatteryHit;
     }
-    
-    //Record a hit on the LF Battery
+
     public void setLFBatteryHit(boolean hit) {
         lfBatteryHit = hit;
     }
-    
-    //Set the original/undamaged Jump Sail integrity
+
     public void setOSailIntegrity(int sail) {
         original_sail_integrity = sail;
     }
-    
-    //Return the original/undamaged Jump Sail integrity
+
     public int getOSailIntegrity() {
         return original_sail_integrity;
     }
-    
-    //Return the damage taken to the Jump Sail
+
     public int getSailDamage() {
         return (getOSailIntegrity() - getSailIntegrity());
     }
 
-    //Set the current integrity of the jump sail
     public void setSailIntegrity(int sail) {
         sail_integrity = sail;
     }
-    
-    //Return the current integrity of the jump sail
+
     public int getSailIntegrity() {
         return sail_integrity;
     }
@@ -841,7 +806,7 @@ public class Jumpship extends Aero {
         int integrity = (int) Math.ceil(1.2 + (getJumpDriveWeight() / 60000.0));
         setOKFIntegrity(integrity);
         setKFIntegrity(integrity);
-        //Helium Tanks make up about 2/3 of the drive core. 
+        //Helium Tanks make up about 2/3 of the drive core.
         setKFHeliumTankIntegrity((int) (integrity * 0.67));
     }
 
@@ -879,7 +844,7 @@ public class Jumpship extends Aero {
         if (driveCoreType == DRIVE_CORE_PRIMITIVE) {
             pct = 0.05 + 0.03 * jumpRange;
         }
-        return Math.ceil(getWeight() * pct); 
+        return Math.ceil(getWeight() * pct);
     }
 
     // different firing arcs
@@ -888,7 +853,7 @@ public class Jumpship extends Aero {
     public int getWeaponArc(int wn) {
         final Mounted mounted = getEquipment(wn);
 
-        int arc = Compute.ARC_NOSE;
+        int arc;
         switch (mounted.getLocation()) {
             case LOC_NOSE:
                 if (mounted.isInWaypointLaunchMode()) {
@@ -1119,13 +1084,12 @@ public class Jumpship extends Aero {
     }
 
     public boolean hasWeaponInArc(int loc) {
-        boolean hasWeapons = false;
         for (Mounted weap : getWeaponList()) {
             if (weap.getLocation() == loc) {
-                hasWeapons = true;
+                return true;
             }
         }
-        return hasWeapons;
+        return false;
     }
 
     public double getFuelPerTon() {
@@ -1156,26 +1120,9 @@ public class Jumpship extends Aero {
             armorPoints -= Math.round(get0SI() / 10.0) * locCount;
         } else {
             armorPoints -= Math.floor(Math.round(get0SI() / 10.0) * locCount * 0.66);
-            armorPoints = Math.ceil(armorPoints / 0.66);
         }
 
-        // now I need to determine base armor points by type and weight
-        boolean clan = TechConstants.isClan(getArmorTechLevel(firstArmorIndex()));
-        double baseArmor = clan ? 1.0 : 0.8;
-
-        if (weight >= 250000) {
-            baseArmor = clan ? 0.5 : 0.4;
-        } else if (weight >= 150000) {
-            baseArmor = clan ? 0.7 : 0.6;
-        }
-
-        if (armorType[0] == EquipmentType.T_ARMOR_LC_FERRO_IMP) {
-            baseArmor += 0.2;
-        } else if (armorType[0] == EquipmentType.T_ARMOR_LC_FERRO_CARBIDE) {
-            baseArmor += 0.4;
-        } else if (armorType[0] == EquipmentType.T_ARMOR_LC_LAMELLOR_FERRO_CARBIDE) {
-            baseArmor += 0.6;
-        }
+        double baseArmor = ArmorType.forEntity(this).getPointsPerTon(this);
 
         return RoundWeight.standard(armorPoints / baseArmor, this);
     }
@@ -1201,26 +1148,21 @@ public class Jumpship extends Aero {
         return true;
     }
 
-    @Override
-    public boolean doomedInSpace() {
-        return false;
-    }
-
     /**
      * need to check bay location before loading ammo
      */
     @Override
-    public boolean loadWeapon(Mounted mounted, Mounted mountedAmmo) {
+    public boolean loadWeapon(WeaponMounted mounted, AmmoMounted mountedAmmo) {
         boolean success = false;
-        WeaponType wtype = (WeaponType) mounted.getType();
-        AmmoType atype = (AmmoType) mountedAmmo.getType();
+        WeaponType wtype = mounted.getType();
+        AmmoType atype = mountedAmmo.getType();
 
         if (mounted.getLocation() != mountedAmmo.getLocation()) {
             return success;
         }
 
         // for large craft, ammo must be in the same ba
-        Mounted bay = whichBay(getEquipmentNum(mounted));
+        WeaponMounted bay = whichBay(getEquipmentNum(mounted));
         if ((bay != null) && !bay.ammoInBay(getEquipmentNum(mountedAmmo))) {
             return success;
         }
@@ -1233,11 +1175,6 @@ public class Jumpship extends Aero {
         return success;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see megamek.common.Entity#getIniBonus()
-     */
     @Override
     public int getHQIniBonus() {
         // large craft are considered to have > 7 tons comm equipment
@@ -1245,9 +1182,6 @@ public class Jumpship extends Aero {
         return 2;
     }
 
-    /**
-     * what location is opposite the given one
-     */
     @Override
     public int getOppositeLocation(int loc) {
         switch (loc) {
@@ -1325,7 +1259,7 @@ public class Jumpship extends Aero {
     public void newRound(int roundNumber) {
         super.newRound(roundNumber);
 
-        // accumulate some more 
+        // accumulate some more
         // We assume that  will be accumulated. If this is proven wrong by
         // the movement
         // then we make the proper adjustments in server#processMovement
@@ -1333,7 +1267,7 @@ public class Jumpship extends Aero {
         // thrust. So once you
         // get 1 thrust point, you have to spend it before you can accumulate
         // more
-        if (isDeployed() && (isBattleStation() == true)) {
+        if (isDeployed() && isBattleStation()) {
             setAccumulatedThrust(1);
         }
 
@@ -1403,7 +1337,7 @@ public class Jumpship extends Aero {
 
     /**
      * Finds the arc on the opposite side of the ship. Used in BV calculations.
-     * 
+     *
      * @param arc A firing arc constant from <code>Compute</code>
      * @return    The arc on the opposite side of the ship.
      */
@@ -1441,16 +1375,6 @@ public class Jumpship extends Aero {
     }
 
     @Override
-    public boolean isFighter() {
-        return false;
-    }
-
-    @Override
-    public boolean isAerospaceFighter() {
-        return false;
-    }
-
-    @Override
     public boolean isPrimitive() {
         return getDriveCoreType() == DRIVE_CORE_PRIMITIVE;
     }
@@ -1471,5 +1395,20 @@ public class Jumpship extends Aero {
     @Override
     public boolean isLargeAerospace() {
         return true;
+    }
+
+    @Override
+    public boolean isCapitalScale() {
+        return true;
+    }
+
+    @Override
+    public boolean isJumpShip() {
+        return true;
+    }
+
+    @Override
+    public int getGenericBattleValue() {
+        return (int) Math.round(Math.exp(0.0619 + 0.5607*Math.log(getWeight())));
     }
 }

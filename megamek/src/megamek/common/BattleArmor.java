@@ -17,7 +17,13 @@ import megamek.client.ui.swing.calculationReport.CalculationReport;
 import megamek.client.ui.swing.calculationReport.DummyCalculationReport;
 import megamek.common.cost.BattleArmorCostCalculator;
 import megamek.common.enums.AimingMode;
+import megamek.common.equipment.AmmoMounted;
+import megamek.common.equipment.MiscMounted;
+import megamek.common.equipment.WeaponMounted;
 import megamek.common.options.OptionsConstants;
+import megamek.common.planetaryconditions.Atmosphere;
+import megamek.common.planetaryconditions.PlanetaryConditions;
+import megamek.common.planetaryconditions.Wind;
 import megamek.common.weapons.InfantryAttack;
 import megamek.common.weapons.infantry.InfantryWeapon;
 import org.apache.logging.log4j.LogManager;
@@ -358,7 +364,7 @@ public class BattleArmor extends Infantry {
                 .setClanAdvancement(2710, DATE_NONE, 3058).setPrototypeFactions(F_TH)
                 .setReintroductionFactions(F_CS).setTechRating(RATING_D)
                 .setAvailability(RATING_F, RATING_X, RATING_E, RATING_D)
-                .setStaticTechLevel(SimpleTechLevel.STANDARD), //ultralight
+                .setStaticTechLevel(SimpleTechLevel.STANDARD), //PA(L)
             new TechAdvancement(TECH_BASE_ALL).setISAdvancement(DATE_NONE, 3050, 3050)
                 .setClanAdvancement(2865, 2870, 2900).setPrototypeFactions(F_CWF)
                 .setProductionFactions(F_CIH, F_FS, F_LC).setClanApproximate(true, false, false)
@@ -385,12 +391,22 @@ public class BattleArmor extends Infantry {
                 .setStaticTechLevel(SimpleTechLevel.STANDARD) // assault
     };
 
+    public static TechAdvancement exoskeletonTechAdvancement() {
+        return new TechAdvancement(TECH_BASE_ALL).setAdvancement(2100, DATE_NONE, 2200)
+            .setApproximate(true, false, true).setTechRating(RATING_C)
+            .setAvailability(RATING_B, RATING_B, RATING_B, RATING_B)
+            .setStaticTechLevel(SimpleTechLevel.STANDARD);
+    }
+
     public static TechAdvancement getConstructionTechAdvancement(int weightClass) {
         return new TechAdvancement(TA_BATTLEARMOR[weightClass]);
     }
 
     @Override
     public TechAdvancement getConstructionTechAdvancement() {
+        if (isExoskeleton()) {
+            return exoskeletonTechAdvancement();
+        }
         int index = getWeightClass();
         if (index < 0 || index >= TA_BATTLEARMOR.length) {
             index = EntityWeightClass.WEIGHT_MEDIUM;
@@ -430,18 +446,18 @@ public class BattleArmor extends Infantry {
         }
 
         if ((!mpCalculationSetting.ignoreWeather) && (null != game)) {
-            int weatherMod = game.getPlanetaryConditions().getMovementMods(this);
+            PlanetaryConditions conditions = game.getPlanetaryConditions();
+            int weatherMod = conditions.getMovementMods(this);
             mp = Math.max(mp + weatherMod, 0);
 
-            if ((game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_GUSTING_RAIN)
+            if (conditions.getWeather().isGustingRain()
                     && getCrew().getOptions().stringOption(OptionsConstants.MISC_ENV_SPECIALIST).equals(Crew.ENVSPC_RAIN)) {
                 mp += 1;
             }
 
             if (getCrew().getOptions().stringOption(OptionsConstants.MISC_ENV_SPECIALIST).equals(Crew.ENVSPC_WIND)
-                    && (game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_NONE)
-                    && ((game.getPlanetaryConditions().getWindStrength() == PlanetaryConditions.WI_STRONG_GALE)
-                    || (game.getPlanetaryConditions().getWindStrength() == PlanetaryConditions.WI_STORM))) {
+                    && conditions.getWeather().isClear()
+                    && conditions.getWind().isStrongGaleOrStorm()) {
                 mp += 1;
             }
         }
@@ -485,13 +501,16 @@ public class BattleArmor extends Infantry {
             return 0;
         }
 
-        if (!mpCalculationSetting.ignoreWeather && (null != game)
-                && (game.getPlanetaryConditions().getWindStrength() >= PlanetaryConditions.WI_STORM)) {
-            return 0;
+        if (null != game) {
+            PlanetaryConditions conditions = game.getPlanetaryConditions();
+            if (!mpCalculationSetting.ignoreWeather
+                    && conditions.getWind().isStrongerThan(Wind.STRONG_GALE)){
+                return 0;
+            }
         }
 
         int mp = 0;
-        if (getMovementMode() != EntityMovementMode.INF_UMU) {
+        if (!getMovementMode().isUMUInfantry()) {
             mp = getOriginalJumpMP();
         }
         // if we have no normal jump jets, we get 1 jump MP from mechanical jump
@@ -500,13 +519,25 @@ public class BattleArmor extends Infantry {
             mp++;
         }
 
-        if ((mp > 0)
-                && hasWorkingMisc(MiscType.F_PARTIAL_WING)
-                && (mpCalculationSetting.ignoreWeather || (game == null) || !game.getPlanetaryConditions().isVacuum())) {
-            mp++;
+        // MM is concerned with in-game conditions that impact Partial Wing mp
+        if ((game != null)) {
+            PlanetaryConditions conditions = game.getPlanetaryConditions();
+            boolean ignoreGameLessThanThin = mpCalculationSetting.ignoreWeather
+                || !conditions.getAtmosphere().isLighterThan(Atmosphere.THIN);
+            if ((mp > 0)
+                    && hasWorkingMisc(MiscType.F_PARTIAL_WING)
+                    && ignoreGameLessThanThin) {
+                mp++;
+            }
+        } else {
+            // MML just cares that the Partial Wing exists and is installed
+            if ((mp > 0) && hasWorkingMisc(MiscType.F_PARTIAL_WING)) {
+                mp++;
+            }
         }
 
-        if ((mp > 0) && hasWorkingMisc(MiscType.F_JUMP_BOOSTER)) {
+        if ((mp > 0)
+                && hasWorkingMisc(MiscType.F_JUMP_BOOSTER)) {
             mp++;
         }
 
@@ -1216,7 +1247,7 @@ public class BattleArmor extends Infantry {
     }
 
     @Override
-    public boolean loadWeapon(Mounted mounted, Mounted mountedAmmo) {
+    public boolean loadWeapon(WeaponMounted mounted, AmmoMounted mountedAmmo) {
         // BA must carry the ammo in same location as the weapon.
         // except for mine launcher mines
         // This allows for squad weapons and individual trooper weapons
@@ -1230,7 +1261,7 @@ public class BattleArmor extends Infantry {
     }
 
     @Override
-    public boolean loadWeaponWithSameAmmo(Mounted mounted, Mounted mountedAmmo) {
+    public boolean loadWeaponWithSameAmmo(WeaponMounted mounted, AmmoMounted mountedAmmo) {
         // BA must carry the ammo in same location as the weapon.
         // except for mine launcher mines
         // This allows for squad weapons and individual trooper weapons
@@ -1243,234 +1274,10 @@ public class BattleArmor extends Infantry {
         return super.loadWeaponWithSameAmmo(mounted, mountedAmmo);
     }
 
-    public final String getBLK() {
-        String newline = "\r\n";
-        StringBuffer buff = new StringBuffer();
-        buff.append("<BlockVersion>");
-        buff.append(newline);
-        buff.append("1");
-        buff.append(newline);
-        buff.append("</BlockVersion>");
-        buff.append(newline);
-
-        buff.append("<UnitType>");
-        buff.append(newline);
-        buff.append("BattleArmor");
-        buff.append(newline);
-        buff.append("</UnitType>");
-        buff.append(newline);
-
-        buff.append("<name>");
-        buff.append(newline);
-        buff.append(getChassis());
-        buff.append(newline);
-        buff.append("</name>");
-        buff.append(newline);
-
-        buff.append("<model>");
-        buff.append(newline);
-        buff.append(getModel());
-        buff.append(newline);
-        buff.append("</model>");
-        buff.append(newline);
-
-        buff.append("<year>");
-        buff.append(newline);
-        buff.append(getYear());
-        buff.append(newline);
-        buff.append("</year>");
-        buff.append(newline);
-
-        buff.append("<type>");
-        buff.append(newline);
-        switch (getTechLevel()) {
-            case TechConstants.T_INTRO_BOXSET:
-                buff.append("IS Level 1");
-                break;
-            case TechConstants.T_IS_TW_NON_BOX:
-                buff.append("IS Level 2");
-                break;
-            case TechConstants.T_IS_ADVANCED:
-                buff.append("IS Level 3");
-                break;
-            case TechConstants.T_IS_EXPERIMENTAL:
-                buff.append("IS Level 4");
-                break;
-            case TechConstants.T_IS_UNOFFICIAL:
-                buff.append("IS Level 5");
-                break;
-            case TechConstants.T_CLAN_TW:
-                buff.append("Clan Level 2");
-                break;
-            case TechConstants.T_CLAN_ADVANCED:
-                buff.append("Clan Level 3");
-                break;
-            case TechConstants.T_CLAN_EXPERIMENTAL:
-                buff.append("Clan Level 4");
-                break;
-            case TechConstants.T_CLAN_UNOFFICIAL:
-                buff.append("Clan Level 5");
-                break;
-        }
-        buff.append(newline);
-        buff.append("</type>");
-        buff.append(newline);
-
-        buff.append("<trooper count>");
-        buff.append(newline);
-        buff.append(getWeight());
-        buff.append(newline);
-        buff.append("</trooper count>");
-        buff.append(newline);
-
-        buff.append("<weightclass>");
-        buff.append(newline);
-        switch (getWeightClass()) {
-            case EntityWeightClass.WEIGHT_ULTRA_LIGHT:
-                buff.append("0");
-                break;
-            case EntityWeightClass.WEIGHT_LIGHT:
-                buff.append("1");
-                break;
-            case EntityWeightClass.WEIGHT_MEDIUM:
-                buff.append("2");
-                break;
-            case EntityWeightClass.WEIGHT_HEAVY:
-                buff.append("3");
-                break;
-            case EntityWeightClass.WEIGHT_ASSAULT:
-                buff.append("4");
-                break;
-        }
-        buff.append(newline);
-        buff.append("</weightclass>");
-        buff.append(newline);
-
-        buff.append("<motion_type>");
-        buff.append(newline);
-        switch (getMovementMode()) {
-            case INF_JUMP:
-                buff.append("jump");
-                break;
-            case INF_LEG:
-                buff.append("leg");
-                break;
-            case VTOL:
-                buff.append("vtol");
-                break;
-            case INF_UMU:
-                buff.append("submarine");
-                break;
-            default:
-                buff.append("none");
-                break;
-        }
-        buff.append(newline);
-        buff.append("</motion_type>");
-        buff.append(newline);
-
-        buff.append("<chassis>");
-        buff.append(newline);
-        switch (getChassisType()) {
-            case BattleArmor.CHASSIS_TYPE_BIPED:
-                buff.append("biped");
-                break;
-            case BattleArmor.CHASSIS_TYPE_QUAD:
-                buff.append("quad");
-                break;
-        }
-        buff.append("</chassis>");
-        buff.append(newline);
-
-        buff.append("<cruiseMP>");
-        buff.append(newline);
-        buff.append(getOriginalRunMP());
-        buff.append(newline);
-        buff.append("</cruiseMP>");
-        buff.append(newline);
-
-        buff.append("<jumpMP>");
-        buff.append(newline);
-        buff.append(getOriginalJumpMP());
-        buff.append(newline);
-        buff.append("</jumpMP>");
-        buff.append(newline);
-
-        buff.append("<armor>");
-        buff.append(newline);
-        buff.append(getOArmor(LOC_TROOPER_1));
-        buff.append(newline);
-        buff.append("</armor>");
-        buff.append(newline);
-
-        if (getTurretCapacity() > 0) {
-            buff.append("<turret>");
-            buff.append(newline);
-            if (hasModularTurretMount()) {
-                buff.append("Modular:");
-            } else {
-                buff.append("Standard:");
-            }
-            buff.append(getTurretCapacity());
-            buff.append("</turret>");
-            buff.append(newline);
-        }
-
-        buff.append("<armor_type>");
-        buff.append(newline);
-        buff.append(getArmorType(LOC_SQUAD));
-        buff.append(newline);
-        buff.append("</armor_type>");
-        buff.append(newline);
-
-        buff.append("<armor_tech>");
-        buff.append(newline);
-        buff.append(getArmorTechLevel(LOC_SQUAD));
-        buff.append(newline);
-        buff.append("</armor_tech>");
-        buff.append(newline);
-
-        for (int i = 0; i < locations(); i++) {
-            boolean found = false;
-            for (Mounted m : getEquipment()) {
-                // don't write out swarm and leg attack, those get added
-                // dynamically
-                if ((m.getType() instanceof WeaponType)
-                        && m.getType().hasFlag(WeaponType.F_INFANTRY_ATTACK)) {
-                    continue;
-                }
-                if (m.getLocation() == i) {
-                    if (!found) {
-                        found = true;
-                        buff.append("<");
-                        buff.append(getLocationName(i));
-                        buff.append(" equipment>");
-                        buff.append(newline);
-                    }
-                    buff.append(m.getType().getInternalName());
-                    buff.append(newline);
-                }
-            }
-            if (found) {
-                buff.append("</");
-                buff.append(getLocationName(i));
-                buff.append(" equipment>");
-                buff.append(newline);
-            }
-        }
-
-        return buff.toString();
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see megamek.common.Entity#getVibroClaws()
-     */
     @Override
     public int getVibroClaws() {
         int claws = 0;
-        for (Mounted mounted : getMisc()) {
+        for (MiscMounted mounted : getMisc()) {
             if (mounted.getType().hasFlag(MiscType.F_VIBROCLAW)) {
                 claws++;
             }
@@ -2172,5 +1979,16 @@ public class BattleArmor extends Infantry {
     @Override
     public boolean isBattleArmor() {
         return true;
+    }
+
+    // BA index 0 appears to be a dump slot
+    @Override
+    public int firstArmorIndex() {
+        return 1;
+    }
+
+    @Override
+    public int getGenericBattleValue() {
+        return (int) Math.round(Math.exp(3.157 + 1.514*Math.log(getWeight())));
     }
 }

@@ -73,11 +73,22 @@ public class LobbyUtility {
         if (!isExclusiveDeployment(game)) {
             return true;
         } else {
+            final GameOptions gOpts = game.getOptions();
+            List<Player> players = game.getPlayersList();
+
+            if (gOpts.booleanOption(OptionsConstants.BASE_SET_PLAYER_DEPLOYMENT_TO_PLAYER0) && !player.isBot() && player.getId() != 0) {
+                return true;
+            }
+
+            if (gOpts.booleanOption(OptionsConstants.BASE_SET_PLAYER_DEPLOYMENT_TO_PLAYER0)) {
+                players = players.stream().filter(p -> p.isBot() || p.getId() == 0).collect(Collectors.toList());
+            }
+
             if (isTeamsShareVision(game)) {
-                return game.getPlayersVector().stream().filter(p -> p.isEnemyOf(player))
+                return players.stream().filter(p -> p.isEnemyOf(player))
                         .noneMatch(p -> startPosOverlap(pos, p.getStartingPos()));
             } else {
-                return game.getPlayersVector().stream().filter(p -> !p.equals(player))
+                return players.stream().filter(p -> !p.equals(player))
                         .noneMatch(p -> startPosOverlap(pos, p.getStartingPos()));
             }
         }
@@ -149,7 +160,7 @@ public class LobbyUtility {
      * Draws the given text (the board name or special text) as a label on the
      * lower edge of the image for which the graphics g is given.
      */
-    static void drawMinimapLabel(String text, int w, int h, Graphics g, boolean invalid) {
+    public static void drawMinimapLabel(String text, int w, int h, Graphics g, boolean invalid) {
         if (text.isBlank()) {
             return;
         }

@@ -17,6 +17,7 @@ package megamek.common;
 import java.math.BigInteger;
 import java.text.NumberFormat;
 
+import megamek.common.miscGear.AntiMekGear;
 import megamek.common.weapons.ppc.CLERPPC;
 import megamek.common.weapons.ppc.ISERPPC;
 import megamek.common.weapons.ppc.ISHeavyPPC;
@@ -281,6 +282,7 @@ public class MiscType extends EquipmentType {
     public static final BigInteger F_PROTOTYPE = BigInteger.valueOf(1).shiftLeft(225);
     // Fortify Equipment
     public static final BigInteger F_TRENCH_CAPABLE = BigInteger.valueOf(1).shiftLeft(226);
+    public static final BigInteger F_SUPPORT_VEE_BAR_ARMOR = BigInteger.valueOf(1).shiftLeft(227);
 
     // Secondary Flags for Physical Weapons
     public static final long S_CLUB = 1L << 0; // BMR - Indicates an Improvised Club
@@ -383,14 +385,13 @@ public class MiscType extends EquipmentType {
     public static final long S_ATMOSPHERIC_LIFEBOAT = 1L << 2;
 
     // New stuff for shields
-    protected int baseDamageAbsorptionRate = 0;
-    protected int baseDamageCapacity = 0;
-    protected int damageTaken = 0;
+    private int baseDamageAbsorptionRate = 0;
+    private int baseDamageCapacity = 0;
 
-    private boolean industrial = false;
+    protected boolean industrial = false;
 
     // New stuff for infantry kits
-    protected double damageDivisor = 1.0;
+    private double damageDivisor = 1.0;
 
     /** Creates new MiscType */
     public MiscType() {
@@ -454,10 +455,9 @@ public class MiscType extends EquipmentType {
 
     @Override
     public Double variableStepSize() {
-        if (hasFlag(F_CARGO) || hasFlag(F_LIQUID_CARGO)) {
+        if (hasFlag(F_CARGO) || hasFlag(F_LIQUID_CARGO) || hasFlag(F_CARGOLIFTER)) {
             return 0.5;
-        }
-        if (hasFlag(F_LADDER)) {
+        } else if (hasFlag(F_LADDER)) {
             return 20.0;
         }
         return super.variableStepSize();
@@ -885,7 +885,7 @@ public class MiscType extends EquipmentType {
         } else if (hasFlag(F_BA_MISSION_EQUIPMENT)) {
             // Size is weight in kg
             return RoundWeight.nearestKg(size / 1000.0);
-        } else if (hasFlag(MiscType.F_RAM_PLATE)) {
+        } else if (hasFlag(F_RAM_PLATE)) {
             return RoundWeight.nextTon(entity.getWeight() / 10.0);
         }
        // okay, I'm out of ideas
@@ -1306,19 +1306,19 @@ public class MiscType extends EquipmentType {
                 return entity.locations() - 1;
             }
         } else if (hasFlag(F_ENDO_STEEL)) {
-            if ((entity instanceof Mech) && ((Mech) entity).isSuperHeavy()) {
-                return 7;
+            if (entity.isSuperHeavy()) {
+                return isClan() ? 4 : 7;
             } else {
-                return 14;
+                return isClan() ? 7 : 14;
             }
-            // Clan Endo Steel doesn't have variable crits
+        } else if (hasFlag(F_ENDO_STEEL_PROTO)) {
+            return entity.isSuperHeavy() ? 8 : 16;
         } else if (hasFlag(F_ENDO_COMPOSITE)) {
-            if ((entity instanceof Mech) && ((Mech) entity).isSuperHeavy()) {
-                return 4;
+            if (entity.isSuperHeavy()) {
+                return isClan() ? 2 : 4;
             } else {
-                return 7;
+                return isClan() ? 4 : 7;
             }
-            // Clan Endo Composite doesn't have variable crits
         } else if (hasFlag(F_FUEL)) {
             return (int) Math.ceil(getTonnage(entity));
         } else if (hasFlag(F_CARGO) || hasFlag(F_LIQUID_CARGO) || hasFlag(F_COMMUNICATIONS)) {
@@ -1483,9 +1483,6 @@ public class MiscType extends EquipmentType {
         EquipmentType.addType(MiscType.createCLECM());
         EquipmentType.addType(MiscType.createISTargComp());
         EquipmentType.addType(MiscType.createCLTargComp());
-        EquipmentType.addType(MiscType.createMekStealth());
-        EquipmentType.addType(MiscType.createISFerroFibrous());
-        EquipmentType.addType(MiscType.createCLFerroFibrous());
         EquipmentType.addType(MiscType.createISEndoSteel());
         EquipmentType.addType(MiscType.createCLEndoSteel());
         EquipmentType.addType(MiscType.createBeagleActiveProbe());
@@ -1522,21 +1519,6 @@ public class MiscType extends EquipmentType {
         EquipmentType.addType(MiscType.createImprovedJumpJet());
         EquipmentType.addType(MiscType.createVehicularJumpJet());
         EquipmentType.addType(MiscType.createJumpBooster());
-        EquipmentType.addType(MiscType.createFerroFibrousPrototype());
-        EquipmentType.addType(MiscType.createFerroAlumPrototype());
-        EquipmentType.addType(MiscType.createLightFerroFibrous());
-        EquipmentType.addType(MiscType.createHeavyFerroFibrous());
-        EquipmentType.addType(MiscType.createISFerroAlum());
-        EquipmentType.addType(MiscType.createCLFerroAlum());
-        EquipmentType.addType(MiscType.createHeavyFerroAlum());
-        EquipmentType.addType(MiscType.createLightFerroAlum());
-        EquipmentType.addType(MiscType.createISHardenedArmor());
-        EquipmentType.addType(MiscType.createISIndustrialArmor());
-        EquipmentType.addType(MiscType.createISPrimitiveArmor());
-        EquipmentType.addType(MiscType.createPrimitiveFighterArmor());
-        EquipmentType.addType(MiscType.createISHeavyIndustrialArmor());
-        EquipmentType.addType(MiscType.createISCommercialArmor());
-        EquipmentType.addType(MiscType.createCLFerroLamellorArmor());
         EquipmentType.addType(MiscType.createISEndoSteelPrototype());
         EquipmentType.addType(MiscType.createReinforcedStructure());
         EquipmentType.addType(MiscType.createISCompositeStructure());
@@ -1580,14 +1562,10 @@ public class MiscType extends EquipmentType {
         EquipmentType.addType(MiscType.createHeavyArmor());
         EquipmentType.addType(MiscType.createSpikes());
         EquipmentType.addType(MiscType.createTalons());
-        EquipmentType.addType(MiscType.createISReactive());
-        EquipmentType.addType(MiscType.createCLReactive());
-        EquipmentType.addType(MiscType.createISReflective());
-        EquipmentType.addType(MiscType.createCLReflective());
         EquipmentType.addType(MiscType.createISCASEII());
         EquipmentType.addType(MiscType.createCLCASEII());
         EquipmentType.addType(MiscType.createISAES());
-        EquipmentType.addType(MiscType.createISModularArmor());
+        EquipmentType.addType(MiscType.createModularArmor());
         EquipmentType.addType(MiscType.createCommsGear());
         EquipmentType.addType(MiscType.createISGroundMobileHPG());
         EquipmentType.addType(MiscType.createISMobileHPG());
@@ -1642,7 +1620,6 @@ public class MiscType extends EquipmentType {
         EquipmentType.addType(MiscType.createISLargeNavalCommScannerSuite());
         EquipmentType.addType(MiscType.createISNavalTugAdaptor());
         EquipmentType.addType(MiscType.createISSpaceMineDispenser());
-        EquipmentType.addType(MiscType.createVehicularStealth());
         EquipmentType.addType(MiscType.createEmergencyC3M());
         EquipmentType.addType(MiscType.createNovaCEWS());
 
@@ -1654,23 +1631,6 @@ public class MiscType extends EquipmentType {
         EquipmentType.addType(MiscType.createProtomechUMU());
 
         // Start BattleArmor equipment
-        EquipmentType.addType(MiscType.createISBAStandardArmor());
-        EquipmentType.addType(MiscType.createClanBAStandardArmor());
-        EquipmentType.addType(MiscType.createISBAAdvancedArmor());
-        EquipmentType.addType(MiscType.createISBAStandardPrototypeArmor());
-        EquipmentType.addType(MiscType.createClanBAFireResistantArmor());
-        EquipmentType.addType(MiscType.createISBAReactiveArmor());
-        EquipmentType.addType(MiscType.createClanBAReactiveArmor());
-        EquipmentType.addType(MiscType.createISBAReflectiveArmor());
-        EquipmentType.addType(MiscType.createClanBAReflectiveArmor());
-        EquipmentType.addType(MiscType.createISBAStealthPrototype());
-        EquipmentType.addType(MiscType.createISBABasicStealth());
-        EquipmentType.addType(MiscType.createClanBABasicStealth());
-        EquipmentType.addType(MiscType.createISBAStandardStealth());
-        EquipmentType.addType(MiscType.createClanBAStandardStealth());
-        EquipmentType.addType(MiscType.createISBAImprovedStealth());
-        EquipmentType.addType(MiscType.createClanBAImprovedStealth());
-        EquipmentType.addType(MiscType.createISBAMimeticCamo());
         EquipmentType.addType(MiscType.createMine());
         EquipmentType.addType(MiscType.createBABasicManipulator());
         EquipmentType.addType(MiscType.createBABasicManipulatorMineClearance());
@@ -1772,13 +1732,9 @@ public class MiscType extends EquipmentType {
         EquipmentType.addType(MiscType.createLadder());
         EquipmentType.addType(MiscType.createMaritimeLifeboat());
         EquipmentType.addType(MiscType.createMaritimeEscapePod());
-        EquipmentType.addType(MiscType.createAtmossphericLifeboat());
+        EquipmentType.addType(MiscType.createAtmosphericLifeboat());
 
         // 3145 Stuff
-        EquipmentType.addType(MiscType.createAntiPenetrativeAblation());
-        EquipmentType.addType(MiscType.createISHeatDissipating());
-        EquipmentType.addType(MiscType.createISImpactResistant());
-        EquipmentType.addType(MiscType.createISBallisticReinforced());
         EquipmentType.addType(MiscType.createHarJelII());
         EquipmentType.addType(MiscType.createHarJelIII());
         EquipmentType.addType(MiscType.createRadicalHeatSinkSystem());
@@ -1796,7 +1752,6 @@ public class MiscType extends EquipmentType {
         // Prototype Stuff
         EquipmentType.addType(MiscType.createISProtoArtemis());
         EquipmentType.addType(MiscType.createCASEPrototype());
-        EquipmentType.addType(MiscType.createElectricDischargeArmor());
         EquipmentType.addType(MiscType.createProtoMagneticClamp());
         EquipmentType.addType(MiscType.createProtomechMeleeWeapon());
         EquipmentType.addType(MiscType.createProtoQuadMeleeSystem());
@@ -1824,17 +1779,9 @@ public class MiscType extends EquipmentType {
         EquipmentType.addType(MiscType.createLithiumFusionBattery());
         EquipmentType.addType(MiscType.createLightSail());
         EquipmentType.addType(MiscType.createEnergyStorageBattery());
-        EquipmentType.addType(MiscType.createISImpFerroAluminumArmor());
-        EquipmentType.addType(MiscType.createClanImpFerroAluminumArmor());
-        EquipmentType.addType(MiscType.createPrimitiveLCAerospaceArmor());
-        EquipmentType.addType(MiscType.createISAeroSpaceArmor());
-        EquipmentType.addType(MiscType.createClanAeroSpaceArmor());
-        EquipmentType.addType(MiscType.createISFerroCarbideArmor());
-        EquipmentType.addType(MiscType.createClanFerroCarbideArmor());
-        EquipmentType.addType(MiscType.createISLamellorFerroCarbideArmor());
-        EquipmentType.addType(MiscType.createClanLamellorFerroCarbideArmor());
 
         // Infantry Equipment Packs
+        EquipmentType.addType(new AntiMekGear());
         EquipmentType.addType(MiscType.createISAblativeStandardInfArmor());
         EquipmentType.addType(MiscType.createISAblativeConcealedInfArmor());
         EquipmentType.addType(MiscType.createISAblativeFlakStandardArmorInfArmor());
@@ -2179,6 +2126,7 @@ public class MiscType extends EquipmentType {
         misc.cost = COST_VARIABLE;
         misc.flags = misc.flags.or(F_PARTIAL_WING).or(F_MECH_EQUIPMENT);
         misc.rulesRefs = "292, TO";
+        misc.omniFixedOnly = true;
         //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_F)
                 .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
@@ -2202,6 +2150,7 @@ public class MiscType extends EquipmentType {
         misc.spreadable = true;
         misc.cost = COST_VARIABLE;
         misc.flags = misc.flags.or(F_PARTIAL_WING).or(F_MECH_EQUIPMENT);
+        misc.omniFixedOnly = true;
         misc.rulesRefs = "292, TO";
         //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         misc.techAdvancement.setTechBase(TECH_BASE_CLAN).setIntroLevel(false).setUnofficial(false)
@@ -2366,99 +2315,6 @@ public class MiscType extends EquipmentType {
 
     // Armor (Mech/Vehicle/Fighter)
 
-    public static MiscType createISCommercialArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_COMMERCIAL);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_COMMERCIAL, false));
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_COMMERCIAL, true));
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = 0;
-        misc.hittable = false;
-        misc.bv = 0;
-        misc.industrial = true;
-        misc.flags = misc.flags.or(F_COMMERCIAL_ARMOR).or(F_MECH_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.rulesRefs = "205, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_ALL).setTechRating(RATING_B)
-                .setAvailability(RATING_B, RATING_B, RATING_A, RATING_A)
-                .setAdvancement(2290, 2300, 2310)
-                .setApproximate(true, true, false).setPrototypeFactions(F_TA)
-                .setProductionFactions(F_TA);
-
-        return misc;
-    }
-
-    public static MiscType createISPrimitiveArmor() {
-        //TODO
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_PRIMITIVE);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_PRIMITIVE, false));
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = 0;
-        misc.hittable = false;
-        misc.bv = 0;
-        misc.industrial = true;
-        misc.flags = misc.flags.or(F_PRIMITIVE_ARMOR).or(F_MECH_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.rulesRefs = "125, IO";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_C)
-                .setAvailability(RATING_B, RATING_C, RATING_B, RATING_B)
-                .setISAdvancement(DATE_ES, 2290, 2315, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, true, true, false, false)
-                .setClanAdvancement(DATE_ES, 2290, 2315, DATE_NONE, DATE_NONE)
-                .setClanApproximate(false, true, true, false, false).setPrototypeFactions(F_TH)
-                .setProductionFactions(F_TH);
-
-        return misc;
-    }
-
-    public static MiscType createPrimitiveFighterArmor() {
-
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_PRIMITIVE_FIGHTER);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_PRIMITIVE_FIGHTER, false));
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = 0;
-        misc.hittable = false;
-        misc.bv = 0;
-        misc.industrial = true;
-        misc.flags = misc.flags.or(F_PRIMITIVE_ARMOR).or(F_FIGHTER_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.rulesRefs = "125, IO";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_C)
-                .setAvailability(RATING_B, RATING_C, RATING_B, RATING_B)
-                .setISAdvancement(DATE_ES, 2300, 2315).setISApproximate(false, true, true)
-                .setClanApproximate(false, true, true, false, false)
-                .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.ADVANCED);
-        return misc;
-    }
-
-    public static MiscType createISIndustrialArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_INDUSTRIAL);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_INDUSTRIAL, false));
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_INDUSTRIAL, true));
-        misc.addLookupName("Clan Industrial Armor");
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = 0;
-        misc.hittable = false;
-        misc.bv = 0;
-        misc.industrial = true;
-        misc.flags = misc.flags.or(F_INDUSTRIAL_ARMOR).or(F_MECH_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.rulesRefs = "205, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_ALL).setTechRating(RATING_C)
-                .setAvailability(RATING_B, RATING_C, RATING_B, RATING_B)
-                .setAdvancement(2430, 2439, 2439)
-                .setApproximate(true, true, true).setPrototypeFactions(F_TH)
-                .setProductionFactions(F_TH);
-        return misc;
-    }
-
     // TODO - At some point the "Standard" below needs to be broken out as they
     // all have Separate Tech Advancement information.
 
@@ -2472,11 +2328,9 @@ public class MiscType extends EquipmentType {
         misc.setInternalName(EquipmentType.getStructureTypeName(T_STRUCTURE_STANDARD));
         misc.addLookupName(EquipmentType.getStructureTypeName(T_STRUCTURE_STANDARD, false));
         misc.addLookupName(EquipmentType.getStructureTypeName(T_STRUCTURE_STANDARD, true));
-        misc.addLookupName(EquipmentType.getArmorTypeName(T_ARMOR_STANDARD, false));
-        misc.addLookupName(EquipmentType.getArmorTypeName(T_ARMOR_STANDARD, true));
         misc.addLookupName("Regular");
-        misc.addLookupName("IS Standard Armor");
-        misc.addLookupName("Clan Standard Armor");
+        misc.addLookupName("IS Standard Structure");
+        misc.addLookupName("Clan Standard Structure");
         misc.flags = misc.flags.or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT).or(F_SUPPORT_TANK_EQUIPMENT)
                 .or(F_VTOL_EQUIPMENT).or(F_FIGHTER_EQUIPMENT).or(F_PROTOMECH_EQUIPMENT);
         misc.criticals = 0;
@@ -2489,436 +2343,7 @@ public class MiscType extends EquipmentType {
         return misc;
     }
 
-    public static MiscType createISHeavyIndustrialArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_HEAVY_INDUSTRIAL);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_HEAVY_INDUSTRIAL, false));
-        misc.addLookupName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_HEAVY_INDUSTRIAL, true));
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = 0;
-        misc.hittable = false;
-        misc.bv = 0;
-        misc.industrial = true;
-        misc.flags = misc.flags.or(F_HEAVY_INDUSTRIAL_ARMOR).or(F_MECH_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.rulesRefs = "205, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_ALL).setTechRating(RATING_D)
-                .setAvailability(RATING_C, RATING_C, RATING_C, RATING_B)
-                .setAdvancement(2460, 2470, 2470)
-                .setApproximate(false, true, false).setPrototypeFactions(F_TH)
-                .setProductionFactions(F_TH);
-        return misc;
-    }
-
-    public static MiscType createAntiPenetrativeAblation() {
-        MiscType misc = new MiscType();
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_ANTI_PENETRATIVE_ABLATION);
-        misc.setInternalName("IS " + misc.name);
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = CRITICALS_VARIABLE;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_ANTI_PENETRATIVE_ABLATIVE).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT)
-                .or(F_VTOL_EQUIPMENT).or(F_FIGHTER_EQUIPMENT).or(F_SUPPORT_TANK_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "86, IO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_X, RATING_X, RATING_X, RATING_E)
-                .setISAdvancement(3100, 3114,  DATE_NONE, DATE_NONE, DATE_NONE)
-                .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_DC)
-                .setProductionFactions(F_DC)
-                .setStaticTechLevel(SimpleTechLevel.ADVANCED);
-        return misc;
-    }
-
-    public static MiscType createISBallisticReinforced() {
-        MiscType misc = new MiscType();
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BALLISTIC_REINFORCED);
-        misc.setInternalName("IS " + misc.name);
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = CRITICALS_VARIABLE;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_BALLISTIC_REINFORCED).or(F_MECH_EQUIPMENT).or(F_FIGHTER_EQUIPMENT)
-                .or(F_TANK_EQUIPMENT).or(F_VTOL_EQUIPMENT).or(F_SUPPORT_TANK_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "87, IO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_X, RATING_X, RATING_X, RATING_E)
-                .setISAdvancement(3120, 3131, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_DC)
-                .setProductionFactions(F_DC)
-                .setStaticTechLevel(SimpleTechLevel.ADVANCED);
-        return misc;
-    }
-
-    public static MiscType createFerroFibrousPrototype() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_FERRO_FIBROUS_PROTO);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_FERRO_FIBROUS_PROTO, false));
-        misc.addLookupName("IS Ferro-Fibrous Armor Prototype");
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = CRITICALS_VARIABLE;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_FERRO_FIBROUS_PROTO).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT)
-                .or(F_VTOL_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "72, IO";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_F, RATING_F, RATING_X, RATING_X)
-                .setISAdvancement(2557, DATE_NONE, DATE_NONE, 2571, 3034)
-                .setISApproximate(true, false, false, true, true).setPrototypeFactions(F_TH)
-                .setReintroductionFactions(F_LC, F_DC);
-        return misc;
-    }
-
-    public static MiscType createISFerroFibrous() {
-        MiscType misc = new MiscType();
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_FERRO_FIBROUS);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_FERRO_FIBROUS, false));
-        misc.addLookupName("IS Ferro-Fibrous Armor");
-        misc.addLookupName("IS Ferro Fibre");
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = CRITICALS_VARIABLE;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_FERRO_FIBROUS).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT).or(F_VTOL_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "205, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_D, RATING_F, RATING_D, RATING_C).setISAdvancement(2557, 2571, 3055, 2810, 3040)
-                .setISApproximate(false, false, false, true, false).setPrototypeFactions(F_TH)
-                .setProductionFactions(F_TH).setReintroductionFactions(F_DC);
-        return misc;
-    }
-
-    public static MiscType createFerroAlumPrototype() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_FERRO_ALUM_PROTO);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_FERRO_ALUM_PROTO, false));
-        misc.addLookupName("IS Ferro-Alum Armor Prototype");
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_FERRO_FIBROUS_PROTO).or(F_FIGHTER_EQUIPMENT)
-                .or(F_SC_EQUIPMENT).or(F_DS_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "72, IO";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_F, RATING_F, RATING_X, RATING_X)
-                .setISAdvancement(2557, DATE_NONE, DATE_NONE, 2571, 3034)
-                .setISApproximate(true, false, false, true, true).setPrototypeFactions(F_TH)
-                .setReintroductionFactions(F_LC, F_DC);
-        return misc;
-    }
-
-    public static MiscType createISFerroAlum() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_ALUM);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_ALUM, false));
-        misc.addLookupName("IS Ferro-Aluminum Armor");
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_FERRO_FIBROUS).or(F_FIGHTER_EQUIPMENT).or(F_SC_EQUIPMENT).or(F_DS_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "205, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_D, RATING_F, RATING_D, RATING_C).setISAdvancement(2557, 2571, 3055, 2810, 3040)
-                .setISApproximate(false, false, false, true, false).setPrototypeFactions(F_TH)
-                .setProductionFactions(F_TH).setReintroductionFactions(F_DC);
-        return misc;
-    }
-
-    public static MiscType createCLFerroAlum() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_ALUM);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_ALUM, true));
-        misc.addLookupName("Clan Ferro-Aluminum Armor");
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_FERRO_FIBROUS).or(F_FIGHTER_EQUIPMENT).or(F_SC_EQUIPMENT).or(F_DS_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "205, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
-                .setAvailability(RATING_X, RATING_E, RATING_D, RATING_C)
-                .setClanAdvancement(2820, 2825, 2830, DATE_NONE, DATE_NONE)
-                .setClanApproximate(true, true, false, false, false).setPrototypeFactions(F_CSR)
-                .setProductionFactions(F_CSR);
-        return misc;
-    }
-
-    public static MiscType createCLFerroFibrous() {
-        MiscType misc = new MiscType();
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_FERRO_FIBROUS);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_FERRO_FIBROUS, true));
-        misc.addLookupName("Clan Ferro-Fibrous Armor");
-        misc.addLookupName("Clan Ferro Fibre");
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = CRITICALS_VARIABLE;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_FERRO_FIBROUS).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT).or(F_VTOL_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "205, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
-                .setAvailability(RATING_X, RATING_E, RATING_D, RATING_C)
-                .setClanAdvancement(2820, 2825, 2830, DATE_NONE, DATE_NONE)
-                .setClanApproximate(true, true, false, false, false).setPrototypeFactions(F_CSR)
-                .setProductionFactions(F_CSR);
-
-        return misc;
-    }
-
-    public static MiscType createLightFerroFibrous() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_LIGHT_FERRO);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_LIGHT_FERRO, false));
-        misc.addLookupName("IS Light Ferro-Fibrous Armor");
-        misc.addLookupName("IS LightFerro");
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = CRITICALS_VARIABLE;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_LIGHT_FERRO).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT).or(F_VTOL_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "205, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
-                .setISAdvancement(3055, 3067, 3070, DATE_NONE, DATE_NONE)
-                .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FW)
-                .setProductionFactions(F_FW);
-        return misc;
-    }
-
-    public static MiscType createLightFerroAlum() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_LIGHT_ALUM);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_LIGHT_ALUM, false));
-        misc.addLookupName("IS Light Ferro-Aluminum Armor");
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_LIGHT_FERRO).or(F_FIGHTER_EQUIPMENT).or(F_SC_EQUIPMENT).or(F_DS_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "205, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
-                .setISAdvancement(3055, 3067, 3070, DATE_NONE, DATE_NONE)
-                .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FW)
-                .setProductionFactions(F_FW);
-        return misc;
-    }
-
-    public static MiscType createHeavyFerroFibrous() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_HEAVY_FERRO);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_HEAVY_FERRO, false));
-        misc.addLookupName("IS Heavy Ferro-Fibrous Armor");
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = CRITICALS_VARIABLE;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_HEAVY_FERRO).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT).or(F_VTOL_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "205, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
-                .setISAdvancement(3056, 3069, 3070, DATE_NONE, DATE_NONE)
-                .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS, F_LC)
-                .setProductionFactions(F_LC);
-        return misc;
-    }
-
-    public static MiscType createHeavyFerroAlum() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_HEAVY_ALUM);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_HEAVY_ALUM, false));
-        misc.addLookupName("IS Heavy Ferro-Aluminum Armor");
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_HEAVY_FERRO).or(F_FIGHTER_EQUIPMENT).or(F_SC_EQUIPMENT).or(F_DS_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "205, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
-                .setISAdvancement(3056, 3069, 3070, DATE_NONE, DATE_NONE)
-                .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FS, F_LC)
-                .setProductionFactions(F_LC);
-        return misc;
-    }
-
-    public static MiscType createCLFerroLamellorArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_FERRO_LAMELLOR);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_FERRO_LAMELLOR, true));
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = CRITICALS_VARIABLE;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.bv = 0;
-        misc.flags = misc.flags.or(F_FERRO_LAMELLOR).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT).or(F_FIGHTER_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.rulesRefs = "279, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        misc.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-                .setClanAdvancement(3070, 3109, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setClanApproximate(false, false, false, false, false).setPrototypeFactions(F_CSR)
-                .setProductionFactions(F_CSR).setStaticTechLevel(SimpleTechLevel.ADVANCED);
-        return misc;
-    }
-
-    public static MiscType createISHardenedArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_HARDENED);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_HARDENED, false));
-        misc.addLookupName("Clan Hardened");
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = 0;
-        misc.hittable = false;
-        misc.bv = 0;
-        misc.flags = misc.flags.or(F_HARDENED_ARMOR).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.rulesRefs = "280, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        misc.techAdvancement.setTechBase(TECH_BASE_ALL).setTechRating(RATING_D)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-                .setISAdvancement(3047, 3081, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, true, false, false, false)
-                .setClanAdvancement(3061, 3081, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setClanApproximate(false, true, false, false, false).setPrototypeFactions(F_FS, F_LC, F_CGB)
-                .setProductionFactions(F_LC).setStaticTechLevel(SimpleTechLevel.ADVANCED);
-        return misc;
-    }
-
-    public static MiscType createISHeatDissipating() {
-        MiscType misc = new MiscType();
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_HEAT_DISSIPATING);
-        misc.setInternalName("IS " + misc.name);
-        misc.addLookupName("Clan Heat-Dissipating");
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = CRITICALS_VARIABLE;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_HEAT_DISSIPATING).or(F_MECH_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "87, IO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        misc.techAdvancement.setTechBase(TECH_BASE_ALL).setTechRating(RATING_E)
-                .setAvailability(RATING_X, RATING_X, RATING_X, RATING_E)
-                .setISAdvancement(3115, 3123, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setISApproximate(true, false, false, false, false)
-                .setClanAdvancement(3115, 3126, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CC)
-                .setProductionFactions(F_CC)
-                .setStaticTechLevel(SimpleTechLevel.ADVANCED);
-        return misc;
-    }
-
-    public static MiscType createISImpactResistant() {
-        MiscType misc = new MiscType();
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_IMPACT_RESISTANT);
-        misc.setInternalName("IS " + misc.name);
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = CRITICALS_VARIABLE;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_IMPACT_RESISTANT).or(F_MECH_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "87, IO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_X, RATING_X, RATING_X, RATING_E)
-                .setISAdvancement(3090, 3103, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_LC)
-                .setProductionFactions(F_LC)
-                .setStaticTechLevel(SimpleTechLevel.ADVANCED);
-        return misc;
-    }
-
-    public static MiscType createISReflective() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_REFLECTIVE);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_REFLECTIVE, false));
-        misc.addLookupName("IS Reflective Armor");
-        misc.addLookupName("IS Reflective");
-        misc.tonnage = 0;
-        misc.criticals = CRITICALS_VARIABLE;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_REFLECTIVE).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT).or(F_VTOL_EQUIPMENT)
-                .or(F_SUPPORT_TANK_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "280, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-                .setISAdvancement(3058, 3080, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, true, false, false, false).setPrototypeFactions(F_LC)
-                .setProductionFactions(F_LC).setStaticTechLevel(SimpleTechLevel.ADVANCED);
-        return misc;
-    }
-
-    public static MiscType createCLReflective() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_REFLECTIVE);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_REFLECTIVE, true));
-        misc.addLookupName("Clan Reflective Armor");
-        misc.addLookupName("Clan Reflective");
-        misc.tonnage = 0;
-        misc.criticals = CRITICALS_VARIABLE;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_REFLECTIVE).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT).or(F_VTOL_EQUIPMENT)
-                .or(F_SUPPORT_TANK_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "280, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        misc.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-                .setClanAdvancement(3061, 3080, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setClanApproximate(false, true, false, false, false).setPrototypeFactions(F_CJF)
-                .setProductionFactions(F_CJF).setStaticTechLevel(SimpleTechLevel.ADVANCED);
-
-        return misc;
-    }
-
-    public static MiscType createISModularArmor() {
+    public static MiscType createModularArmor() {
         MiscType misc = new MiscType();
 
         misc.name = "Modular Armor";
@@ -2929,12 +2354,12 @@ public class MiscType extends EquipmentType {
         misc.tonnage = 1;
         misc.criticals = 1;
         misc.cost = 100000;
-        misc.flags = misc.flags.or(F_MODULAR_ARMOR).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT).or(F_SUPPORT_TANK_EQUIPMENT).or(F_VTOL_EQUIPMENT);
+        misc.flags = misc.flags.or(F_MODULAR_ARMOR).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT).or(F_FIGHTER_EQUIPMENT)
+                .or(F_SUPPORT_TANK_EQUIPMENT).or(F_VTOL_EQUIPMENT);
         misc.bv = BV_VARIABLE;
-        misc.damageTaken = 0;
         misc.baseDamageAbsorptionRate = 10;
         misc.baseDamageCapacity = 10;
-        misc.rulesRefs = "281, TO";
+        misc.rulesRefs = "93, TO:AUE";
         //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
         misc.techAdvancement.setTechBase(TECH_BASE_ALL).setTechRating(RATING_D)
                 .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
@@ -2946,722 +2371,7 @@ public class MiscType extends EquipmentType {
         return misc;
     }
 
-    public static MiscType createISReactive() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_REACTIVE);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_REACTIVE, false));
-        misc.addLookupName("IS Reactive Armor");
-        misc.addLookupName("IS Reactive");
-        misc.tonnage = 0;
-        misc.criticals = CRITICALS_VARIABLE;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_REACTIVE).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT).or(F_VTOL_EQUIPMENT)
-            .or(F_SUPPORT_TANK_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "282, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-                .setISAdvancement(3063, 3081, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, true, false, false, false).setPrototypeFactions(F_DC)
-                .setProductionFactions(F_DC).setStaticTechLevel(SimpleTechLevel.ADVANCED);
-        return misc;
-    }
-
-    public static MiscType createCLReactive() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_REACTIVE);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_REACTIVE, true));
-        misc.addLookupName("Clan Reactive Armor");
-        misc.addLookupName("Clan Reactive");
-        misc.tonnage = 0;
-        misc.criticals = CRITICALS_VARIABLE;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_REACTIVE).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT).or(F_VTOL_EQUIPMENT)
-                .or(F_SUPPORT_TANK_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "282, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        misc.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-                .setClanAdvancement(3065, 3081, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setClanApproximate(false, true, false, false, false).setPrototypeFactions(F_CGB)
-                .setProductionFactions(F_CGB).setStaticTechLevel(SimpleTechLevel.ADVANCED);
-        return misc;
-    }
-
-    public static MiscType createMekStealth() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_STEALTH);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_STEALTH, false));
-        misc.addLookupName("IS Stealth Armor");
-        misc.tonnage = 0; // ???
-        misc.criticals = 12;
-        misc.tankslots = 0;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_STEALTH).or(F_MECH_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        String[] saModes = { "Off", "On" };
-        misc.setModes(saModes);
-        misc.setInstantModeSwitch(false);
-        misc.bv = 0;
-        misc.rulesRefs = "206, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_X, RATING_X, RATING_E, RATING_D)
-                .setISAdvancement(3051, 3063, 3072, DATE_NONE, DATE_NONE)
-                .setISApproximate(true, false, false, false, false)
-                .setPrototypeFactions(F_CC)
-                .setProductionFactions(F_CC);
-        return misc;
-    }
-
-    public static MiscType createVehicularStealth() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_STEALTH_VEHICLE);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_STEALTH_VEHICLE, false));
-        misc.addLookupName("IS Vehicular Stealth Armor");
-        misc.tonnage = 0; // ???
-        // Has to be 1, because we allocate 2 of them, so 2*1=2, which is
-        // correct
-        // When this was 2, it was ending up as 2*2=4 slots used on the tank.
-        // Bad juju.
-        misc.tankslots = 1;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_STEALTH).or(F_TANK_EQUIPMENT).or(F_FIGHTER_EQUIPMENT).or(F_VTOL_EQUIPMENT)
-                .or(F_SUPPORT_TANK_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        String[] saModes = { "Off", "On" };
-        misc.setModes(saModes);
-        misc.setInstantModeSwitch(false);
-        misc.bv = 0;
-        misc.rulesRefs = "282, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-                .setISAdvancement(DATE_NONE, 3067, 3084, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, false, true, false, false).setPrototypeFactions(F_CC)
-                .setProductionFactions(F_CC).setStaticTechLevel(SimpleTechLevel.STANDARD);
-        return misc;
-    }
-
-    // Armor (Small Craft, and Large Aerospace Craft)
-
-    public static MiscType createPrimitiveLCAerospaceArmor() {
-
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_PRIMITIVE_AERO);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_PRIMITIVE_AERO, false));
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = 0;
-        misc.hittable = false;
-        misc.bv = 0;
-        misc.industrial = true;
-        misc.flags = misc.flags.or(F_PRIMITIVE_ARMOR).or(F_SC_EQUIPMENT).or(F_DS_EQUIPMENT)
-                .or(F_JS_EQUIPMENT).or(F_WS_EQUIPMENT).or(F_SS_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.rulesRefs = "125, IO";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_C)
-                .setAvailability(RATING_B, RATING_C, RATING_B, RATING_B)
-                .setISAdvancement(DATE_ES, 2300, 2315).setISApproximate(false, true, true)
-                .setProductionFactions(F_TH).setStaticTechLevel(SimpleTechLevel.STANDARD);
-        return misc;
-    }
-
-    // Separate IS/Clan standard aerospace armor, which provides different points per ton.
-    public static MiscType createISAeroSpaceArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_AEROSPACE);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_AEROSPACE, false));
-        misc.tonnage = 0;
-        misc.criticals = 0;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_SC_EQUIPMENT).or(F_DS_EQUIPMENT)
-                .or(F_JS_EQUIPMENT).or(F_WS_EQUIPMENT).or(F_SS_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "205, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_D)
-            .setAvailability(RATING_C, RATING_C, RATING_C, RATING_B)
-            .setISAdvancement(2460, 2470, 2470).setISApproximate(true, false, false)
-            .setPrototypeFactions(F_TH).setProductionFactions(F_TH)
-            .setStaticTechLevel(SimpleTechLevel.STANDARD);
-        return misc;
-    }
-
-    public static MiscType createClanAeroSpaceArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_AEROSPACE);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_AEROSPACE, true));
-        misc.tonnage = 0;
-        misc.criticals = 0;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.flags = misc.flags.or(F_SC_EQUIPMENT).or(F_DS_EQUIPMENT)
-                .or(F_JS_EQUIPMENT).or(F_WS_EQUIPMENT).or(F_SS_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.bv = 0;
-        misc.rulesRefs = "205, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_D)
-            .setAvailability(RATING_C, RATING_C, RATING_C, RATING_B)
-            .setClanAdvancement(DATE_NONE, DATE_NONE, 2470)
-            .setStaticTechLevel(SimpleTechLevel.STANDARD);
-        return misc;
-    }
-
-    public static MiscType createISImpFerroAluminumArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_LC_FERRO_IMP);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_LC_FERRO_IMP, false));
-        misc.addLookupName(misc.name);
-        misc.addLookupName("ImprovedFerroAluminum");
-        misc.tonnage = 0;
-        misc.criticals = 0;
-        misc.hittable = false;
-        misc.bv = 0;
-        misc.flags = misc.flags.or(F_CAPITAL_ARMOR).or(F_IMP_FERRO).or(F_JS_EQUIPMENT).or(F_WS_EQUIPMENT).or(F_SS_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.rulesRefs = "152,SO";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_E, RATING_X, RATING_E, RATING_D)
-                .setISAdvancement(2500, 2520, DATE_NONE, 2950, 3052)
-                .setISApproximate(true, true, false, false, false)
-                .setPrototypeFactions(F_TH).setProductionFactions(F_TH).setReintroductionFactions(F_FS, F_LC)
-                .setStaticTechLevel(SimpleTechLevel.ADVANCED);
-        return misc;
-    }
-
-    public static MiscType createClanImpFerroAluminumArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_LC_FERRO_IMP);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_LC_FERRO_IMP, true));
-        misc.tonnage = 0;
-        misc.criticals = 0;
-        misc.hittable = false;
-        misc.bv = 0;
-        misc.flags = misc.flags.or(F_CAPITAL_ARMOR).or(F_IMP_FERRO).or(F_JS_EQUIPMENT).or(F_WS_EQUIPMENT).or(F_SS_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.rulesRefs = "152,SO";
-        misc.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_E)
-                .setAvailability(RATING_E, RATING_X, RATING_E, RATING_D)
-                .setClanAdvancement(2500, 2520).setClanApproximate(false, true)
-                .setPrototypeFactions(F_TH).setProductionFactions(F_TH)
-                .setStaticTechLevel(SimpleTechLevel.ADVANCED);
-        return misc;
-    }
-
-    public static MiscType createISFerroCarbideArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_LC_FERRO_CARBIDE);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_LC_FERRO_CARBIDE, false));
-        misc.addLookupName("Ferro-Carbide");
-        misc.tonnage = 0;
-        misc.criticals = 0;
-        misc.hittable = false;
-        misc.bv = 0;
-        misc.flags = misc.flags.or(F_CAPITAL_ARMOR).or(F_FERRO_CARBIDE).or(F_JS_EQUIPMENT).or(F_WS_EQUIPMENT).or(F_SS_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.rulesRefs = "152,SO";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_E, RATING_X, RATING_E, RATING_D)
-                .setISAdvancement(2550, 2570, DATE_NONE, 2950, 3055).setISApproximate(true, false, false, false, false)
-                .setPrototypeFactions(F_TH)
-                .setProductionFactions(F_TH).setReintroductionFactions(F_DC, F_LC)
-                .setStaticTechLevel(SimpleTechLevel.ADVANCED);
-        return misc;
-    }
-
-    public static MiscType createClanFerroCarbideArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_LC_FERRO_CARBIDE);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_LC_FERRO_CARBIDE, true));
-        misc.tonnage = 0;
-        misc.criticals = 0;
-        misc.hittable = false;
-        misc.bv = 0;
-        misc.flags = misc.flags.or(F_CAPITAL_ARMOR).or(F_FERRO_CARBIDE).or(F_JS_EQUIPMENT).or(F_WS_EQUIPMENT).or(F_SS_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.rulesRefs = "152,SO";
-        misc.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_E)
-                .setAvailability(RATING_E, RATING_X, RATING_E, RATING_D)
-                .setClanAdvancement(2550, 2570, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                .setProductionFactions(F_TH)
-                .setStaticTechLevel(SimpleTechLevel.ADVANCED);
-        return misc;
-    }
-
-    public static MiscType createISLamellorFerroCarbideArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_LC_LAMELLOR_FERRO_CARBIDE);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_LC_LAMELLOR_FERRO_CARBIDE, false));
-        misc.addLookupName(misc.name);
-        misc.tonnage = 0;
-        misc.criticals = 0;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.bv = 0;
-        misc.flags = misc.flags.or(F_CAPITAL_ARMOR).or(F_JS_EQUIPMENT).or(F_WS_EQUIPMENT).or(F_SS_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.rulesRefs = "152,SO";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setTechRating(RATING_E)
-                .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
-                .setISAdvancement(2600, 2615, DATE_NONE, 2950, 3055).setISApproximate(true, false, false, false, false)
-                .setClanAdvancement(2600, 2615, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                .setProductionFactions(F_TH).setReintroductionFactions(F_FS, F_FW, F_LC)
-                .setStaticTechLevel(SimpleTechLevel.ADVANCED);
-        return misc;
-    }
-
-    public static MiscType createClanLamellorFerroCarbideArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_LC_LAMELLOR_FERRO_CARBIDE);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_LC_LAMELLOR_FERRO_CARBIDE, true));
-        misc.tonnage = 0;
-        misc.criticals = 0;
-        misc.hittable = false;
-        misc.spreadable = true;
-        misc.bv = 0;
-        misc.flags = misc.flags.or(F_CAPITAL_ARMOR).or(F_JS_EQUIPMENT).or(F_WS_EQUIPMENT).or(F_SS_EQUIPMENT);
-        misc.omniFixedOnly = true;
-        misc.rulesRefs = "152,SO";
-        misc.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_E)
-                .setAvailability(RATING_E, RATING_F, RATING_E, RATING_D)
-                .setClanAdvancement(2600, 2615, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                .setProductionFactions(F_TH)
-                .setStaticTechLevel(SimpleTechLevel.ADVANCED);
-        return misc;
-    }
-
-
-    // Armor (ProtoMech)
-
-    // TODO Protomech Armor IO pg 36
-
-    public static MiscType createElectricDischargeArmor() {
-        // TODO: add game rules for this
-        MiscType misc = new MiscType();
-        misc.name = EquipmentType.getArmorTypeName(T_ARMOR_EDP);
-        misc.setInternalName("CLEDPArmor");
-        misc.addLookupName(EquipmentType.getArmorTypeName(T_ARMOR_EDP, true));
-        misc.addLookupName(EquipmentType.getArmorTypeName(T_ARMOR_EDP));
-        misc.shortName = "EDP";
-        misc.tonnage = TONNAGE_VARIABLE;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_PROTOMECH_EQUIPMENT).or(F_ELECTRIC_DISCHARGE_ARMOR);
-        misc.omniFixedOnly = true;
-        misc.bv = 32;
-        String[] modes = { "not charging", "charging" };
-        misc.setModes(modes);
-        misc.rulesRefs = "64, IO";
-        misc.techAdvancement.setTechBase(TECH_BASE_CLAN).setTechRating(RATING_F)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_X)
-                .setClanAdvancement(3071, DATE_NONE, DATE_NONE, 3085, DATE_NONE)
-                .setClanApproximate(true, false, false, false, false).setPrototypeFactions(F_CFM)
-                .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL);
-        return misc;
-    }
-
-    // Armor (Battle Armor Infantry)
-
-    public static MiscType createISBAStandardArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_STANDARD);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_STANDARD, false));
-        misc.addLookupName("IS BA Standard (Basic)");
-        misc.tonnage = 0;
-        misc.criticals = 0;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_BA_EQUIPMENT);
-        misc.bv = 0;
-        misc.rulesRefs = "252, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setISAdvancement(2680, DATE_NONE, 3054, DATE_NONE, 3050)
-                .setISApproximate(true, false, true, false, false)
-                .setPrototypeFactions(F_TH)
-                .setReintroductionFactions(F_FS, F_LC, F_DC).setTechRating(RATING_E)
-                .setAvailability(RATING_F, RATING_F, RATING_E, RATING_D)
-                .setStaticTechLevel(SimpleTechLevel.STANDARD);
-
-        return misc;
-    }
-
-    public static MiscType createClanBAStandardArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_STANDARD);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_STANDARD, true));
-        misc.addLookupName("Clan BA Standard (Basic)");
-        misc.tonnage = 0;
-        misc.criticals = 0;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_BA_EQUIPMENT);
-        misc.bv = 0;
-        misc.rulesRefs = "252, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_CLAN)
-                .setClanAdvancement(DATE_NONE, 2868, 3054).setClanApproximate(true, true, false)
-                .setProductionFactions(F_CWF).setTechRating(RATING_E)
-                .setAvailability(RATING_F, RATING_F, RATING_E, RATING_D)
-                .setStaticTechLevel(SimpleTechLevel.STANDARD);
-
-        return misc;
-    }
-
-    public static MiscType createISBAStandardPrototypeArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = BattleArmor.STANDARD_PROTOTYPE;
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_STANDARD_PROTOTYPE));
-        misc.addLookupName("IS BA Standard (Prototype)");
-        // misc.addLookupName("Clan BA Standard (Prototype)");
-        misc.tonnage = 0;
-        misc.criticals = 4;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_BA_EQUIPMENT);
-        misc.bv = 0;
-        misc.techAdvancement.setTechBase(TECH_BASE_IS)
-                .setISAdvancement(3050, DATE_NONE, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_TH, F_FS, F_LC, F_DC)
-                .setProductionFactions(F_TH, F_FS, F_LC, F_DC).setTechRating(RATING_E)
-                .setAvailability(RATING_F, RATING_F, RATING_E, RATING_D)
-                .setStaticTechLevel(SimpleTechLevel.EXPERIMENTAL);
-
-        return misc;
-    }
-
-    public static MiscType createISBAAdvancedArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = BattleArmor.ADVANCED_ARMOR;
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_STANDARD_ADVANCED));
-        misc.addLookupName("IS BA Advanced");
-        misc.tonnage = 0;
-        misc.criticals = 5;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_BA_EQUIPMENT);
-        misc.bv = 0;
-        misc.rulesRefs = "252, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setISAdvancement(DATE_NONE, 3057, 3060)
-                .setProductionFactions(F_FW).setTechRating(RATING_E)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E);
-
-        return misc;
-    }
-
-    public static MiscType createClanBAFireResistantArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = BattleArmor.FIRE_RESISTANT;
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_FIRE_RESIST));
-        misc.addLookupName("Clan BA Fire Resistant");
-        misc.tonnage = 0;
-        misc.criticals = 5;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_FIRE_RESISTANT).or(F_BA_EQUIPMENT);
-        misc.bv = 0;
-        misc.rulesRefs = "253, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_CLAN).setClanAdvancement(3052, 3058, 3065)
-                .setClanApproximate(true, false, false).setPrototypeFactions(F_CFM)
-                .setProductionFactions(F_CFM).setTechRating(RATING_F)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E);
-
-        return misc;
-    }
-
-    public static MiscType createISBAStealthPrototype() {
-        MiscType misc = new MiscType();
-
-        misc.name = BattleArmor.STEALTH_PROTOTYPE;
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_STEALTH_PROTOTYPE));
-        misc.addLookupName("IS BA Stealth (Prototype)");
-        misc.addLookupName("Clan BA Stealth (Prototype)");
-        misc.tonnage = 0;
-        misc.criticals = 4;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_STEALTH).or(F_BA_EQUIPMENT);
-        misc.bv = 0;
-        misc.rulesRefs = "252, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setISAdvancement(3050, 3052, 3054, 3055, DATE_NONE)
-                .setISApproximate(false, false, false, false, false).setPrototypeFactions(F_FS, F_LC)
-                .setProductionFactions(F_FS, F_LC).setTechRating(RATING_E)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_X);
-
-        return misc;
-    }
-
-    public static MiscType createISBABasicStealth() {
-        MiscType misc = new MiscType();
-
-        misc.name = BattleArmor.BASIC_STEALTH_ARMOR;
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_STEALTH_BASIC, false));
-        misc.addLookupName("IS BA Stealth (Basic)");
-        misc.tonnage = 0;
-        misc.criticals = 3;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_STEALTH).or(F_BA_EQUIPMENT);
-        misc.bv = 0;
-        misc.rulesRefs = "252, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setISAdvancement(2700, 2710, 3054, 2770, 3052)
-                .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                .setProductionFactions(F_TH).setReintroductionFactions(F_DC).setTechRating(RATING_E)
-                .setAvailability(RATING_F, RATING_F, RATING_E, RATING_D);
-
-        return misc;
-    }
-
-    public static MiscType createClanBABasicStealth() {
-        MiscType misc = new MiscType();
-
-        misc.name = BattleArmor.BASIC_STEALTH_ARMOR;
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_STEALTH_BASIC, true));
-        misc.addLookupName("Clan BA Stealth (Basic)");
-        misc.tonnage = 0;
-        misc.criticals = 3;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_STEALTH).or(F_BA_EQUIPMENT);
-        misc.bv = 0;
-        misc.rulesRefs = "252, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_CLAN)
-                .setClanAdvancement(DATE_NONE, DATE_NONE, 3054).setTechRating(RATING_E)
-                .setAvailability(RATING_F, RATING_F, RATING_E, RATING_D);
-
-        return misc;
-    }
-
-    public static MiscType createISBAStandardStealth() {
-        MiscType misc = new MiscType();
-
-        misc.name = BattleArmor.STANDARD_STEALTH_ARMOR;
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_STEALTH, false));
-        misc.addLookupName("IS BA Stealth (Standard)");
-        misc.addLookupName("IS BA Stealth");
-        misc.tonnage = 0;
-        misc.criticals = 4;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_STEALTH).or(F_BA_EQUIPMENT);
-        misc.bv = 0;
-        misc.rulesRefs = "252, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setISAdvancement(2710, 2720, 3055, 2770, 3053)
-                .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
-                .setProductionFactions(F_TH).setReintroductionFactions(F_DC).setTechRating(RATING_E)
-                .setAvailability(RATING_F, RATING_X, RATING_E, RATING_D);
-
-        return misc;
-    }
-
-    public static MiscType createClanBAStandardStealth() {
-        MiscType misc = new MiscType();
-
-        misc.name = BattleArmor.STANDARD_STEALTH_ARMOR;
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_STEALTH, true));
-        misc.addLookupName("Clan BA Stealth (Standard)");
-        misc.addLookupName("Clan BA Stealth");
-        misc.tonnage = 0;
-        misc.criticals = 4;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_STEALTH).or(F_BA_EQUIPMENT);
-        misc.bv = 0;
-        misc.rulesRefs = "252, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_CLAN)
-                .setClanAdvancement(DATE_NONE, DATE_NONE, 3055).setPrototypeFactions(F_TH)
-                .setTechRating(RATING_E)
-                .setAvailability(RATING_F, RATING_X, RATING_E, RATING_D);
-
-        return misc;
-    }
-
-    public static MiscType createISBAImprovedStealth() {
-        MiscType misc = new MiscType();
-        misc.name = BattleArmor.IMPROVED_STEALTH_ARMOR;
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_STEALTH_IMP, false));
-        misc.addLookupName("IS BA Stealth (Improved)");
-        misc.tonnage = 0;
-        misc.criticals = 5;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_STEALTH).or(F_BA_EQUIPMENT);
-        misc.bv = 0;
-        misc.rulesRefs = "252, TM";
-
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setISAdvancement(3055, 3057, 3059)
-                .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_FW, F_WB)
-                .setProductionFactions(F_FW, F_WB).setTechRating(RATING_E)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E);
-
-        return misc;
-    }
-
-    public static MiscType createClanBAImprovedStealth() {
-        MiscType misc = new MiscType();
-        misc.name = BattleArmor.IMPROVED_STEALTH_ARMOR;
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_STEALTH_IMP, true));
-        misc.addLookupName("Clan BA Stealth (Improved)");
-        misc.tonnage = 0;
-        misc.criticals = 5;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_STEALTH).or(F_BA_EQUIPMENT);
-        misc.bv = 0;
-        misc.rulesRefs = "252, TM";
-
-        misc.techAdvancement.setTechBase(TECH_BASE_CLAN)
-                .setClanAdvancement(DATE_NONE, 3058, 3059)
-                .setProductionFactions(F_CSR).setTechRating(RATING_E)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E);
-
-        return misc;
-    }
-
-    public static MiscType createISBAMimeticCamo() {
-        MiscType misc = new MiscType();
-        misc.name = BattleArmor.MIMETIC_ARMOR;
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_MIMETIC));
-        misc.addLookupName("IS BA Mimetic");
-        misc.tonnage = 0;
-        misc.criticals = 7;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_STEALTH).or(F_VISUAL_CAMO).or(F_BA_EQUIPMENT);
-        misc.bv = 0;
-        misc.rulesRefs = "253, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setISAdvancement(3058, 3061, 3065, DATE_NONE, DATE_NONE)
-                .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_CS, F_WB)
-                .setProductionFactions(F_WB).setTechRating(RATING_E)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E);
-
-        return misc;
-    }
-
-    public static MiscType createISBAReactiveArmor() {
-        MiscType misc = new MiscType();
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_REACTIVE);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_REACTIVE, false));
-        misc.addLookupName("IS BA Reactive (Blazer)");
-        misc.addLookupName("IS BA Reactive");
-        misc.tonnage = 0;
-        misc.criticals = 7;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_BA_EQUIPMENT).or(F_REACTIVE);
-        misc.bv = 0;
-        misc.rulesRefs = "282, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        misc.techAdvancement.setTechBase(TECH_BASE_IS)
-            .setISAdvancement(3075, 3110, DATE_NONE, DATE_NONE, DATE_NONE)
-            .setISApproximate(false, true, false, false, false)
-            .setProductionFactions(F_RS).setTechRating(RATING_F)
-            .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-            .setStaticTechLevel(SimpleTechLevel.ADVANCED);
-
-        return misc;
-    }
-
-    public static MiscType createClanBAReactiveArmor() {
-        MiscType misc = new MiscType();
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_REACTIVE);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_REACTIVE, true));
-        misc.addLookupName("Clan BA Reactive (Blazer)");
-        misc.addLookupName("Clan BA Reactive");
-        misc.tonnage = 0;
-        misc.criticals = 7;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_BA_EQUIPMENT).or(F_REACTIVE);
-        misc.bv = 0;
-        misc.rulesRefs = "282, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        misc.techAdvancement.setTechBase(TECH_BASE_CLAN)
-                .setClanAdvancement(3075, 3110, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setClanApproximate(false, true, false, false, false).setPrototypeFactions(F_CSF)
-                .setTechRating(RATING_F).setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-                .setStaticTechLevel(SimpleTechLevel.ADVANCED);
-
-        return misc;
-    }
-
-    public static MiscType createISBAReflectiveArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_REFLECTIVE);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_REFLECTIVE, false));
-        misc.addLookupName("IS BA Laser Reflective (Reflec/Glazed)");
-        misc.addLookupName("IS BA Reflective");
-        misc.tonnage = 0;
-        misc.criticals = 7;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_BA_EQUIPMENT).or(F_REFLECTIVE);
-        misc.bv = 0;
-        misc.rulesRefs = "280, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        misc.techAdvancement.setTechBase(TECH_BASE_IS)
-            .setISAdvancement(3074, 3110, DATE_NONE, DATE_NONE, DATE_NONE)
-            .setISApproximate(false, true, false, false, false)
-            .setProductionFactions(F_DC).setTechRating(RATING_F)
-            .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-            .setStaticTechLevel(SimpleTechLevel.ADVANCED);
-
-        return misc;
-    }
-
-    public static MiscType createClanBAReflectiveArmor() {
-        MiscType misc = new MiscType();
-
-        misc.name = EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_REFLECTIVE);
-        misc.setInternalName(EquipmentType.getArmorTypeName(EquipmentType.T_ARMOR_BA_REFLECTIVE, true));
-        misc.addLookupName("Clan BA Laser Reflective (Reflec/Glazed)");
-        misc.addLookupName("Clan BA Reflective");
-        misc.tonnage = 0;
-        misc.criticals = 7;
-        misc.spreadable = true;
-        misc.hittable = false;
-        misc.flags = misc.flags.or(F_BA_EQUIPMENT).or(F_REFLECTIVE);
-        misc.bv = 0;
-        misc.rulesRefs = "280, TO";
-        //Tech Progression tweaked to combine IntOps with TRO Prototypes/3145 NTNU RS
-        misc.techAdvancement.setTechBase(TECH_BASE_CLAN)
-                .setClanAdvancement(3074, 3110, DATE_NONE, DATE_NONE, DATE_NONE)
-                .setClanApproximate(false, true, false, false, false)
-                .setPrototypeFactions(F_CSF)
-                .setProductionFactions(F_CNC).setTechRating(RATING_F)
-                .setAvailability(RATING_X, RATING_X, RATING_F, RATING_E)
-                .setStaticTechLevel(SimpleTechLevel.ADVANCED);
-
-        return misc;
-    }
-
-    // Armor (Conventional Infantry)
+   // Armor (Conventional Infantry)
 
     public static MiscType createISAblativeStandardInfArmor() {
         MiscType misc = new MiscType();
@@ -4921,7 +3631,7 @@ public class MiscType extends EquipmentType {
         String[] modes = { "retracted", "extended" };
         misc.setModes(modes);
         misc.rulesRefs = "236, TM";
-        misc.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
+        misc.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_B)
                 .setAvailability(RATING_F, RATING_D, RATING_D, RATING_D)
                 .setISAdvancement(2400, 2420, 3075, DATE_NONE, DATE_NONE)
                 .setISApproximate(true, false, false, false, false).setPrototypeFactions(F_TH)
@@ -4945,7 +3655,6 @@ public class MiscType extends EquipmentType {
         misc.setInstantModeSwitch(true);
         String[] modes = { S_NO_SHIELD, S_ACTIVE_SHIELD, S_PASSIVE_SHIELD };
         misc.setModes(modes);
-        misc.damageTaken = 0;
         misc.baseDamageAbsorptionRate = 3;
         misc.baseDamageCapacity = 11;
         misc.rulesRefs = "290, TO";
@@ -4974,7 +3683,6 @@ public class MiscType extends EquipmentType {
         misc.setInstantModeSwitch(true);
         String[] modes = { S_NO_SHIELD, S_ACTIVE_SHIELD, S_PASSIVE_SHIELD };
         misc.setModes(modes);
-        misc.damageTaken = 0;
         misc.baseDamageAbsorptionRate = 5;
         misc.baseDamageCapacity = 18;
         misc.rulesRefs = "290, TO";
@@ -5003,7 +3711,6 @@ public class MiscType extends EquipmentType {
         misc.setInstantModeSwitch(true);
         String[] modes = { S_NO_SHIELD, S_ACTIVE_SHIELD, S_PASSIVE_SHIELD };
         misc.setModes(modes);
-        misc.damageTaken = 0;
         misc.baseDamageAbsorptionRate = 7;
         misc.baseDamageCapacity = 25;
         misc.rulesRefs = "290, TO";
@@ -5395,7 +4102,7 @@ public class MiscType extends EquipmentType {
         misc.criticals = 1;
         misc.hittable = false;
         misc.flags = misc.flags.or(F_CASEP).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT).or(F_SUPPORT_TANK_EQUIPMENT)
-                .or(F_FIGHTER_EQUIPMENT).or(F_HEAVY_EQUIPMENT);
+                .or(F_FIGHTER_EQUIPMENT).or(F_HEAVY_EQUIPMENT).or(F_PROTOTYPE);
         misc.cost = 150000;
         misc.bv = 0;
         misc.rulesRefs = "71, IO";
@@ -6051,13 +4758,13 @@ public class MiscType extends EquipmentType {
     // Down the road it might be better to make this into a separate Small
     // Support Vee,
     // But for now leaving it as equipment.
-    public static MiscType createAtmossphericLifeboat() {
+    public static MiscType createAtmosphericLifeboat() {
         MiscType misc = new MiscType();
         misc.name = "Lifeboat (Atmospheric)";
         misc.setInternalName(misc.name);
         misc.tankslots = 0;
-        misc.tonnage = 7;
-        misc.cost = 5000;
+        misc.tonnage = 1;
+        misc.cost = 6000;
         misc.bv = 0;
         misc.industrial = true;
         misc.flags = misc.flags.or(F_SUPPORT_TANK_EQUIPMENT).or(F_LIFEBOAT);
@@ -6109,7 +4816,7 @@ public class MiscType extends EquipmentType {
         misc.flags = misc.flags.or(F_BAP).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT)
                 .or(F_SUPPORT_TANK_EQUIPMENT).or(F_FIGHTER_EQUIPMENT).or(F_SC_EQUIPMENT)
                 .or(F_DS_EQUIPMENT).andNot(F_WS_EQUIPMENT).andNot(F_JS_EQUIPMENT)
-                .andNot(F_SS_EQUIPMENT).or(F_HEAVY_EQUIPMENT);
+                .andNot(F_SS_EQUIPMENT).or(F_HEAVY_EQUIPMENT).or(F_PROTOTYPE);
         misc.bv = 10;
         misc.rulesRefs = "71, IO";
         misc.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false)
@@ -6265,7 +4972,7 @@ public class MiscType extends EquipmentType {
         misc.cost = 1000000;
         misc.flags = misc.flags.or(F_ECM).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT).or(F_SUPPORT_TANK_EQUIPMENT).or(F_FIGHTER_EQUIPMENT)
                 .or(F_SC_EQUIPMENT).or(F_DS_EQUIPMENT).andNot(F_WS_EQUIPMENT).andNot(F_JS_EQUIPMENT).andNot(F_SS_EQUIPMENT)
-                .or(F_HEAVY_EQUIPMENT);
+                .or(F_HEAVY_EQUIPMENT).or(F_PROTOTYPE);
         misc.bv = 61;
         misc.setModes(new String[] { "ECM" });
         misc.setInstantModeSwitch(false);
@@ -6499,7 +5206,8 @@ public class MiscType extends EquipmentType {
         misc.criticals = 1;
         misc.hittable = true;
         misc.flags = misc.flags.or(F_MECH_EQUIPMENT).or(F_FIGHTER_EQUIPMENT).or(F_SC_EQUIPMENT).or(F_DS_EQUIPMENT)
-                .or(F_TANK_EQUIPMENT).or(F_SUPPORT_TANK_EQUIPMENT).or(F_VTOL_EQUIPMENT).or(F_SENSOR_DISPENSER);
+                .or(F_TANK_EQUIPMENT).or(F_SUPPORT_TANK_EQUIPMENT).or(F_VTOL_EQUIPMENT).or(F_SENSOR_DISPENSER)
+                .or(F_PROTOTYPE);
         misc.bv = 0;
         misc.cost = 60000;
         misc.industrial = true;
@@ -6686,7 +5394,7 @@ public class MiscType extends EquipmentType {
         misc.cost = 100000;
         misc.flags = misc.flags.or(F_ARTEMIS_PROTO).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT)
                 .or(F_SUPPORT_TANK_EQUIPMENT).or(F_FIGHTER_EQUIPMENT).or(F_SC_EQUIPMENT).or(F_DS_EQUIPMENT)
-                .or(F_JS_EQUIPMENT).or(F_WS_EQUIPMENT).or(F_SS_EQUIPMENT).or(F_HEAVY_EQUIPMENT);
+                .or(F_JS_EQUIPMENT).or(F_WS_EQUIPMENT).or(F_SS_EQUIPMENT).or(F_HEAVY_EQUIPMENT).or(F_PROTOTYPE);
         misc.rulesRefs = "217, IO";
         misc.techAdvancement.setTechBase(TECH_BASE_IS).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_E)
                 .setAvailability(RATING_F, RATING_X, RATING_X, RATING_X)
@@ -6789,7 +5497,6 @@ public class MiscType extends EquipmentType {
         misc.flags = misc.flags.or(F_TARGCOMP).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT).or(F_SUPPORT_TANK_EQUIPMENT)
                 .or(F_FIGHTER_EQUIPMENT).or(F_HEAVY_EQUIPMENT);
         // see note above
-        misc.spreadable = true;
         String[] modes = { "Normal", "Aimed shot" };
         misc.setModes(modes);
         misc.rulesRefs = "238, TM";
@@ -6817,7 +5524,6 @@ public class MiscType extends EquipmentType {
         misc.flags = misc.flags.or(F_TARGCOMP).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT).or(F_SUPPORT_TANK_EQUIPMENT)
                 .or(F_FIGHTER_EQUIPMENT).or(F_HEAVY_EQUIPMENT);
         // see note above
-        misc.spreadable = true;
         String[] modes = { "Normal", "Aimed shot" };
         misc.setModes(modes);
         misc.rulesRefs = "238, TM";
@@ -7555,14 +6261,15 @@ public class MiscType extends EquipmentType {
         MiscType misc = new MiscType();
         misc.tonnage = 1;
         misc.cost = 25000;
-        misc.name = "Refueling Drogue/Fluid Suction System (Aero)";
+        misc.name = "Refueling Drogue";
         misc.setInternalName(EquipmentTypeLookup.REFUELING_DROGUE);
         misc.flags = misc.flags.or(F_REFUELING_DROGUE).or(F_FIGHTER_EQUIPMENT).or(F_VTOL_EQUIPMENT)
                 .or(F_SUPPORT_TANK_EQUIPMENT).or(F_SC_EQUIPMENT);
         misc.industrial = true;
         misc.rulesRefs = "247, TM";
         misc.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
-                .setTechRating(RATING_A).setAvailability(RATING_A, RATING_A, RATING_A, RATING_A)
+                // IO:AE, page 36, 3rd printing
+                .setTechRating(RATING_C).setAvailability(RATING_A, RATING_A, RATING_A, RATING_A)
                 .setISAdvancement(DATE_PS, DATE_PS, DATE_PS, DATE_NONE, DATE_NONE)
                 .setISApproximate(false, false, false, false, false)
                 .setClanAdvancement(DATE_PS, DATE_PS, DATE_PS, DATE_NONE, DATE_NONE)
@@ -7784,7 +6491,7 @@ public class MiscType extends EquipmentType {
         misc.addLookupName("CLNavalTugAdaptor");
         misc.flags = misc.flags.or(F_NAVAL_TUG_ADAPTOR).or(F_SC_EQUIPMENT).or(F_DS_EQUIPMENT).or(F_WS_EQUIPMENT);
         misc.rulesRefs = "334, TO";
-        misc.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_F)
+        misc.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false).setTechRating(RATING_C)
                 .setAvailability(RATING_C, RATING_C, RATING_C, RATING_C)
                 .setAdvancement(DATE_ES, DATE_ES, DATE_ES, DATE_NONE, DATE_NONE)
                 .setApproximate(false, false, false, false, false).setStaticTechLevel(SimpleTechLevel.ADVANCED);
@@ -7988,7 +6695,7 @@ public class MiscType extends EquipmentType {
         MiscType misc = new MiscType();
 
         misc.name = "Cargo";
-        misc.setInternalName(misc.name);
+        misc.setInternalName(EquipmentTypeLookup.CARGO);
         misc.addLookupName("Cargo (1 ton)");
         misc.addLookupName("Cargo (0.5 tons)");
         misc.addLookupName("Cargo (1.5 tons)");
@@ -8270,7 +6977,7 @@ public class MiscType extends EquipmentType {
         misc.tonnage = 1;
         misc.criticals = 1;
         misc.cost = 120000;
-        misc.flags = misc.flags.or(F_HARJEL).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT);
+        misc.flags = misc.flags.or(F_HARJEL).or(F_MECH_EQUIPMENT).or(F_TANK_EQUIPMENT).or(F_SUPPORT_TANK_EQUIPMENT);
         misc.omniFixedOnly = false;
         misc.bv = 0;
         misc.rulesRefs = "288, TO";
@@ -8375,7 +7082,7 @@ public class MiscType extends EquipmentType {
         misc.rulesRefs = "228, TM";
         misc.techAdvancement.setTechBase(TECH_BASE_ALL)
                 .setTechRating(RATING_B).setAvailability(RATING_C, RATING_E, RATING_D, RATING_C)
-                .setISAdvancement(DATE_PS, DATE_PS).setStaticTechLevel(SimpleTechLevel.STANDARD);
+                .setAdvancement(DATE_PS, DATE_PS).setStaticTechLevel(SimpleTechLevel.STANDARD);
         return misc;
     }
 
@@ -8390,6 +7097,7 @@ public class MiscType extends EquipmentType {
         misc.criticals = 7;
         misc.spreadable = true;
         misc.flags = misc.flags.or(F_NULLSIG).or(F_MECH_EQUIPMENT);
+        misc.omniFixedOnly = true;
         String[] saModes = { "Off", "On" };
         misc.setModes(saModes);
         misc.setInstantModeSwitch(false);
@@ -8592,14 +7300,14 @@ public class MiscType extends EquipmentType {
         MiscType misc = new MiscType();
 
         misc.name = "Mast Mount";
-        misc.setInternalName("ISMastMount");
+        misc.setInternalName(EquipmentTypeLookup.MAST_MOUNT);
         misc.addLookupName("CLMastMount");
         misc.tonnage = 0.5;
         misc.tankslots = 0;
         misc.cost = 50000;
         misc.flags = misc.flags.or(F_MAST_MOUNT).or(F_VTOL_EQUIPMENT).or(F_SUPPORT_TANK_EQUIPMENT);
         misc.bv = BV_VARIABLE;
-        misc.rulesRefs = "350, TO";
+        misc.rulesRefs = "162, TO:AUE";
         misc.techAdvancement.setTechBase(TECH_BASE_ALL).setIntroLevel(false).setUnofficial(false)
                 .setTechRating(RATING_C).setAvailability(RATING_F, RATING_F, RATING_F, RATING_F)
                 .setISAdvancement(DATE_PS, DATE_PS, DATE_PS, DATE_NONE, DATE_NONE)
@@ -8902,6 +7610,9 @@ public class MiscType extends EquipmentType {
         misc.setInternalName(EquipmentType.getStructureTypeName(T_STRUCTURE_ENDO_STEEL, false));
         misc.addLookupName("IS EndoSteel");
         misc.addLookupName("IS Endo-Steel");
+        misc.addLookupName("IS Endo Steel Structure");
+        misc.addLookupName("IS EndoSteel Structure");
+        misc.addLookupName("IS Endo-Steel Structure");
         misc.tonnage = TONNAGE_VARIABLE;
         misc.criticals = CRITICALS_VARIABLE;
         misc.hittable = false;
@@ -8924,8 +7635,10 @@ public class MiscType extends EquipmentType {
         misc.setInternalName(EquipmentType.getStructureTypeName(T_STRUCTURE_ENDO_PROTOTYPE, false));
         misc.addLookupName("IS Endo Steel Prototype");
         misc.addLookupName("IS Endo-Steel Prototype");
+        misc.addLookupName("IS Endo Steel Prototype Structure");
+        misc.addLookupName("IS Endo-Steel Prototype Structure");
         misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = 16;
+        misc.criticals = CRITICALS_VARIABLE;
         misc.hittable = false;
         misc.spreadable = true;
         misc.flags = misc.flags.or(F_ENDO_STEEL_PROTO);
@@ -8946,8 +7659,11 @@ public class MiscType extends EquipmentType {
         misc.setInternalName(EquipmentType.getStructureTypeName(T_STRUCTURE_ENDO_STEEL, true));
         misc.addLookupName("Clan Endo-Steel");
         misc.addLookupName("Clan EndoSteel");
+        misc.addLookupName("Clan Endo-Steel Structure");
+        misc.addLookupName("Clan EndoSteel Structure");
+        misc.addLookupName("Clan Endo Steel Structure");
         misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = 7;
+        misc.criticals = CRITICALS_VARIABLE;
         misc.hittable = false;
         misc.spreadable = true;
         misc.flags = misc.flags.or(F_ENDO_STEEL);
@@ -8968,6 +7684,7 @@ public class MiscType extends EquipmentType {
         misc.name = EquipmentType.getStructureTypeName(T_STRUCTURE_COMPOSITE);
         misc.setInternalName(EquipmentType.getStructureTypeName(T_STRUCTURE_COMPOSITE, false));
         misc.addLookupName("Composite");
+        misc.addLookupName("IS Composite Structure");
         misc.tonnage = TONNAGE_VARIABLE;
         misc.criticals = 0;
         misc.hittable = false;
@@ -8989,6 +7706,7 @@ public class MiscType extends EquipmentType {
         misc.name = EquipmentType.getStructureTypeName(T_STRUCTURE_ENDO_COMPOSITE);
         misc.setInternalName(EquipmentType.getStructureTypeName(T_STRUCTURE_ENDO_COMPOSITE, false));
         misc.addLookupName("IS Endo-Composite");
+        misc.addLookupName("IS Endo-Composite Structure");
         misc.tonnage = TONNAGE_VARIABLE;
         misc.criticals = CRITICALS_VARIABLE;
         misc.hittable = false;
@@ -9013,8 +7731,9 @@ public class MiscType extends EquipmentType {
         misc.name = EquipmentType.getStructureTypeName(T_STRUCTURE_ENDO_COMPOSITE);
         misc.setInternalName(EquipmentType.getStructureTypeName(T_STRUCTURE_ENDO_COMPOSITE, true));
         misc.addLookupName("Clan Endo-Composite");
+        misc.addLookupName("Clan Endo-Composite Structure");
         misc.tonnage = TONNAGE_VARIABLE;
-        misc.criticals = 4;
+        misc.criticals = CRITICALS_VARIABLE;
         misc.hittable = false;
         misc.spreadable = true;
         misc.flags = misc.flags.or(F_ENDO_COMPOSITE);
@@ -9038,10 +7757,11 @@ public class MiscType extends EquipmentType {
         misc.setInternalName(EquipmentType.getStructureTypeName(T_STRUCTURE_REINFORCED));
         misc.addLookupName("IS Reinforced");
         misc.addLookupName("Clan Reinforced");
+        misc.addLookupName("IS Reinforced Structure");
+        misc.addLookupName("Clan Reinforced Structure");
         misc.tonnage = TONNAGE_VARIABLE;
         misc.criticals = 0;
         misc.hittable = false;
-        misc.spreadable = true;
         misc.bv = 0;
         misc.flags = misc.flags.or(F_REINFORCED);
         misc.omniFixedOnly = true;
@@ -10248,7 +8968,7 @@ public class MiscType extends EquipmentType {
         MiscType misc = new MiscType();
 
         misc.name = "Parafoil";
-        misc.setInternalName("BAParafoil");
+        misc.setInternalName(EquipmentTypeLookup.BA_PARAFOIL);
         misc.tonnage = .035;
         misc.criticals = 1;
         misc.hittable = false;
@@ -10775,7 +9495,7 @@ public class MiscType extends EquipmentType {
         MiscType misc = new MiscType();
 
         misc.name = "Magnetic Clamps [BA]";
-        misc.setInternalName("BA-Magnetic Clamp");
+        misc.setInternalName(EquipmentTypeLookup.BA_MAGNETIC_CLAMP);
         misc.addLookupName("Magnetic Clamp");
         misc.shortName = "Magnetic Clamps";
         misc.tonnage = .030;
@@ -10984,7 +9704,7 @@ public class MiscType extends EquipmentType {
         MiscType misc = new MiscType();
 
         misc.name = "Detachable Weapon Pack";
-        misc.setInternalName("ISDetachableWeaponPack");
+        misc.setInternalName(EquipmentTypeLookup.BA_DWP);
         misc.addLookupName("CLDetachableWeaponPack");
         misc.tonnage = 0;
         misc.criticals = 1;
@@ -11034,7 +9754,7 @@ public class MiscType extends EquipmentType {
         misc.addLookupName("Mission Equipment Storage (20 kg)");
         misc.addLookupName("Mission Equipment Storage (5kg)");
         misc.addLookupName("Mission Equipment Storage (200 kg)");
-        misc.setInternalName(misc.name);
+        misc.setInternalName(EquipmentTypeLookup.BA_MISSION_EQUIPMENT);
         misc.tonnage = TONNAGE_VARIABLE;
         misc.criticals = 1;
         misc.flags = misc.flags.or(F_VARIABLE_SIZE).or(F_BA_EQUIPMENT).or(F_BA_MISSION_EQUIPMENT)
@@ -11233,6 +9953,6 @@ public class MiscType extends EquipmentType {
 
     @Override
     public String toString() {
-        return "MiscType: " + name;
+        return "[Misc] " + internalName;
     }
 }

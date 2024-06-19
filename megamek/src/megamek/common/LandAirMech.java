@@ -14,7 +14,12 @@
 package megamek.common;
 
 import megamek.common.enums.MPBoosters;
+import megamek.common.equipment.AmmoMounted;
+import megamek.common.equipment.BombMounted;
+import megamek.common.equipment.MiscMounted;
+import megamek.common.equipment.WeaponMounted;
 import megamek.common.options.OptionsConstants;
+import megamek.common.planetaryconditions.PlanetaryConditions;
 import org.apache.logging.log4j.LogManager;
 
 import java.util.*;
@@ -125,7 +130,11 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
     //Autoejection
     private boolean critThresh = false;
 
-    private int[] bombChoices = new int[BombType.B_NUM];
+    // Bomb choices
+
+    protected int[] intBombChoices = new int[BombType.B_NUM];
+    protected int[] extBombChoices = new int[BombType.B_NUM];
+
     private Targetable airmechBombTarget = null;
 
     private int fuel;
@@ -345,14 +354,15 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
         }
         int j = getJumpMP();
         if (null != game) {
-            int weatherMod = game.getPlanetaryConditions().getMovementMods(this);
+            PlanetaryConditions conditions = game.getPlanetaryConditions();
+            int weatherMod = conditions.getMovementMods(this);
             if (weatherMod != 0) {
                 j = Math.max(j + weatherMod, 0);
             }
 
             if(getCrew().getOptions().stringOption(OptionsConstants.MISC_ENV_SPECIALIST).equals(Crew.ENVSPC_WIND)
-                    && (game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_NONE)
-                    && (game.getPlanetaryConditions().getWindStrength() == PlanetaryConditions.WI_TORNADO_F13)) {
+                    && conditions.getWeather().isClear()
+                    && conditions.getWind().isTornadoF1ToF3()) {
                 j += 1;
             }
         }
@@ -366,12 +376,13 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
         }
         int j = getJumpMP();
         if (!mpCalculationSetting.ignoreWeather && (null != game)) {
-            int weatherMod = game.getPlanetaryConditions().getMovementMods(this);
+            PlanetaryConditions conditions = game.getPlanetaryConditions();
+            int weatherMod = conditions.getMovementMods(this);
             j = Math.max(j + weatherMod, 0);
 
             if(getCrew().getOptions().stringOption(OptionsConstants.MISC_ENV_SPECIALIST).equals(Crew.ENVSPC_WIND)
-                    && (game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_NONE)
-                    && (game.getPlanetaryConditions().getWindStrength() == PlanetaryConditions.WI_TORNADO_F13)) {
+                    && conditions.getWeather().isClear()
+                    && conditions.getWind().isTornadoF1ToF3()) {
                 j += 1;
             }
         }
@@ -722,9 +733,12 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
                 roll.addModifier(vmod, "Velocity greater than 2x safe thrust");
             }
 
-            int atmoCond = game.getPlanetaryConditions().getAtmosphere();
+            PlanetaryConditions conditions = game.getPlanetaryConditions();
             // add in atmospheric effects later
-            if (!(game.getBoard().inSpace() || (atmoCond == PlanetaryConditions.ATMO_VACUUM)) && isAirborne()) {
+            boolean spaceOrVacuum = game.getBoard().inSpace()
+                    || conditions.getAtmosphere().isVacuum();
+            if (!spaceOrVacuum
+                    && isAirborne()) {
                 roll.addModifier(+1, "Atmospheric operations");
             }
 
@@ -1083,31 +1097,68 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
         return whoFirst;
     }
 
-    @Override
     public int getMaxBombPoints() {
-        return countWorkingMisc(MiscType.F_BOMB_BAY);
+        return getMaxExtBombPoints() + getMaxIntBombPoints();
     }
 
     @Override
-    public int getMaxBombSize() {
+    public int getMaxExtBombPoints() {
+        return 0;
+    }
+    @Override
+    public int getMaxIntBombPoints() {
+        return countWorkingMisc(MiscType.F_BOMB_BAY);
+    }
+
+    /**
+     *
+     * @return Largest empty bay size
+     */
+    @Override
+    public int getMaxIntBombSize() {
         return Math.max(emptyBaysInLoc(LOC_CT), Math.max(emptyBaysInLoc(LOC_RT), emptyBaysInLoc(LOC_LT)));
     }
 
     @Override
-    public int[] getBombChoices() {
-        return bombChoices.clone();
+    public int[] getIntBombChoices() {
+        return intBombChoices.clone();
     }
 
     @Override
-    public void setBombChoices(int[] bc) {
-        if (bc.length == bombChoices.length) {
-            bombChoices = bc;
+    public void setIntBombChoices(int[] bc) {
+        if (bc.length == intBombChoices.length) {
+            intBombChoices = bc.clone();
         }
     }
 
     @Override
+    public void setUsedInternalBombs(int b){
+        // Do nothing; LAMs don't take internal bomb bay hits like this
+    }
+
+    @Override
+    public void increaseUsedInternalBombs(int b){
+        // Do nothing
+    }
+
+    @Override
+    public int getUsedInternalBombs() {
+        // Currently not possible
+        return 0;
+    }
+
+    @Override
+    public int[] getExtBombChoices() {
+        return extBombChoices;
+    }
+
+    @Override
+    public void setExtBombChoices(int[] bc) {
+    }
+
+    @Override
     public void clearBombChoices() {
-        Arrays.fill(bombChoices, 0);
+        Arrays.fill(intBombChoices, 0);
     }
 
     @Override
@@ -2001,18 +2052,18 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
 
         mounted.setBombMounted(true);
 
-        if (mounted.getType() instanceof BombType) {
-            bombList.add(mounted);
+        if (mounted instanceof BombMounted) {
+            bombList.add((BombMounted) mounted);
         }
 
-        if (mounted.getType() instanceof WeaponType) {
-            totalWeaponList.add(mounted);
-            weaponList.add(mounted);
+        if (mounted instanceof WeaponMounted) {
+            totalWeaponList.add((WeaponMounted) mounted);
+            weaponList.add((WeaponMounted) mounted);
             if (mounted.getType().hasFlag(WeaponType.F_ARTILLERY)) {
                 aTracker.addWeapon(mounted);
             }
             if (mounted.getType().hasFlag(WeaponType.F_ONESHOT) && (AmmoType.getOneshotAmmo(mounted) != null)) {
-                Mounted m = new Mounted(this, AmmoType.getOneshotAmmo(mounted));
+                AmmoMounted m = (AmmoMounted) Mounted.createMounted(this, AmmoType.getOneshotAmmo(mounted));
                 m.setShotsLeft(1);
                 mounted.setLinked(m);
                 // Oneshot ammo will be identified by having a location
@@ -2020,19 +2071,19 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
                 addEquipment(m, Entity.LOC_NONE, false);
             }
         }
-        if (mounted.getType() instanceof AmmoType) {
-            ammoList.add(mounted);
+        if (mounted instanceof AmmoMounted) {
+            ammoList.add((AmmoMounted) mounted);
         }
-        if (mounted.getType() instanceof MiscType) {
-            miscList.add(mounted);
+        if (mounted instanceof MiscMounted) {
+            miscList.add((MiscMounted) mounted);
         }
         equipmentList.add(mounted);
     }
 
     @Override
-    public Mounted addEquipment(EquipmentType etype, int loc, boolean rearMounted) throws LocationFullException {
+    public Mounted<?> addEquipment(EquipmentType etype, int loc, boolean rearMounted) throws LocationFullException {
         if (etype instanceof BombType) {
-            Mounted mounted = new Mounted(this, etype);
+            Mounted<?> mounted = Mounted.createMounted(this, etype);
             addBomb(mounted, loc);
             return mounted;
         } else {
@@ -2043,11 +2094,13 @@ public class LandAirMech extends BipedMech implements IAero, IBomber {
     @Override
     public boolean canSpot() {
         if (getConversionMode() == CONV_MODE_FIGHTER) {
-            return !isAirborne() || hasWorkingMisc(MiscType.F_RECON_CAMERA)
-                    || hasWorkingMisc(MiscType.F_INFRARED_IMAGER) || hasWorkingMisc(MiscType.F_HYPERSPECTRAL_IMAGER)
-                    || (hasWorkingMisc(MiscType.F_HIRES_IMAGER)
-                            && ((game.getPlanetaryConditions().getLight() == PlanetaryConditions.L_DAY)
-                                    || (game.getPlanetaryConditions().getLight() == PlanetaryConditions.L_DUSK)));
+            boolean hiresLighted = hasWorkingMisc(MiscType.F_HIRES_IMAGER)
+                    && game.getPlanetaryConditions().getLight().isDayOrDusk();
+            return !isAirborne()
+                    || hasWorkingMisc(MiscType.F_RECON_CAMERA)
+                    || hasWorkingMisc(MiscType.F_INFRARED_IMAGER)
+                    || hasWorkingMisc(MiscType.F_HYPERSPECTRAL_IMAGER)
+                    || hiresLighted;
         } else {
             return super.canSpot();
         }

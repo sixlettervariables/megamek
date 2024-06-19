@@ -1,16 +1,22 @@
 /*
- * MegaMek - Copyright (C) 2000-2004 Ben Mazur (bmazur@sev.org)
- * Copyright © 2013 Edward Cullen (eddy@obsessedcomputers.co.uk)
+ * MegaMek - Copyright (Cc) 2000-2004 Ben Mazur (bmazur@sev.org)
+ * Copyright (c) 2013 Edward Cullen (eddy@obsessedcomputers.co.uk)
+ * Copyright (c) 2024 - The MegaMek Team. All Rights Reserved.
  *
- * This program is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the Free
- * Software Foundation; either version 2 of the License, or (at your option)
- * any later version.
+ * This file is part of MegaMek.
  *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
- * or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
- * for more details.
+ * MegaMek is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * MegaMek is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with MegaMek. If not, see <http://www.gnu.org/licenses/>.
  */
 package megamek.common;
 
@@ -23,7 +29,6 @@ import org.apache.logging.log4j.LogManager;
 
 import java.io.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
 
@@ -47,7 +52,7 @@ public class Board implements Serializable {
     public static final int START_EDGE = 9;
     public static final int START_CENTER = 10;
     public static final int NUM_ZONES = 11;
-    
+
     // Board Dimensions
     // Used for things like artillery rules that reference the standard mapsheet dimensions
     public static final int DEFAULT_BOARD_HEIGHT = 17;
@@ -75,34 +80,6 @@ public class Board implements Serializable {
     private int mapType = T_GROUND;
 
     private Hex[] data;
-
-    /**
-     * The path to the file to load as background image for this board. To avoid
-     * the Server sending a serialized image, the image isn't loaded until
-     * requested.
-     */
-    private List<String> backgroundPaths = new ArrayList<>();
-
-    /**
-     * Keeps track of how many boards were combined to create this board. These
-     * are necessary to properly index into the background image, and only need
-     * to be set if backgroundPaths are present.
-     */
-    private int numBoardsWidth, numBoardsHeight;
-
-    /**
-     * Keeps track of the size of the boards used to create this board. These
-     * are necessary to properly index into the background image, and only need
-     * to be set if backgroundPaths are present.
-     */
-    private int subBoardWidth, subBoardHeight;
-
-    /**
-     * Flags that determine if the background image should be flipped. These are
-     * necessary to properly index into the background image, and only need to
-     * be set if backgroundPaths are present.
-     */
-    private List<Boolean> flipBGHoriz = new ArrayList<>(), flipBGVert = new ArrayList<>();
 
     /**
      * Building data structures.
@@ -136,6 +113,9 @@ public class Board implements Serializable {
 
     /** Tags associated with this board to facilitate searching for it. */
     private Set<String> tags = new HashSet<>();
+
+    private final int boardId = 0;
+
     //endregion Variable Declarations
 
     //region Constructors
@@ -242,12 +222,12 @@ public class Board implements Serializable {
      * @param errBuff A buffer for storing error messages, if any.  This is allowed to be null.
      */
     public void newData(final int width, final int height, final Hex[] data,
-                        final @Nullable StringBuffer errBuff) {
+                        final @Nullable List<String> errors) {
         this.width = width;
         this.height = height;
         this.data = data;
 
-        initializeAll(errBuff);
+        initializeAll(errors);
         processBoardEvent(new BoardEvent(this, null, BoardEvent.BOARD_NEW_BOARD));
     }
 
@@ -287,7 +267,7 @@ public class Board implements Serializable {
     /**
      * Initialize all hexes
      */
-    protected void initializeAll(final @Nullable StringBuffer errBuff) {
+    protected void initializeAll(final @Nullable List<String> errors) {
         // Initialize all buildings.
         buildings.removeAllElements();
         if (bldgByCoords == null) {
@@ -319,11 +299,10 @@ public class Board implements Serializable {
                         } catch (IllegalArgumentException excep) {
                             // Log the error and remove the
                             // building from the board.
-                            if (errBuff == null) {
+                            if (errors == null) {
                                 LogManager.getLogger().error("Unable to create building.", excep);
                             } else {
-                                errBuff.append("Unable to create building at ").append(coords)
-                                        .append("!\n").append(excep.getMessage()).append("\n");
+                                errors.add("Unable to create building at " + coords + ". " + excep.getMessage());
                             }
                             curHex.removeTerrain(Terrains.BUILDING);
                         }
@@ -347,11 +326,10 @@ public class Board implements Serializable {
                             }
                         } catch (IllegalArgumentException excep) {
                             // Log the error and remove the fuel tank from the board.
-                            if (errBuff == null) {
+                            if (errors == null) {
                                 LogManager.getLogger().error("Unable to create fuel tank.", excep);
                             } else {
-                                errBuff.append("Unable to create fuel tank at ").append(coords)
-                                        .append("!\n").append(excep.getMessage()).append("\n");
+                                errors.add("Unable to create fuel tank at " + coords + ". " + excep.getMessage());
                             }
                             curHex.removeTerrain(Terrains.FUEL_TANK);
                         }
@@ -374,11 +352,10 @@ public class Board implements Serializable {
                             }
                         } catch (IllegalArgumentException excep) {
                             // Log the error and remove the bridge from the board.
-                            if (errBuff == null) {
+                            if (errors == null) {
                                 LogManager.getLogger().error("Unable to create bridge.", excep);
                             } else {
-                                errBuff.append("Unable to create bridge at ").append(coords)
-                                        .append("!\n").append(excep.getMessage()).append("\n");
+                                errors.add("Unable to create bridge at " + coords + ". " + excep.getMessage());
                             }
                             curHex.removeTerrain(Terrains.BRIDGE);
                         }
@@ -434,35 +411,35 @@ public class Board implements Serializable {
 
         // Always make the coords of the hex match the actual position on the board
         hex.setCoords(new Coords(x, y));
-        
+
         hex.clearExits();
         for (int i = 0; i < 6; i++) {
             Hex other = getHexInDir(x, y, i);
             hex.setExits(other, i, roadsAutoExit);
         }
-        
+
         // Internally handled terrain (inclines, cliff-bottoms)
         initializeAutomaticTerrain(x, y, /* useInclines: */ true);
-        
+
         // Add woods/jungle elevation where none was saved
         initializeFoliageElev(x, y);
-        
+
         if (event) {
             processBoardEvent(new BoardEvent(this, new Coords(x, y), BoardEvent.BOARD_CHANGED_HEX));
         }
     }
-    
+
     /** Adds the FOLIAGE_ELEV terrain when none is present. */
     private void initializeFoliageElev(int x, int y) {
         Hex hex = getHex(x, y);
 
         // If the foliage elevation is present or the hex doesn't even have foliage,
         // nothing needs to be done
-        if (hex.containsTerrain(Terrains.FOLIAGE_ELEV) || 
+        if (hex.containsTerrain(Terrains.FOLIAGE_ELEV) ||
                 (!hex.containsTerrain(Terrains.WOODS) && !hex.containsTerrain(Terrains.JUNGLE))) {
             return;
         }
-        
+
         // Foliage is missing, therefore add it with the standard TW values
         // elevation 3 for Ultra Woods/Jungle and 2 for Light/Heavy
         if (hex.terrainLevel(Terrains.WOODS) == 3 || hex.terrainLevel(Terrains.JUNGLE) == 3) {
@@ -471,9 +448,9 @@ public class Board implements Serializable {
             hex.addTerrain(new Terrain(Terrains.FOLIAGE_ELEV, 2));
         }
     }
-    
-    /** 
-     * Checks all hex edges of the hex at (x, y) if automatically handled 
+
+    /**
+     * Checks all hex edges of the hex at (x, y) if automatically handled
      * terrains such as inclines must be placed or removed.
      * @param x The hex X-coord.
      * @param y The hex Y-coord.
@@ -491,7 +468,7 @@ public class Board implements Serializable {
 
         // Get the currently set cliff-tops for correction. When exits
         // are not specified, the cliff-tops are removed.
-        if (hex.containsTerrain(Terrains.CLIFF_TOP) 
+        if (hex.containsTerrain(Terrains.CLIFF_TOP)
                 && hex.getTerrain(Terrains.CLIFF_TOP).hasExitsSpecified()) {
             origCliffTopExits = hex.getTerrain(Terrains.CLIFF_TOP).getExits();
         }
@@ -517,26 +494,26 @@ public class Board implements Serializable {
 
             // Should there be an incline top?
             if (((levelDiff == 1) || (levelDiff == 2))
-                    && !cliffTopExitInThisDir 
+                    && !cliffTopExitInThisDir
                     && !inWater
                     && !towardsWater) {
                 inclineTopExits += (1 << i);
             }
-            
+
             if (towardsWater
                     && !inWater
-                    && !cliffTopExitInThisDir 
+                    && !cliffTopExitInThisDir
                     && ((levelDiffToWaterSurface == 1) || levelDiffToWaterSurface == 2)) {
                 inclineTopExits += (1 << i);
             }
 
             // Should there be a high level cliff top?
-            if (levelDiff > 2 
+            if (levelDiff > 2
                     && !inWater
                     && (!towardsWater || levelDiffToWaterSurface > 2)) {
                 highInclineTopExits += (1 << i);
             }
-            
+
             // Should there be an incline bottom or a cliff bottom?
             // This needs to check for a cliff-top in the other hex and
             // in the opposite direction
@@ -568,7 +545,7 @@ public class Board implements Serializable {
         }
     }
 
-    /** 
+    /**
      * Adds automatically handled terrain such as inclines when the given
      * exits value is not 0, otherwise removes it.
      */
@@ -579,7 +556,7 @@ public class Board implements Serializable {
             hex.removeTerrain(terrainType);
         }
     }
-    
+
     /**
      * Rebuilds automatic terrains for the whole board.
      * @param useInclines Indicates whether to use inclines on hex exits.
@@ -691,6 +668,12 @@ public class Board implements Serializable {
             Hex currHex = hexIter.next();
             int x = currCoord.getX();
             int y = currCoord.getY();
+
+            // Client may have sent off-board coordinates or null info; ignore.
+            if (!contains(x,y) || null == currHex){
+                continue;
+            }
+
             data[(y * width) + x] = currHex;
             initializeHex(x, y);
 
@@ -794,7 +777,7 @@ public class Board implements Serializable {
         }
         return new BoardDimensions(boardx, boardy);
     }
-    
+
     /** Inspects the given board file and returns a set of its tags. */
     public static Set<String> getTags(final File filepath) {
         var result = new HashSet<String>();
@@ -820,16 +803,15 @@ public class Board implements Serializable {
         }
         return result;
     }
-    
+
     public static boolean isValid(String board) {
         Board tempBoard = new Board(16, 17);
         if (!board.endsWith(".board")) {
             board += ".board";
         }
 
-        StringBuffer errBuff = new StringBuffer();
         try (InputStream is = new FileInputStream(new MegaMekFile(Configuration.boardsDir(), board).getFile())) {
-            tempBoard.load(is, errBuff, false);
+            tempBoard.load(is, null, false);
         } catch (IOException ex) {
             return false;
         }
@@ -841,9 +823,9 @@ public class Board implements Serializable {
      * Can the given player deploy at these coordinates?
      */
     public boolean isLegalDeployment(Coords c, Player p) {
-        return isLegalDeployment(c, p.getStartingPos(), p.getStartWidth(), p.getStartOffset());
+        return isLegalDeployment(c, p.getStartingPos(), p.getStartWidth(), p.getStartOffset(), p.getStartingAnyNWx(), p.getStartingAnyNWy(), p.getStartingAnySEx(), p.getStartingAnySEy());
     }
-    
+
     /**
      * Can the given entity be deployed at these coordinates
      */
@@ -851,14 +833,14 @@ public class Board implements Serializable {
         if (e == null) {
             return false;
         }
-        
-        return isLegalDeployment(c, e.getStartingPos(), e.getStartingWidth(), e.getStartingOffset());
+
+        return isLegalDeployment(c, e.getStartingPos(), e.getStartingWidth(), e.getStartingOffset(), e.getStartingAnyNWx(), e.getStartingAnyNWy(), e.getStartingAnySEx(), e.getStartingAnySEy());
     }
-    
+
     /**
      * Can an object be deployed at these coordinates, given a starting zone, width of starting zone and offset from edge of board?
      */
-    public boolean isLegalDeployment(Coords c, int zoneType, int startingWidth, int startingOffset) {
+    public boolean isLegalDeployment(Coords c, int zoneType, int startingWidth, int startingOffset, int startingAnyNWx, int startingAnyNWy, int startingAnySEx, int startingAnySEy) {
         if ((c == null) || !contains(c)) {
             return false;
         }
@@ -868,10 +850,13 @@ public class Board implements Serializable {
         int maxx = width - startingOffset;
         int miny = startingOffset;
         int maxy = height - startingOffset;
-        
+
         switch (zoneType) {
             case START_ANY:
-                return true;
+                return (((startingAnyNWx == Entity.STARTING_ANY_NONE) || (c.getX() >= startingAnyNWx))
+                        && ((startingAnySEx == Entity.STARTING_ANY_NONE) || (c.getX() <= startingAnySEx))
+                        && ((startingAnyNWy == Entity.STARTING_ANY_NONE) || (c.getY() >= startingAnyNWy))
+                        && ((startingAnySEy == Entity.STARTING_ANY_NONE) || (c.getY() <= startingAnySEy)));
             case START_NW:
                 return ((c.getX() < (minx + nLimit)) && (c.getX() >= minx) && (c.getY() >= miny) && (c.getY() < (height / 2)))
                         || ((c.getY() < (miny + nLimit)) && (c.getY() >= miny) && (c.getX() >= minx) && (c.getX() < (width / 2)));
@@ -947,7 +932,7 @@ public class Board implements Serializable {
         load(is, null, false);
     }
 
-    public void load(InputStream is, StringBuffer errBuff, boolean continueLoadOnError) {
+    public void load(InputStream is, @Nullable List<String> errors, boolean continueLoadOnError) {
         int nw = 0, nh = 0, di = 0;
         Hex[] nd = new Hex[0];
         int index = 0;
@@ -996,15 +981,6 @@ public class Board implements Serializable {
                     // The coordinates in the .board file are ignored!
                     nd[index] = new Hex(elevation, args[2], args[3], new Coords(index % nw, index / nw));
                     index++;
-                } else if ((st.ttype == StreamTokenizer.TT_WORD) && st.sval.equalsIgnoreCase("background")) {
-                    st.nextToken();
-                    File bgFile = new MegaMekFile(Configuration.boardBackgroundsDir(),
-                            st.sval).getFile();
-                    if (bgFile.exists()) {
-                        backgroundPaths.add(bgFile.getPath());
-                    } else {
-                        LogManager.getLogger().error("Board specified background image, but path couldn't be found! Path: " + bgFile.getPath());
-                    }
                 } else if ((st.ttype == StreamTokenizer.TT_WORD) && st.sval.equalsIgnoreCase("description")) {
                     st.nextToken();
                     if (st.ttype == '"') {
@@ -1055,12 +1031,12 @@ public class Board implements Serializable {
         }
 
         // check data integrity
-        if (isValid(nd, nw, nh, errBuff) && ((nw > 1) || (nh > 1) || (di == (nw * nh)))) {
-            newData(nw, nh, nd, errBuff);
+        if (isValid(nd, nw, nh, errors) && ((nw > 1) || (nh > 1) || (di == (nw * nh)))) {
+            newData(nw, nh, nd, errors);
         } else if (continueLoadOnError && ((nw > 1) || (nh > 1) || (di == (nw * nh)))) {
             LogManager.getLogger().error("Invalid board data!");
-            newData(nw, nh, nd, errBuff);
-        } else if (errBuff == null) {
+            newData(nw, nh, nd, errors);
+        } else if (errors == null) {
             LogManager.getLogger().error("Invalid board data!");
         }
     }
@@ -1070,59 +1046,68 @@ public class Board implements Serializable {
         return isValid(data, width, height, null);
     }
 
-    public boolean isValid(StringBuffer errBuff) {
+    public boolean isValid(@Nullable List<String> errors) {
         // Search for black-listed hexes
-        return isValid(data, width, height, errBuff);
+        return isValid(data, width, height, errors);
     }
 
-    private boolean isValid(Hex[] data, int width, int height, StringBuffer errBuff) {
+    private boolean isValid(Hex[] data, int width, int height, @Nullable List<String> errors) {
+        List<String> newErrors = new ArrayList<>();
         // Search for black-listed hexes
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
                 Hex hex = data[(y * width) + x];
                 if (hex == null) {
+                    if (errors != null) {
+                        errors.add("Null hex for coordinates " + x + "; " + y + ". Breaking off validity check.");
+                    }
+                    // A null hex must never happen. No need to process the rest of the board.
                     return false;
                 }
-                StringBuffer currBuff = new StringBuffer();
-                boolean valid = hex.isValid(currBuff);
-                
-                // Multi-hex problems 
+                List<String> hexErrors = new ArrayList<>();
+                hex.isValid(hexErrors);
+
+                // Multi-hex problems
                 // A building hex must only have exits to other building hexes of the same Building Type and Class
                 if (hex.containsTerrain(Terrains.BUILDING) && hex.getTerrain(Terrains.BUILDING).hasExitsSpecified()) {
                     for (int dir = 0; dir < 6; dir++) {
                         Hex adjHex = getHexInDir(x, y, dir);
-                        if ((adjHex != null) 
-                                && adjHex.containsTerrain(Terrains.BUILDING) 
+                        if ((adjHex != null)
+                                && adjHex.containsTerrain(Terrains.BUILDING)
                                 && hex.containsTerrainExit(Terrains.BUILDING, dir)) {
                             if (adjHex.getTerrain(Terrains.BUILDING).getLevel() != hex.getTerrain(Terrains.BUILDING).getLevel()) {
-                                valid = false;
-                                currBuff.append("Building has an exit to a building of another Building Type (Light, Medium...).\n");
+                                hexErrors.add("Building has an exit to a building of another Building Type " +
+                                        "(Light, Medium...).");
                             }
                             int thisClass = hex.containsTerrain(Terrains.BLDG_CLASS) ?
                                     hex.getTerrain(Terrains.BLDG_CLASS).getLevel() : 0;
                             int adjClass = adjHex.containsTerrain(Terrains.BLDG_CLASS) ?
                                     adjHex.getTerrain(Terrains.BLDG_CLASS).getLevel() : 0;
                             if (thisClass != adjClass) {
-                                valid = false;
-                                currBuff.append("Building has an exit in direction ").append(dir).append(" to a building of another Building Class.\n");
+                                hexErrors.add("Building has an exit in direction " + dir + " to a building of " +
+                                        "another Building Class.");
                             }
                         }
                     }
                 }
-                
-                // Return early if we aren't logging errors
-                if (!valid && (errBuff == null)) {
+
+                if (!hexErrors.isEmpty() && (errors == null)) {
+                    // Return early if we aren't logging errors
                     return false;
-                } else if (!valid) { // Otherwise, log the error for later output
-                    if (errBuff.length() > 0) {
-                        errBuff.append("----\n");
-                    }
-                    Coords c = new Coords(x, y);
-                    errBuff.append("Hex ").append(c.getBoardNum()).append(" is invalid:\n").append(currBuff);
+                } else if (!hexErrors.isEmpty()) {
+                    // Prepend a line that gives the hex coordinate for all found errors
+                    newErrors.add("Errors in hex " + new Coords(x, y).getBoardNum() + ":");
+                    newErrors.addAll(hexErrors);
+                    hexErrors.clear();
                 }
             }
         }
-        return true;
+
+        if (errors != null) {
+            errors.addAll(newErrors);
+        }
+
+        return newErrors.isEmpty();
     }
 
     /**
@@ -1554,13 +1539,6 @@ public class Board implements Serializable {
         }
     }
 
-    protected Vector<BoardListener> getListeners() {
-        if (boardListeners == null) {
-            boardListeners = new Vector<>();
-        }
-        return boardListeners;
-    }
-
     /**
      * @return an <code>Hashtable</code> of <code>InfernoTrackers</code> on the board.
      */
@@ -1716,90 +1694,6 @@ public class Board implements Serializable {
     }
 
     /**
-     * @return the list of background images associated with this board. If created from a single
-     * board file, then the list should only have one element. Multiple elements exist when the
-     * board is created by combining multiple board files.
-     */
-    public List<String> getBackgroundPaths() {
-        return backgroundPaths;
-    }
-
-    /**
-     * @return the first element of the background path list, or null if it is empty.
-     */
-    public @Nullable String getBackgroundPath() {
-        return getBackgroundPaths().isEmpty() ? null : backgroundPaths.get(0);
-    }
-
-    /**
-     * @return the number of boards in width that were used to create this board. Only used when
-     * background paths are set.
-     */
-    public int getNumBoardsWidth() {
-        return numBoardsWidth;
-    }
-
-    /**
-     * @return the number of boards in height that were used to create this board. Only used when
-     * background paths are set.
-     */
-    public int getNumBoardsHeight() {
-        return numBoardsHeight;
-    }
-
-    /**
-     * Flag that determines if the board background image should be flipped horizontally. Only used
-     * when background paths are set.
-     */
-    public List<Boolean> getFlipBGHoriz() {
-        return flipBGHoriz;
-    }
-
-
-    /**
-     * Flag that determines if the board background image should be flipped vertically. Only used
-     * when background paths are set.
-     */
-    public List<Boolean> getFlipBGVert() {
-        return flipBGVert;
-    }
-
-    public int getSubBoardWidth() {
-        return subBoardWidth;
-    }
-
-    public int getSubBoardHeight() {
-        return subBoardHeight;
-    }
-
-    public void setSubBoardWidth(int width) {
-        subBoardWidth = width;
-    }
-
-    public void setSubBoardHeight(int height) {
-        subBoardHeight = height;
-    }
-
-    public void setNumBoardsWidth(int width) {
-        numBoardsWidth = width;
-    }
-
-    public void setNumBoardsHeight(int height) {
-        numBoardsHeight = height;
-    }
-
-    public void addBackgroundPath(String path, boolean flipVert, boolean flipHorz) {
-        backgroundPaths.add(path);
-
-        flipBGVert.add(flipVert);
-        flipBGHoriz.add(flipHorz);
-    }
-
-    public boolean hasBoardBackground() {
-        return (backgroundPaths != null) && !backgroundPaths.isEmpty();
-    }
-
-    /**
      * Gets the description of the map.
      * @return The description of the map, if one exists, otherwise null.
      */
@@ -1826,16 +1720,6 @@ public class Board implements Serializable {
 
     /**
      * Gets the annotations associated with a hex.
-     * @param x The X-Coordinate of the hex.
-     * @param y The Y-Coordinate of the hex.
-     * @return A collection of annotations for the hex.
-     */
-    public Collection<String> getAnnotations(int x, int y) {
-        return getAnnotations(new Coords(x, y));
-    }
-
-    /**
-     * Gets the annotations associated with a hex.
      * @param c Coordinates of the hex.
      * @return A collection of annotations for the hex.
      */
@@ -1856,13 +1740,13 @@ public class Board implements Serializable {
         }
     }
 
-    /** 
-     * Sets a tileset theme for all hexes of the board. 
+    /**
+     * Sets a tileset theme for all hexes of the board.
      * Passing null as newTheme resets the theme to the theme specified in the board file.
-     */ 
+     */
     public void setTheme(final @Nullable String newTheme) {
         boolean reset = newTheme == null;
-        
+
         for (int c = 0; c < width * height; c++) {
             if (reset) {
                 data[c].resetTheme();
@@ -1877,9 +1761,9 @@ public class Board implements Serializable {
      * @return true when the given Coord c is on the edge of the board.
      */
     public boolean isOnBoardEdge(Coords c) {
-        return (c.getX() == 0) 
+        return (c.getX() == 0)
                 || (c.getY() == 0)
-                || (c.getX() == (width - 1)) 
+                || (c.getX() == (width - 1))
                 || (c.getY() == (height - 1));
     }
 
@@ -1908,5 +1792,11 @@ public class Board implements Serializable {
      */
     public Set<String> getTags() {
         return Collections.unmodifiableSet(tags);
+    }
+
+
+    /** @return The name of this map; this is meant to be displayed in the GUI. */
+    public String getMapName() {
+        return "Board #" + boardId;
     }
 }

@@ -18,7 +18,9 @@ import megamek.common.cost.CombatVehicleCostCalculator;
 import megamek.common.enums.AimingMode;
 import megamek.common.enums.GamePhase;
 import megamek.common.enums.MPBoosters;
+import megamek.common.equipment.AmmoMounted;
 import megamek.common.options.OptionsConstants;
+import megamek.common.planetaryconditions.PlanetaryConditions;
 import megamek.common.weapons.flamers.VehicleFlamerWeapon;
 import megamek.common.weapons.lasers.CLChemicalLaserWeapon;
 import org.apache.logging.log4j.LogManager;
@@ -83,6 +85,8 @@ public class Tank extends Entity {
     public static final int CRIT_TURRET_LOCK = 13;
     public static final int CRIT_TURRET_DESTROYED = 14;
 
+    public static final int CRIT_SENSOR_MAX = 4;
+
     //Fortify terrain just like infantry
     public static final int DUG_IN_NONE = 0;
     public static final int DUG_IN_FORTIFYING1 = 1;
@@ -107,6 +111,8 @@ public class Tank extends Entity {
                 ToHitData.SIDE_LEFT, LOC_LEFT,
                 ToHitData.SIDE_RIGHT, LOC_RIGHT,
                 ToHitData.SIDE_REAR, LOC_REAR);
+    protected boolean hasSponsons = false;
+    protected boolean hasPintle = false;
 
     @Override
     public int getUnitType() {
@@ -210,6 +216,18 @@ public class Tank extends Entity {
         return m_bHasNoDualTurret;
     }
 
+    public int getTurretCount() {
+        int tankTurrets = 0;
+
+        if (!hasNoDualTurret()) {
+            tankTurrets = 2;
+        } else if (!hasNoTurret()) {
+            tankTurrets = 1;
+        }
+
+        return tankTurrets;
+    }
+
     public void setHasNoTurret(boolean b) {
         m_bHasNoTurret = b;
     }
@@ -236,7 +254,7 @@ public class Tank extends Entity {
 
     private static final TechAdvancement TA_COMBAT_VEHICLE = new TechAdvancement(TECH_BASE_ALL)
             .setAdvancement(DATE_NONE, 2470, 2490).setProductionFactions(F_TH)
-            .setTechRating(RATING_E).setAvailability(RATING_C, RATING_C, RATING_C, RATING_B)
+            .setTechRating(RATING_D).setAvailability(RATING_C, RATING_C, RATING_C, RATING_B)
             .setStaticTechLevel(SimpleTechLevel.INTRO);
 
     @Override
@@ -259,6 +277,9 @@ public class Tank extends Entity {
         if (!hasNoDualTurret()) {
             ctl.addComponent(getDualTurretTA());
         }
+        if (hasSponsons) {
+            ctl.addComponent(EquipmentType.get(EquipmentTypeLookup.SPONSON_TURRET).getTechAdvancement());
+        }
     }
 
     @Override
@@ -277,26 +298,23 @@ public class Tank extends Entity {
         }
 
         if (!mpCalculationSetting.ignoreWeather && (null != game)) {
-            int weatherMod = game.getPlanetaryConditions().getMovementMods(this);
+            PlanetaryConditions conditions = game.getPlanetaryConditions();
+            int weatherMod = conditions.getMovementMods(this);
             mp = Math.max(mp + weatherMod, 0);
 
             if (getCrew().getOptions().stringOption(OptionsConstants.MISC_ENV_SPECIALIST).equals(Crew.ENVSPC_SNOW)) {
-                if ((game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_ICE_STORM)) {
+                if (conditions.getWeather().isIceStorm()) {
                     mp += 2;
                 }
 
-                if ((game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_SLEET)
-                        || (game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_LIGHT_SNOW)
-                        || (game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_MOD_SNOW)
-                        || (game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_HEAVY_SNOW)
-                        || (game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_SNOW_FLURRIES)) {
+                if (conditions.getWeather().isLightSnowOrModerateSnowOrSnowFlurriesOrHeavySnowOrSleet()) {
                     mp += 1;
                 }
             }
 
             if(getCrew().getOptions().stringOption(OptionsConstants.MISC_ENV_SPECIALIST).equals(Crew.ENVSPC_WIND)
-                    && (game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_NONE)
-                    && (game.getPlanetaryConditions().getWindStrength() == PlanetaryConditions.WI_TORNADO_F13)) {
+                    && conditions.getWeather().isClear()
+                    && conditions.getWind().isTornadoF1ToF3()) {
                 mp += 1;
             }
         }
@@ -390,7 +408,7 @@ public class Tank extends Entity {
 
     @Override
     public boolean canChangeSecondaryFacing() {
-        return !m_bHasNoTurret && !isTurretLocked(getLocTurret());
+        return !(m_bHasNoTurret || isTurretLocked(getLocTurret()) || getAlreadyTwisted());
     }
 
     @Override
@@ -551,6 +569,20 @@ public class Tank extends Entity {
     @Override
     public boolean isPermanentlyImmobilized(boolean checkCrew) {
         return super.isPermanentlyImmobilized(checkCrew) || isMovementHit();
+    }
+
+    /**
+     * Per https://bg.battletech.com/forums/index.php/topic,78336.msg1869386.html#msg1869386
+     * CVs with working engines and Jump Jets should still have the option to jump during the movement
+     * phase, even if reduced to 0 MP by motive hits, or rolling 12 on the Motive System Damage table.
+     */
+    @Override
+    public boolean isImmobileForJump() {
+        // *Can* jump unless 0 Jump MP, or 1+ Jump MP but engine is critted, or crew unconscious/dead.
+        return super.isImmobile(true) ||
+                super.isPermanentlyImmobilized(true) ||
+                (getJumpMP() == 0) ||
+                isEngineHit();
     }
 
     @Override
@@ -1690,13 +1722,13 @@ public class Tank extends Entity {
         return true;
     }
 
-    @Override
     /**
      * Checks to see if a Tank is capable of going hull-down.  This is true if
      * hull-down rules are enabled and the Tank is in a fortified hex.
      *
      *  @return True if hull-down is enabled and the Tank is in a fortified hex.
      */
+    @Override
     public boolean canGoHullDown() {
         // MoveStep line 2179 performs this same check
         // performing it here will allow us to disable the Hulldown button
@@ -1807,6 +1839,9 @@ public class Tank extends Entity {
                 && mounted.getType().hasFlag(MiscType.F_JUMP_JET)) {
             setOriginalJumpMP(getOriginalJumpMP() + 1);
         }
+        // Track unusual turrets for tech calculations
+        hasSponsons |= mounted.isSponsonTurretMounted();
+        hasPintle |= mounted.isPintleTurretMounted();
     }
 
     /**
@@ -1861,7 +1896,7 @@ public class Tank extends Entity {
                             }
                         }
                     case 9:
-                        if (getSensorHits() < 4) {
+                        if (getSensorHits() < CRIT_SENSOR_MAX) {
                             return CRIT_SENSOR;
                         }
                     case 10:
@@ -2345,9 +2380,7 @@ public class Tank extends Entity {
                 // Only one slot each for all jump jets or fuel tanks, added later.
                 continue;
             }
-            if (!((mount.getType() instanceof AmmoType) || Arrays.asList(
-                    EquipmentType.armorNames).contains(
-                    mount.getType().getName()))) {
+            if (!((mount.getType() instanceof AmmoType) || EquipmentType.isArmorType(mount.getType()))) {
                 usedSlots += mount.getType().getTankSlots(this);
             }
         }
@@ -2388,12 +2421,12 @@ public class Tank extends Entity {
         // for ammo, each type of ammo takes one slots, regardless of
         // submunition type
         Set<String> foundAmmo = new HashSet<>();
-        for (Mounted ammo : getAmmo()) {
+        for (AmmoMounted ammo : getAmmo()) {
             // don't count oneshot ammo
-            if (ammo.isOneShotAmmo()) {
+            if (ammo.isOneShot()) {
                 continue;
             }
-            AmmoType at = (AmmoType) ammo.getType();
+            AmmoType at = ammo.getType();
             if (!foundAmmo.contains(at.getAmmoType() + ":" + at.getRackSize())) {
                 usedSlots++;
                 foundAmmo.add(at.getAmmoType() + ":" + at.getRackSize());
@@ -2867,13 +2900,7 @@ public class Tank extends Entity {
     @Override
     public void setHullDown(boolean down) {
         super.setHullDown(down);
-        if ((getMovedBackwards() == true) && (down == true)) {
-            m_bBackedIntoHullDown = true;
-        } else if ((getMovedBackwards() == false) && (down == true)) {
-            m_bBackedIntoHullDown = false;
-        } else if (down == false) {
-            m_bBackedIntoHullDown = false;
-        }
+        m_bBackedIntoHullDown = getMovedBackwards() && down;
     }
 
     /**
@@ -3025,5 +3052,10 @@ public class Tank extends Entity {
     @Override
     public boolean getsAutoExternalSearchlight() {
         return true;
+    }
+
+    @Override
+    public int getGenericBattleValue() {
+        return (int) Math.round(Math.exp(2.866 + 0.987*Math.log(getWeight())));
     }
 }

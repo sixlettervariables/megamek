@@ -14,7 +14,9 @@
 package megamek.common;
 
 import megamek.common.enums.AimingMode;
+import megamek.common.enums.MPBoosters;
 import megamek.common.options.OptionsConstants;
+import megamek.common.planetaryconditions.PlanetaryConditions;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,13 +32,12 @@ public class VTOL extends Tank implements IBomber {
     public static final int LOC_ROTOR = 5;
     public static final int LOC_TURRET = 6;
     public static final int LOC_TURRET_2 = 7;
-    public static final int LOC_NUM = 8;
 
     // VTOLs can have at most one (chin) turret, sponsons don't count and dual
     // turrets aren't allowed.
-    private static String[] LOCATION_ABBRS = { "BD", "FR", "RS", "LS", "RR",
+    private final static String[] LOCATION_ABBRS = { "BD", "FR", "RS", "LS", "RR",
             "RO", "TU" };
-    private static String[] LOCATION_NAMES = { "Body", "Front", "Right",
+    private static final String[] LOCATION_NAMES = { "Body", "Front", "Right",
             "Left", "Rear", "Rotor", "Turret"};
 
     // critical hits
@@ -51,8 +52,8 @@ public class VTOL extends Tank implements IBomber {
         // need to set elevation to something different than entity
         elevation = 1;
     }
-    
-    
+
+
     @Override
     public int getUnitType() {
         return UnitType.VTOL;
@@ -72,15 +73,17 @@ public class VTOL extends Tank implements IBomber {
     public int getLocTurret() {
         return LOC_TURRET;
     }
-    
+
     @Override
     public int getLocTurret2() {
         return LOC_TURRET_2;
     }
 
-    private int[] bombChoices = new int[BombType.B_NUM];
+    protected int[] intBombChoices = new int[BombType.B_NUM];
+    protected int[] extBombChoices = new int[BombType.B_NUM];
+
     private Targetable bombTarget = null;
-    private List<Coords> strafingCoords = new ArrayList<>();
+    private final List<Coords> strafingCoords = new ArrayList<>();
 
     @Override
     public PilotingRollData checkSkid(EntityMovementType moveType, Hex prevHex, EntityMovementType overallMoveType,
@@ -137,11 +140,6 @@ public class VTOL extends Tank implements IBomber {
         return false;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see megamek.common.Tank#isRepairable()
-     */
     @Override
     public boolean isRepairable() {
         boolean retval = isSalvage();
@@ -236,41 +234,55 @@ public class VTOL extends Tank implements IBomber {
     }
 
     @Override
-    public boolean doomedInAtmosphere() {
-        return true;
-    }
-    
-    @Override
     public boolean isBomber() {
         return (game != null)
                 && game.getOptions().booleanOption(OptionsConstants.ADVCOMBAT_TACOPS_VTOL_ATTACKS);
     }
-    
+
     @Override
     public int availableBombLocation(int cost) {
         return LOC_FRONT;
     }
-    
+
     @Override
-    public int getMaxBombPoints() {
+    public int getMaxExtBombPoints() {
         return (int) Math.round(getWeight() / 5);
     }
 
     @Override
-    public int[] getBombChoices() {
-        return bombChoices.clone();
+    public int getMaxIntBombPoints() {
+        return 0;
     }
 
     @Override
-    public void setBombChoices(int... bc) {
-        if (bc.length == bombChoices.length) {
-            bombChoices = bc;
+    public int getMaxBombPoints() {
+        return getMaxExtBombPoints();
+    }
+
+    @Override
+    public int[] getIntBombChoices() {
+        return intBombChoices.clone();
+    }
+
+    @Override
+    public void setIntBombChoices(int[] bc) {
+    }
+
+    @Override
+    public int[] getExtBombChoices() {
+        return extBombChoices.clone();
+    }
+
+    @Override
+    public void setExtBombChoices(int[] bc) {
+        if (bc.length == extBombChoices.length) {
+            extBombChoices = bc;
         }
     }
-    
+
     @Override
     public void clearBombChoices() {
-        Arrays.fill(bombChoices, 0);
+        Arrays.fill(extBombChoices, 0);
     }
 
     @Override
@@ -280,15 +292,31 @@ public class VTOL extends Tank implements IBomber {
     }
 
     @Override
+    public void setUsedInternalBombs(int b) {
+        // Do nothing
+    }
+
+    @Override
+    public void increaseUsedInternalBombs(int b) {
+        // Do nothing
+    }
+
+    @Override
+    public int getUsedInternalBombs() {
+        // Currently not possible
+        return 0;
+    }
+
+    @Override
     public Targetable getVTOLBombTarget() {
         return bombTarget;
     }
-    
+
     @Override
     public void setVTOLBombTarget(Targetable t) {
         bombTarget = t;
     }
-    
+
     public List<Coords> getStrafingCoords() {
         return strafingCoords;
     }
@@ -301,11 +329,6 @@ public class VTOL extends Tank implements IBomber {
     @Override
     public boolean isNightwalker() {
         return false;
-    }
-
-    @Override
-    public boolean doomedInSpace() {
-        return true;
     }
 
     @Override
@@ -362,7 +385,7 @@ public class VTOL extends Tank implements IBomber {
                             }
                         }
                     case 9:
-                        if (getSensorHits() < 4) {
+                        if (getSensorHits() < Tank.CRIT_SENSOR_MAX) {
                             return CRIT_SENSOR;
                         }
                     case 10:
@@ -413,7 +436,7 @@ public class VTOL extends Tank implements IBomber {
                             }
                         }
                     case 10:
-                        if (getSensorHits() < 4) {
+                        if (getSensorHits() < Tank.CRIT_SENSOR_MAX) {
                             return CRIT_SENSOR;
                         }
                     case 11:
@@ -564,7 +587,7 @@ public class VTOL extends Tank implements IBomber {
     @Override
     public void newRound(int roundNumber) {
         super.newRound(roundNumber);
-        
+
         bombTarget = null;
         strafingCoords.clear();
     }
@@ -584,19 +607,16 @@ public class VTOL extends Tank implements IBomber {
         }
 
         if (!mpCalculationSetting.ignoreWeather && (null != game)) {
-            int weatherMod = game.getPlanetaryConditions().getMovementMods(this);
+            PlanetaryConditions conditions = game.getPlanetaryConditions();
+            int weatherMod = conditions.getMovementMods(this);
             mp = Math.max(mp + weatherMod, 0);
 
             if (getCrew().getOptions().stringOption(OptionsConstants.MISC_ENV_SPECIALIST).equals(Crew.ENVSPC_SNOW)) {
-                if (game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_ICE_STORM) {
+                if (conditions.getWeather().isIceStorm()) {
                     mp += 2;
                 }
 
-                if ((game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_SLEET)
-                        || (game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_LIGHT_SNOW)
-                        || (game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_MOD_SNOW)
-                        || (game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_HEAVY_SNOW)
-                        || (game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_SNOW_FLURRIES)) {
+                if (conditions.getWeather().isLightSnowOrModerateSnowOrSnowFlurriesOrHeavySnowOrSleet()) {
                     mp += 1;
                 }
             }
@@ -622,11 +642,32 @@ public class VTOL extends Tank implements IBomber {
     }
 
     @Override
-    public int height() {
-        if (isSuperHeavy()) {
-            return 1;
+    public MPBoosters getMPBoosters(boolean onlyArmed) {
+        for (Mounted m : getEquipment()) {
+            if (!m.isInoperable() && (m.getType() instanceof MiscType)
+                    && m.getType().hasFlag(MiscType.F_MASC)) {
+                return MPBoosters.VTOL_JET_BOOSTER;
+            }
         }
-        return 0;
+        return MPBoosters.NONE;
+    }
+
+    @Override
+    public PilotingRollData checkSideSlip(EntityMovementType moveType,
+                                          Hex prevHex, EntityMovementType overallMoveType,
+                                          MoveStep prevStep, int prevFacing, int curFacing, Coords lastPos,
+                                          Coords curPos, int distance, boolean speedBooster) {
+        PilotingRollData roll = super.checkSideSlip(moveType, prevHex, overallMoveType, prevStep, prevFacing,
+                curFacing, lastPos, curPos, distance, speedBooster);
+        if (speedBooster) {
+            roll.addModifier(3, "used VTOL Jet Booster");
+        }
+        return roll;
+    }
+
+    @Override
+    public int height() {
+        return isSuperHeavy() ? 1 : 0;
     }
 
     @Override
@@ -636,11 +677,7 @@ public class VTOL extends Tank implements IBomber {
 
     @Override
     public int locations() {
-        if (m_bHasNoTurret) {
-            return 6;
-        } else {
-            return 7;
-        }
+        return m_bHasNoTurret ? 6 : 7;
     }
 
     @Override
@@ -663,15 +700,13 @@ public class VTOL extends Tank implements IBomber {
         }
     }
 
-    /**
-     * Used to determine the draw priority of different Entity subclasses.
-     * This allows different unit types to always be draw above/below other
-     * types.
-     *
-     * @return
-     */
     @Override
     public int getSpriteDrawPriority() {
         return 8;
+    }
+
+    @Override
+    public int getGenericBattleValue() {
+        return (int) Math.round(Math.exp(2.366 + 1.177*Math.log(getWeight())));
     }
 }

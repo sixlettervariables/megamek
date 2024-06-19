@@ -36,6 +36,10 @@ Mk.III
 IS Level 3
 </type>
 
+<role>
+None
+</role>
+
 <motion_type>
 Aerodyne
 </motion_type>
@@ -130,7 +134,7 @@ TARGETING:Unknown
 </systemManufacturers>
 
 <notes>
-Modifed from XTR: to be legal.
+Modified from XTR: to be legal.
 </notes>
 
 <use>
@@ -192,4 +196,11 @@ XTR: Primitives II
 <escape_pod>
 0
 </escape_pod>
+
+
+<quirks>
+atmo_flyer
+easy_maintain
+obsolete
+</quirks>
 

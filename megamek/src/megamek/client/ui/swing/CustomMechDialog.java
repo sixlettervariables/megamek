@@ -20,22 +20,22 @@ import megamek.client.ui.baseComponents.AbstractButtonDialog;
 import megamek.client.ui.swing.util.UIUtil;
 import megamek.common.*;
 import megamek.common.enums.Gender;
+import megamek.common.equipment.WeaponMounted;
 import megamek.common.options.*;
-import megamek.common.util.fileUtils.MegaMekFile;
-import megamek.common.verifier.*;
+import megamek.common.verifier.TestEntity;
 import megamek.common.weapons.bayweapons.ArtilleryBayWeapon;
-import megamek.common.weapons.bayweapons.BayWeapon;
 import megamek.common.weapons.bayweapons.CapitalMissileBayWeapon;
 
 import javax.swing.*;
 import javax.swing.text.DefaultFormatterFactory;
 import javax.swing.text.NumberFormatter;
-
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.List;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * A dialog that a player can use to customize his mech before battle.
@@ -63,7 +63,6 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
 
     private JTabbedPane tabAll;
 
-    private final JTextField fldFatigue = new JTextField(3);
     private final JTextField fldInit = new JTextField(3);
     private final JTextField fldCommandInit = new JTextField(3);
     private final JCheckBox chCommander = new JCheckBox();
@@ -78,14 +77,19 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
             Messages.getString("CustomMechDialog.labDeploymentWidth"), SwingConstants.RIGHT);
     private final JComboBox<String> choDeploymentRound = new JComboBox<>();
     private final JComboBox<String> choDeploymentZone = new JComboBox<>();
-    
+
     // this might seem like kind of a dumb way to declare it, but JFormattedTextField doesn't have an overload that
     // takes both a number formatter and a default value.
     private final NumberFormatter numFormatter = new NumberFormatter();
     private final DefaultFormatterFactory formatterFactory = new DefaultFormatterFactory(numFormatter);
-    
+
     private final JFormattedTextField txtDeploymentOffset = new JFormattedTextField(formatterFactory);
     private final JFormattedTextField txtDeploymentWidth = new JFormattedTextField(formatterFactory);
+
+    private JSpinner spinStartingAnyNWx;
+    private JSpinner spinStartingAnyNWy;
+    private JSpinner spinStartingAnySEx;
+    private JSpinner spinStartingAnySEy;
 
     private final JLabel labDeployShutdown = new JLabel(
             Messages.getString("CustomMechDialog.labDeployShutdown"), SwingConstants.RIGHT);
@@ -148,6 +152,7 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
     private ArrayList<DialogOptionComponent> partRepsComps = new ArrayList<>();
 
     private final boolean editable;
+    private final boolean editableDeployment;
 
     private OffBoardDirection direction = OffBoardDirection.NONE;
     private int distance = 17;
@@ -157,6 +162,13 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
      * Creates new CustomMechDialog
      */
     public CustomMechDialog(ClientGUI clientgui, Client client, List<Entity> entities, boolean editable) {
+        this(clientgui, client, entities, editable, true);
+    }
+
+    /**
+     * Creates new CustomMechDialog
+     */
+    public CustomMechDialog(ClientGUI clientgui, Client client, List<Entity> entities, boolean editable, boolean editableDeployment) {
         super(clientgui.getFrame(), "CustomizeMechDialog", "CustomMechDialog.title");
 
         this.entities = entities;
@@ -164,6 +176,7 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
         this.client = client;
         this.space = clientgui.getClient().getMapSettings().getMedium() == Board.T_SPACE;
         this.editable = editable;
+        this.editableDeployment = editableDeployment;
 
         // Ensure we have at least one passed entity, anything less makes no sense
         if (entities.size() < 1) {
@@ -172,7 +185,6 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
 
         initialize();
     }
-
     public String getSelectedTab() {
         return tabAll.getTitleAt(tabAll.getSelectedIndex());
     }
@@ -182,7 +194,7 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
             tabAll.setSelectedIndex(idx);
         }
     }
-    
+
     public void setSelectedTab(String tabName) {
         for (int i = 0; i < tabAll.getTabCount(); i++) {
             if (tabAll.getTitleAt(i).equals(tabName)) {
@@ -331,7 +343,7 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
             PilotSPAHelper.weaponSpecialistValidWeaponNames(entity, gameOptions()).forEach(optionComp::addValue);
             optionComp.setSelected(option.stringValue());
         }
-        
+
         if ((OptionsConstants.GUNNERY_SANDBLASTER).equals(option.getName())) {
             optionComp.addValue(Messages.getString("CustomMechDialog.None"));
             PilotSPAHelper.sandblasterValidWeaponNames(entity, gameOptions()).forEach(optionComp::addValue);
@@ -386,6 +398,11 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
     @Override
     public void optionClicked(DialogOptionComponent comp, IOption option, boolean state) { }
 
+    @Override
+    public void optionSwitched(DialogOptionComponent clickedComp, IOption option, int i) {
+        // nothing implemented yet
+    }
+
     public boolean isOkay() {
         return okay;
     }
@@ -396,7 +413,7 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
 
     private void refreshDeployment() {
         Entity entity = entities.get(0);
-        
+
         if (entity instanceof QuadVee) {
             choStartingMode.removeItemListener(this);
             choStartingMode.removeAllItems();
@@ -423,11 +440,11 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
             updateStartingModeOptions();
             choStartingMode.addItemListener(this);
         }
-        
+
         choDeploymentZone.removeItemListener(this);
         txtDeploymentOffset.setEnabled(false);
         txtDeploymentWidth.setEnabled(false);
-        
+
         choDeploymentRound.removeAllItems();
         choDeploymentRound.addItem(Messages.getString("CustomMechDialog.StartOfGame"));
 
@@ -445,7 +462,7 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
         if (entity.getTransportId() != Entity.NONE) {
             choDeploymentRound.setEnabled(false);
         }
-        
+
         choDeploymentZone.removeAllItems();
         choDeploymentZone.addItem(Messages.getString("CustomMechDialog.useOwners"));
         choDeploymentZone.addItem(Messages.getString("CustomMechDialog.deployAny"));
@@ -461,16 +478,36 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
         choDeploymentZone.addItem(Messages.getString("CustomMechDialog.deployCenter"));
 
         choDeploymentZone.setSelectedIndex(entity.getStartingPos(false) + 1);
-        
+
         choDeploymentZone.addItemListener(this);
 
         txtDeploymentOffset.setText(Integer.toString(entity.getStartingOffset(false)));
         txtDeploymentWidth.setText(Integer.toString(entity.getStartingWidth(false)));
-        
+
+        MapSettings ms = clientgui.getClient().getMapSettings();
+        int bh = ms.getBoardHeight() * ms.getMapHeight();
+        int bw = ms.getBoardWidth() * ms.getMapWidth();
+
+        int x = Math.min(entity.getStartingAnyNWx(false) + 1, bw);
+        spinStartingAnyNWx.setValue(x);
+        int y = Math.min(entity.getStartingAnyNWy(false) + 1, bh);
+        spinStartingAnyNWy.setValue(y);
+        x = Math.min(entity.getStartingAnySEx(false) + 1, bw);
+        spinStartingAnySEy.setValue(x);
+        y = Math.min(entity.getStartingAnySEy(false) + 1, bh);
+        spinStartingAnySEy.setValue(y);
+
         boolean enableDeploymentZoneControls = choDeploymentZone.isEnabled() && (choDeploymentZone.getSelectedIndex() > 0);
         txtDeploymentOffset.setEnabled(enableDeploymentZoneControls);
         txtDeploymentWidth.setEnabled(enableDeploymentZoneControls);
-        
+
+        // disable some options if not allowed to edit deployment
+        choStartingMode.setEnabled(editableDeployment);
+        choDeploymentZone.setEnabled(editableDeployment);
+        txtDeploymentOffset.setEnabled(editableDeployment);
+        txtDeploymentWidth.setEnabled(editableDeployment);
+        choDeploymentRound.setEnabled(editableDeployment);
+
         chHidden.removeActionListener(this);
         boolean enableHidden = !(entity instanceof Dropship) && !entity.isAirborne() && !entity.isAirborneVTOLorWIGE();
         labHidden.setEnabled(enableHidden);
@@ -486,20 +523,17 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
             // effective range, even if many of the unit's weapons would be out of range
             int maxDistance = 0;
             for (Entity entity : entities) {
-                for (Mounted wep : entity.getWeaponList()) {
-                    EquipmentType e = wep.getType();
-                    WeaponType w = (WeaponType) e;
+                for (WeaponMounted wep : entity.getWeaponList()) {
+                    WeaponType w = wep.getType();
                     int nDistance = 0;
                     if (w.hasFlag(WeaponType.F_ARTILLERY)) {
                         if (w instanceof ArtilleryBayWeapon) {
                             // Artillery bays can mix and match, so limit the bay
                             // to the shortest range of the weapons in it
                             int bayShortestRange = 150; // Cruise missile/120
-                            for (int wId : wep.getBayWeapons()) {
-                                Mounted bweap = entity.getEquipment(wId);
-                                WeaponType bwtype = (WeaponType) bweap.getType();
+                            for (WeaponMounted bweap : wep.getBayWeapons()) {
                                 // Max TO range in mapsheets - 1 for the actual play area
-                                int currentDistance = (bwtype.getLongRange() - 1);
+                                int currentDistance = (bweap.getType().getLongRange() - 1);
                                 if (currentDistance < bayShortestRange) {
                                     bayShortestRange = currentDistance;
                                 }
@@ -531,7 +565,7 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
                         maxDistance = nDistance;
                     }
                 }
-                
+
             }
             Slider sl = new Slider(
                     clientgui.frame,
@@ -545,7 +579,7 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
             butOffBoardDistance.setText(Integer.toString(distance));
             return;
         }
-        
+
         if (actionEvent.getActionCommand().equals("missing")) {
             //If we're down to a single crew member, do not allow any more to be removed.
             final long remaining = Arrays.stream(panCrewMember).filter(p -> !p.getMissing()).count();
@@ -597,7 +631,6 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
         }
 
         // get values
-        int fatigue;
         int init;
         int command;
         int velocity = 0;
@@ -607,7 +640,6 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
         int offBoardDistance;
         try {
             init = Integer.parseInt(fldInit.getText());
-            fatigue = Integer.parseInt(fldFatigue.getText());
             command = Integer.parseInt(fldCommandInit.getText());
             if (isAero || isShip) {
                 velocity = Integer.parseInt(fldStartVelocity.getText());
@@ -659,6 +691,7 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
             for (int i = 0; i < entities.get(0).getCrew().getSlotCount(); i++) {
                 String name = panCrewMember[i].getPilotName();
                 String nick = panCrewMember[i].getNickname();
+                String hits = panCrewMember[i].getHits();
                 Gender gender = panCrewMember[i].getGender();
                 if (gender == Gender.RANDOMIZE) {
                     gender = entities.get(0).getCrew().getGender(i);
@@ -676,6 +709,7 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
                 int gunneryAeroB;
                 int pilotingAero;
                 int tough;
+                int fatigue;
                 int backup = panCrewMember[i].getBackup();
                 try {
                     gunnery = panCrewMember[i].getGunnery();
@@ -690,6 +724,7 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
                     pilotingAero = panCrewMember[i].getPilotingAero();
                     artillery = panCrewMember[i].getArtillery();
                     tough = panCrewMember[i].getToughness();
+                    fatigue = panCrewMember[i].getCrewFatigue();
                 } catch (NumberFormatException e) {
                     msg = Messages.getString("CustomMechDialog.EnterValidSkills");
                     title = Messages.getString("CustomMechDialog.NumberFormatError");
@@ -755,9 +790,12 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
                 }
                 entity.getCrew().setMissing(missing, i);
                 entity.getCrew().setToughness(tough, i);
+                entity.getCrew().setCrewFatigue(fatigue, i);
                 entity.getCrew().setName(name, i);
                 entity.getCrew().setNickname(nick, i);
+                entity.getCrew().setHits(Integer.parseInt(hits), i);
                 entity.getCrew().setGender(gender, i);
+                entity.getCrew().setClanPilot(panCrewMember[i].isClanPilot(), i);
                 entity.getCrew().setPortrait(panCrewMember[i].getPortrait().clone(), i);
                 if (backup >= 0) {
                     if (i == entity.getCrew().getCrewType().getPilotPos()) {
@@ -777,7 +815,6 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
                     client.sendUpdateEntity(other);
                 }
             }
-            entity.getCrew().setFatigue(fatigue);
             entity.getCrew().setInitBonus(init);
             entity.getCrew().setCommandBonus(command);
 
@@ -868,6 +905,15 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
             entity.setStartingOffset(Integer.parseInt(txtDeploymentOffset.getText()));
             entity.setStartingWidth(Integer.parseInt(txtDeploymentWidth.getText()));
 
+            int x = Math.min((Integer) spinStartingAnyNWx.getValue(), (Integer) spinStartingAnySEx.getValue());
+            int y = Math.min((Integer) spinStartingAnyNWy.getValue(), (Integer) spinStartingAnySEy.getValue());
+            entity.setStartingAnyNWx(x - 1);
+            entity.setStartingAnyNWy(y - 1);
+            x = Math.max((Integer) spinStartingAnyNWx.getValue(), (Integer) spinStartingAnySEx.getValue());
+            y = Math.max((Integer) spinStartingAnyNWy.getValue(), (Integer) spinStartingAnySEy.getValue());
+            entity.setStartingAnySEx(x - 1);
+            entity.setStartingAnySEy(y - 1);
+
             // Should the entity begin the game shutdown?
             if (chDeployShutdown.isSelected() && gameOptions().booleanOption(OptionsConstants.RPG_BEGIN_SHUTDOWN)) {
                 entity.performManualShutdown();
@@ -887,34 +933,13 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
         }
 
         okay = true;
-        clientgui.chatlounge.refreshEntities();
+        if ((clientgui != null) && (clientgui.chatlounge != null)) {
+            clientgui.chatlounge.refreshEntities();
+        }
 
         // Check validity of units after customization
         for (Entity entity : entities) {
-            EntityVerifier verifier = EntityVerifier.getInstance(new MegaMekFile(
-                    Configuration.unitsDir(), EntityVerifier.CONFIG_FILENAME).getFile());
-            TestEntity testEntity = null;
-            if (entity instanceof Mech) {
-                testEntity = new TestMech((Mech) entity, verifier.mechOption, null);
-            } else if ((entity instanceof Tank)
-                    && !(entity instanceof GunEmplacement)) {
-                if (entity.isSupportVehicle()) {
-                    testEntity = new TestSupportVehicle(entity, verifier.tankOption, null);
-                } else {
-                    testEntity = new TestTank((Tank) entity, verifier.tankOption, null);
-                }
-            } else if (entity.getEntityType() == Entity.ETYPE_AERO
-                    && entity.getEntityType() != Entity.ETYPE_DROPSHIP
-                    && entity.getEntityType() != Entity.ETYPE_SMALL_CRAFT
-                    && entity.getEntityType() != Entity.ETYPE_FIGHTER_SQUADRON
-                    && entity.getEntityType() != Entity.ETYPE_JUMPSHIP
-                    && entity.getEntityType() != Entity.ETYPE_SPACE_STATION) {
-                testEntity = new TestAero((Aero) entity, verifier.mechOption, null);
-            } else if (entity instanceof BattleArmor) {
-                testEntity = new TestBattleArmor((BattleArmor) entity, verifier.baOption, null);
-            } else if (entity instanceof Infantry) {
-                testEntity = new TestInfantry((Infantry) entity, verifier.infOption, null);
-            }
+            TestEntity testEntity = TestEntity.getEntityVerifier(entity);
             int gameTL = TechConstants.getGameTechLevel(client.getGame(), entity.isClan());
             entity.setDesignValid((testEntity == null) || testEntity.correctEntity(new StringBuffer(), gameTL));
         }
@@ -935,7 +960,7 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
             chDeployProne.setSelected(false);
             return;
         }
-        
+
         if (itemEvent.getSource().equals(choDeploymentZone)) {
             boolean enableDeploymentZoneControls = choDeploymentZone.isEnabled() && (choDeploymentZone.getSelectedIndex() > 0);
             txtDeploymentOffset.setEnabled(enableDeploymentZoneControls);
@@ -1009,19 +1034,38 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
 
     @Override
     protected Container createCenterPane() {
-        boolean multipleEntities = entities.size() > 1;
+        final Entity entity = entities.get(0);
+        boolean multipleEntities = (entities.size() > 1) || (entity instanceof FighterSquadron);
         boolean quirksEnabled = gameOptions().booleanOption(OptionsConstants.ADVANCED_STRATOPS_QUIRKS);
         boolean partialRepairsEnabled = gameOptions().booleanOption(OptionsConstants.ADVANCED_STRATOPS_PARTIALREPAIRS);
-        final Entity entity = entities.get(0);
         final boolean isMech = entities.stream().allMatch(e -> e instanceof Mech);
         final boolean isShip = entities.stream().allMatch(Entity::isLargeAerospace);
-        final boolean isAero = entities.stream().allMatch(e -> e.isAerospace() && !e.isLargeAerospace());
+        final boolean isAero = entities.stream().allMatch(e -> e.isAero() && !e.isLargeAerospace());
         final boolean isVTOL = entities.stream().allMatch(e -> e.getMovementMode().isVTOL());
         final boolean isWiGE = entities.stream().allMatch(e -> (e instanceof Tank) && e.getMovementMode().isWiGE());
         final boolean isQuadVee = entities.stream().allMatch(e -> e instanceof QuadVee);
         final boolean isLAM = entities.stream().allMatch(e -> e instanceof LandAirMech);
         final boolean isGlider = entities.stream().allMatch(e -> (e instanceof Protomech) && e.getMovementMode().isWiGE());
         boolean eligibleForOffBoard = true;
+
+        int bh = clientgui.getClient().getMapSettings().getBoardHeight();
+        int bw = clientgui.getClient().getMapSettings().getBoardWidth();
+        int x = Math.min(entity.getStartingAnyNWx(false) + 1, bw);
+        SpinnerNumberModel mStartingAnyNWx = new SpinnerNumberModel(x, 0,bw, 1);
+        spinStartingAnyNWx = new JSpinner(mStartingAnyNWx);
+        spinStartingAnyNWx.setValue(x);
+        int y = Math.min(entity.getStartingAnyNWy(false) + 1, bh);
+        SpinnerNumberModel mStartingAnyNWy = new SpinnerNumberModel(y, 0, bh, 1);
+        spinStartingAnyNWy = new JSpinner(mStartingAnyNWy);
+        spinStartingAnyNWy.setValue(y);
+        x = Math.min(entity.getStartingAnySEx(false) + 1, bw);
+        SpinnerNumberModel mStartingAnySEx = new SpinnerNumberModel(x, 0, bw, 1);
+        spinStartingAnySEx = new JSpinner(mStartingAnySEx);
+        spinStartingAnySEx.setValue(x);
+        y = Math.min(entity.getStartingAnySEy(false) + 1, bh);
+        SpinnerNumberModel mStartingAnySEy = new SpinnerNumberModel(y, 0, bh, 1);
+        spinStartingAnySEy = new JSpinner(mStartingAnySEy);
+        spinStartingAnySEy.setValue(y);
 
         for (Entity e : entities) {
             // TODO : This check is good for now, but at some point we want atmospheric flying
@@ -1074,7 +1118,9 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
             }
             tabAll.addTab(Messages.getString("CustomMechDialog.tabEquipment"), scrEquip);
         }
-        tabAll.addTab(Messages.getString("CustomMechDialog.tabDeployment"), new JScrollPane(panDeploy));
+        tabAll.addTab(Messages.getString(
+                        editableDeployment ? "CustomMechDialog.tabDeployment" : "CustomMechDialog.tabState" ),
+                new JScrollPane(panDeploy));
         if (quirksEnabled && !multipleEntities) {
             JScrollPane scrQuirks = new JScrollPane(panQuirks);
             scrQuirks.getVerticalScrollBar().setUnitIncrement(16);
@@ -1100,13 +1146,6 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
         }
 
         // **CREW TAB**//
-        if (gameOptions().booleanOption(OptionsConstants.ADVANCED_TACOPS_FATIGUE)) {
-            panCrew.add(new JLabel(Messages.getString("CustomMechDialog.labFatigue"), SwingConstants.RIGHT), GBC.std());
-            panCrew.add(fldFatigue, GBC.eop());
-            fldFatigue.setToolTipText(Messages.getString("CustomMechDialog.labFatigueToolTip"));
-        }
-        fldFatigue.setText(Integer.toString(entity.getCrew().getFatigue()));
-
         if (gameOptions().booleanOption(OptionsConstants.RPG_INDIVIDUAL_INITIATIVE)) {
             panCrew.add(new JLabel(Messages.getString("CustomMechDialog.labInit"), SwingConstants.RIGHT), GBC.std());
             panCrew.add(fldInit, GBC.eop());
@@ -1172,6 +1211,13 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
         panDeploy.add(txtDeploymentOffset, GBC.eol());
         panDeploy.add(labDeploymentWidth, GBC.std());
         panDeploy.add(txtDeploymentWidth, GBC.eol());
+
+        panDeploy.add(new JLabel(Messages.getString("CustomMechDialog.labDeploymentAnyNW")), GBC.std());
+        panDeploy.add(spinStartingAnyNWx, GBC.std());
+        panDeploy.add(spinStartingAnyNWy, GBC.eol());
+        panDeploy.add(new JLabel(Messages.getString("CustomMechDialog.labDeploymentAnySE")), GBC.std());
+        panDeploy.add(spinStartingAnySEx, GBC.std());
+        panDeploy.add(spinStartingAnySEy, GBC.eol());
 
         numFormatter.setMinimum(0);
         numFormatter.setCommitsOnValidEdit(true);
@@ -1258,7 +1304,6 @@ public class CustomMechDialog extends AbstractButtonDialog implements ActionList
         }
 
         if (!editable) {
-            fldFatigue.setEnabled(false);
             fldInit.setEnabled(false);
             fldCommandInit.setEnabled(false);
             chCommander.setEnabled(false);

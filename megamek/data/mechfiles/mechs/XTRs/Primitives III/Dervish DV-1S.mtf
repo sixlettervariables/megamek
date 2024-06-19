@@ -1,12 +1,19 @@
-Version:1.3
-Dervish
-DV-1S
+chassis:Dervish
+model:DV-1S
 mul id:877
 Config:Biped
 techbase:Inner Sphere
 era:2520
 source:XTR: Primitives III
 rules level:3
+role:Missile Boat
+
+
+
+
+quirk:easy_maintain
+quirk:obsolete
+
 
 mass:55
 engine:265 Fusion Engine(IS)
@@ -162,7 +169,7 @@ manufacturer:Sword of the Prophet Enterprises,Achernar Battlemechs,Arcturan Arms
 primaryfactory:Algedi,Achernar,Arcturus,Boardwalk,Coventry,Filtvelt,New Avalon,New Ivaarsen,New Samarkand,Randis IV,Oriente
 systemmanufacturer:CHASSIS:Dorwinion Primitive
 systemmanufacturer:ENGINE:Fusion 265 Primitive
-systemmanufacturer:ARMOR:Unknown Primitve
+systemmanufacturer:ARMOR:Unknown Primitive
 systemmanufacturer:JUMPJET:Unknown
 systemmanufacturer:COMMUNICATIONS:Unknown
 systemmanufacturer:TARGETING:Unknown

@@ -19,7 +19,9 @@
 package megamek.common;
 
 import megamek.common.enums.MPBoosters;
+import megamek.common.equipment.MiscMounted;
 import megamek.common.options.OptionsConstants;
+import megamek.common.planetaryconditions.PlanetaryConditions;
 
 /**
  * Quad Mek that can convert into either tracked or wheeled vehicle mode.
@@ -91,7 +93,7 @@ public class QuadVee extends QuadMech {
 
     public String getMotiveTypeString(int motiveType) {
         if (motiveType < 0 || motiveType >= MOTIVE_STRING.length) {
-            return MOTIVE_STRING[MOTIVE_UNKNOWN];
+            return "Unknown";
         }
         return MOTIVE_STRING[motiveType];
     }
@@ -132,6 +134,10 @@ public class QuadVee extends QuadMech {
         return false;
     }
 
+    @Override
+    public CrewType defaultCrewType() {
+        return CrewType.QUADVEE;
+    }
 
     @Override
     public int getWalkMP(MPCalculationSetting mpCalculationSetting) {
@@ -196,12 +202,13 @@ public class QuadVee extends QuadMech {
         }
 
         if (!mpCalculationSetting.ignoreWeather && (null != game)) {
-            int weatherMod = game.getPlanetaryConditions().getMovementMods(this);
+            PlanetaryConditions conditions = game.getPlanetaryConditions();
+            int weatherMod = conditions.getMovementMods(this);
             mp = Math.max(mp + weatherMod, 0);
 
             if(getCrew().getOptions().stringOption(OptionsConstants.MISC_ENV_SPECIALIST).equals(Crew.ENVSPC_WIND)
-                    && (game.getPlanetaryConditions().getWeather() == PlanetaryConditions.WE_NONE)
-                    && (game.getPlanetaryConditions().getWindStrength() == PlanetaryConditions.WI_TORNADO_F13)) {
+                    && conditions.getWeather().isClear()
+                    && conditions.getWind().isTornadoF1ToF3()) {
                 mp += 1;
             }
         }
@@ -373,12 +380,12 @@ public class QuadVee extends QuadMech {
     @Override
     public boolean canFall(boolean gyroLegDamage) {
         // QuadVees cannot fall due to failed PSR in vehicle mode.
-        return getConversionMode() == CONV_MODE_MECH || convertingNow;
+        return getConversionMode() == CONV_MODE_MECH || (convertingNow && game.getPhase().isMovement());
     }
 
     /**
-     * The cost to convert between quad and vehicle modes.
-     * @return
+     * Computes conversion cost.
+     * @return The cost to convert between quad and vehicle modes.
      */
     public int conversionCost() {
         int cost = 2;
@@ -390,8 +397,8 @@ public class QuadVee extends QuadMech {
                 }
             }
         }
-        for (Mounted m : getMisc()) {
-            if (m.getType() instanceof MiscType && m.getType().hasFlag(MiscType.F_TRACKS)) {
+        for (MiscMounted m : getMisc()) {
+            if (m.getType().hasFlag(MiscType.F_TRACKS)) {
                 cost += m.getDamageTaken();
                 break;
             }

@@ -27,7 +27,9 @@ import megamek.common.Mounted;
 import megamek.common.TargetRoll;
 import megamek.common.Targetable;
 import megamek.common.ToHitData;
+import megamek.common.equipment.MiscMounted;
 import megamek.common.options.OptionsConstants;
+import org.apache.logging.log4j.LogManager;
 
 /**
  * The attacker makes a club attack on the target. This also covers mech melee
@@ -38,14 +40,14 @@ import megamek.common.options.OptionsConstants;
  */
 public class ClubAttackAction extends PhysicalAttackAction {
     private static final long serialVersionUID = -8744665286254604559L;
-    private Mounted club;
+    private MiscMounted club;
     private int aiming;
     private boolean zweihandering;
 
     /**
      * Creates new ClubAttackAction
      */
-    public ClubAttackAction(int entityId, int targetId, Mounted club,
+    public ClubAttackAction(int entityId, int targetId, MiscMounted club,
                             int aimTable) {
         super(entityId, targetId);
         this.club = club;
@@ -62,7 +64,7 @@ public class ClubAttackAction extends PhysicalAttackAction {
      * @param zweihandering - a boolean indicating whether the attacker is zweihandering (using both hands)
      */
     public ClubAttackAction(int entityId, int targetType, int targetId,
-                            Mounted club, int aimTable, boolean zweihandering) {
+                            MiscMounted club, int aimTable, boolean zweihandering) {
         super(entityId, targetType, targetId);
         this.club = club;
         aiming = aimTable;
@@ -78,9 +80,9 @@ public class ClubAttackAction extends PhysicalAttackAction {
      * @param zweihandering - a boolean indicating whether the attacker is zweihandering (using both hands)
      * @return an integer of the damage dealt
      */
-    public static int getDamageFor(Entity entity, Mounted club,
+    public static int getDamageFor(Entity entity, MiscMounted club,
             boolean targetInfantry, boolean zweihandering) {
-        MiscType mType = (MiscType) (club.getType());
+        MiscType mType = club.getType();
         int nDamage = (int) Math.floor(entity.getWeight() / 5.0);
         if (mType.hasSubType(MiscType.S_SWORD)) {
             nDamage = (int) (Math.ceil(entity.getWeight() / 10.0) + 1.0);
@@ -256,8 +258,13 @@ public class ClubAttackAction extends PhysicalAttackAction {
         final Entity ae = game.getEntity(attackerId);
         MiscType clubType;
         // arguments legal?
-        if ((ae == null) || (target == null)) {
-            throw new IllegalArgumentException("Attacker or target not valid");
+        if (ae == null) {
+            LogManager.getLogger().error("Attacker not valid");
+            return new ToHitData(TargetRoll.IMPOSSIBLE, "Attacker not valid");
+        }
+        if (target == null) {
+            LogManager.getLogger().error("target not valid");
+            return new ToHitData(TargetRoll.IMPOSSIBLE, "target not valid");
         }
         if (club == null) {
             throw new IllegalArgumentException("Club is null");
@@ -556,11 +563,11 @@ public class ClubAttackAction extends PhysicalAttackAction {
         return toHit;
     }
 
-    public Mounted getClub() {
+    public MiscMounted getClub() {
         return club;
     }
 
-    public void setClub(Mounted club) {
+    public void setClub(MiscMounted club) {
         this.club = club;
     }
 

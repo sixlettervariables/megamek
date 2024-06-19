@@ -19,7 +19,7 @@
 package megamek.common.alphaStrike;
 
 import megamek.common.BTObject;
-import megamek.common.UnitRole;
+import megamek.common.CombatRole;
 import megamek.common.strategicBattleSystems.BattleForceSUAFormatter;
 
 import java.util.Arrays;
@@ -39,9 +39,20 @@ import static megamek.common.alphaStrike.BattleForceSUA.*;
  * These return an undamaged state by default and thus require overriding in AlphaStrikeElement
  * (e.g. {@link #getCurrentArmor()}.
  */
-public interface ASCardDisplayable extends BattleForceSUAFormatter, BTObject {
+public interface ASCardDisplayable extends BattleForceSUAFormatter, BTObject, CombatRole {
 
     // TODO : Must also be able to return more "current" values for MV, Dmg, crits etc.
+
+
+    @Override
+    default String generalName() {
+        return getChassis();
+    }
+
+    @Override
+    default String specificName() {
+        return getModel();
+    }
 
     /** @return The AS element's model, such as "AS7-D". */
     String getModel();
@@ -49,14 +60,13 @@ public interface ASCardDisplayable extends BattleForceSUAFormatter, BTObject {
     /** @return The AS element's chassis, such as "Atlas". */
     String getChassis();
 
+    String getFullChassis();
+
     /** @return This AS element's MUL ID if it has one, -1 otherwise. */
     int getMulId();
 
     /** @return The AS element's Point Value (PV). This is not adjusted for damage on the element. */
     int getPointValue();
-
-    /** @return The AS element's battlefield role (ROLE). */
-    UnitRole getRole();
 
     /** @return The AS element's Pilot Skill (SKILL). Unless another skill has been set, this is 4. */
     default int getSkill() {
@@ -352,5 +362,20 @@ public interface ASCardDisplayable extends BattleForceSUAFormatter, BTObject {
     @Override
     default boolean isIndustrialMek() {
         return isType(IM);
+    }
+
+    @Override
+    default boolean isWarShip() {
+        return isType(WS);
+    }
+
+    @Override
+    default boolean isJumpShip() {
+        return isType(JS);
+    }
+
+    @Override
+    default boolean isSpaceStation() {
+        return isType(SS);
     }
 }

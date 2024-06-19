@@ -20,6 +20,7 @@ package megamek.common.battlevalue;
 
 import megamek.common.*;
 import megamek.common.annotations.Nullable;
+import megamek.common.equipment.WeaponMounted;
 import megamek.common.weapons.ppc.PPCWeapon;
 import megamek.common.weapons.prototypes.*;
 
@@ -54,7 +55,7 @@ public abstract class HeatTrackingBVCalculator extends BVCalculator {
         }
 
         List<WeaponBvHeatRecord> weaponRecords = new ArrayList<>();
-        for (Mounted mounted : entity.getWeaponList()) {
+        for (WeaponMounted mounted : entity.getWeaponList()) {
             if (!countAsOffensiveWeapon(mounted)) {
                 continue;
             }
@@ -86,14 +87,13 @@ public abstract class HeatTrackingBVCalculator extends BVCalculator {
         }
 
         weaponRecords.sort(heatSorter);
-        boolean exceededEfficiency = false;
         int heatEfficiency = heatEfficiency();
+        heatEfficiencyExceeded = heatEfficiency <= 0;
 
         for (WeaponBvHeatRecord weaponRecord : weaponRecords) {
             heatSum += weaponRecord.heat;
             processWeapon(weaponRecord.weapon, true, true);
-            if ((!exceededEfficiency) && (heatSum >= heatEfficiency)) {
-                exceededEfficiency = true;
+            if (heatSum >= heatEfficiency) {
                 heatEfficiencyExceeded = true;
             }
         }
@@ -143,11 +143,11 @@ public abstract class HeatTrackingBVCalculator extends BVCalculator {
         return null;
     }
 
-    protected double weaponHeat(Mounted weapon) {
+    protected double weaponHeat(WeaponMounted weapon) {
         WeaponType wType = (WeaponType) weapon.getType();
         double weaponHeat = wType.getHeat();
 
-        if (weapon.isOneShotWeapon()) {
+        if (weapon.isOneShot()) {
             weaponHeat /= 4;
         }
 

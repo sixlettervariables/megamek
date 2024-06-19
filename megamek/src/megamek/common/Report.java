@@ -28,7 +28,6 @@ import javax.swing.*;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 import java.awt.*;
-import java.io.Serializable;
 import java.util.Hashtable;
 import java.util.Vector;
 
@@ -71,7 +70,7 @@ import static megamek.client.ui.swing.util.UIUtil.uiGray;
  *
  * @author Ryan McConnell (oscarmm)
  */
-public class Report implements Serializable {
+public class Report implements ReportEntry {
     /*
      * Note: some fields are marked transient because they are only used by the
      * server (or only the client). This shaves a few bytes off the packet size,
@@ -409,6 +408,14 @@ public class Report implements Serializable {
         return this;
     }
 
+    public Report add(Roll diceRoll) {
+        return addDataWithTooltip(String.valueOf(diceRoll.getIntValue()), diceRoll.getReport());
+    }
+
+    public Report addDataWithTooltip(Integer data, String tooltip) {
+        return addDataWithTooltip(String.valueOf(data), tooltip);
+    }
+
     /**
      * Adds a field to the report with additional data available as a tooltip
      *
@@ -417,8 +424,8 @@ public class Report implements Serializable {
      * @return This Report to allow chaining
      */
     public Report addDataWithTooltip(String data, String tooltip) {
-        tagData.addElement(String.format("<font color='0xffffff'><a href='%s%s'>%s</a></font>",
-                TOOLTIP_LINK, tooltip, data));
+        String tipFormat = "<a href='%s%s'>%s</a>";
+        tagData.addElement(String.format(tipFormat, TOOLTIP_LINK, tooltip, data));
         return this;
     }
 
@@ -641,6 +648,12 @@ public class Report implements Serializable {
         return text.toString();
     }
 
+    @Override
+    public ReportEntry addRoll(Roll roll) {
+        add(roll.getReport());
+        return this;
+    }
+
     private void handleIndentation(StringBuffer sb) {
         if ((indentation == 0) || (sb.length() == 0)) {
             return;
@@ -688,14 +701,16 @@ public class Report implements Serializable {
     }
 
     public static void setupStylesheet(StyleSheet styleSheet) {
-        Font font = UIManager.getFont("Label.font");
+        GUIPreferences GUIP = GUIPreferences.getInstance();
+        Font font = new Font(GUIP.getReportFontType(), Font.PLAIN, UIUtil.FONT_SCALE1);
         int size = UIUtil.scaleForGUI(UIUtil.FONT_SCALE1);
 
-        GUIPreferences guip = GUIPreferences.getInstance();
-        styleSheet.addRule(
-                "pre { font-family: " + font.getFamily() + "; font-size: " + size + "pt; font-style:normal;}");
-        styleSheet.addRule("a { color: " + hexColor(guip.getReportLinkColor()) + " }");
-        styleSheet.addRule("span.warning { color: " + hexColor(guip.getWarningColor()) + " }");
+        styleSheet.addRule("pre { font-family: " + font.getFamily() + "; font-size: " + size + "pt; font-style:normal;}");
+        styleSheet.addRule("a { color: " + hexColor(GUIP.getReportLinkColor()) + " }");
+        styleSheet.addRule("span.warning { color: " + hexColor(GUIP.getWarningColor()) + " }");
+        styleSheet.addRule("span.success { color: " + hexColor(GUIP.getReportSuccessColor()) + " }");
+        styleSheet.addRule("span.miss { color: " + hexColor(GUIP.getReportMissColor()) + " }");
+        styleSheet.addRule("span.info { color: " + hexColor(GUIP.getReportInfoColor()) + " }");
     }
 
     public String span(String name, String text) {

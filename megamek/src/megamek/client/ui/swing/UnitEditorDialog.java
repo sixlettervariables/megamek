@@ -21,6 +21,7 @@ import megamek.common.options.OptionsConstants;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.util.*;
 import java.util.function.BiConsumer;
 
@@ -141,6 +142,12 @@ public class UnitEditorDialog extends JDialog {
         getContentPane().add(panButtons, BorderLayout.PAGE_END);
 
         // TODO: size right
+
+        String closeAction = "closeAction";
+        final KeyStroke escape = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
+        getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(escape, closeAction);
+        getRootPane().getInputMap(JComponent.WHEN_FOCUSED).put(escape, closeAction);
+        getRootPane().getActionMap().put(closeAction, new CloseAction(this));
 
         adaptToGUIScale();
         pack();
@@ -642,7 +649,7 @@ public class UnitEditorDialog extends JDialog {
         gridBagConstraints.weightx = 0.0;
         panSystem.add(new JLabel("<html><b>" + Messages.getString("UnitEditorDialog.sensor") + "</b><br></html>"),
                 gridBagConstraints);
-        sensorCrit = new CheckCritPanel(4, tank.getSensorHits());
+        sensorCrit = new CheckCritPanel(Tank.CRIT_SENSOR_MAX, tank.getSensorHits());
         gridBagConstraints.gridx = 1;
         gridBagConstraints.weightx = 1.0;
         panSystem.add(sensorCrit, gridBagConstraints);
@@ -786,7 +793,7 @@ public class UnitEditorDialog extends JDialog {
         gridBagConstraints.weightx = 0.0;
         panSystem.add(new JLabel("<html><b>" + Messages.getString("UnitEditorDialog.sensor") + "</b><br></html>"),
                 gridBagConstraints);
-        sensorCrit = new CheckCritPanel(4, vtol.getSensorHits());
+        sensorCrit = new CheckCritPanel(Tank.CRIT_SENSOR_MAX, vtol.getSensorHits());
         gridBagConstraints.gridx = 1;
         gridBagConstraints.weightx = 1.0;
         panSystem.add(sensorCrit, gridBagConstraints);

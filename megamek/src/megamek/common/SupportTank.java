@@ -19,6 +19,8 @@
  */
 package megamek.common;
 
+import megamek.common.equipment.ArmorType;
+
 /**
  * This is a support vehicle
  *
@@ -35,6 +37,7 @@ public class SupportTank extends Tank {
         barRating = new int[locations()];
     }
 
+    @Override
     public void setBARRating(int rating, int loc) {
         barRating[loc] = rating;
     }
@@ -48,12 +51,12 @@ public class SupportTank extends Tank {
 
     @Override
     public int getBARRating(int loc) {
-        return barRating[loc];
+        return (barRating == null) ? 0 : barRating[loc];
     }
 
     @Override
     public boolean hasBARArmor(int loc) {
-        return true;
+        return ArmorType.forEntity(this, loc).hasFlag(MiscType.F_SUPPORT_VEE_BAR_ARMOR);
     }
 
     @Override
@@ -389,5 +392,10 @@ public class SupportTank extends Tank {
     @Override
     public boolean isTrailer() {
         return hasWorkingMisc(MiscType.F_TRAILER_MODIFICATION);
+    }
+
+    @Override
+    public int getGenericBattleValue() {
+        return (int) Math.round(Math.exp(2.681 + 0.681*Math.log(getWeight())));
     }
 }

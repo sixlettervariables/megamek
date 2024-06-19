@@ -25,25 +25,22 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import static megamek.client.ui.swing.util.UIUtil.guiScaledFontHTML;
-import static megamek.client.ui.swing.util.UIUtil.uiLightViolet;
-
 public class ReportDisplay extends StatusBarPhaseDisplay  {
     private static final long serialVersionUID = 6185643976857892270L;
 
-    public static enum ReportCommand implements PhaseCommand {
+    public enum ReportCommand implements PhaseCommand {
         REPORT_REPORT("reportReport"),
         REPORT_PLAYERLIST("reportPlayerList"),
         REPORT_REROLLINITIATIVE("reportRerollInitiative");
 
-        String cmd;
+        final String cmd;
 
         /**
          * Priority that determines this buttons order
          */
         public int priority;
 
-        private ReportCommand(String c) {
+        ReportCommand(String c) {
             cmd = c;
         }
 
@@ -70,7 +67,7 @@ public class ReportDisplay extends StatusBarPhaseDisplay  {
         public String getHotKeyDesc() {
             String result = "";
 
-            if (this ==REPORT_REPORT) {
+            if (this == REPORT_REPORT) {
                 result = "<BR>";
                 result += "&nbsp;&nbsp;" + KeyCommandBind.getDesc(KeyCommandBind.ROUND_REPORT);
             }
@@ -83,8 +80,10 @@ public class ReportDisplay extends StatusBarPhaseDisplay  {
     private Map<ReportCommand, MegamekButton> buttons;
     private boolean rerolled; // have we rerolled an init?
 
-    private static final String RD_REPORTDIPLAY = "ReportDisplay.";
+    private static final String RD_REPORTDISPLAY = "ReportDisplay.";
     private static final String RD_TOOLTIP = ".tooltip";
+
+    private final ClientGUI clientgui;
 
     /**
      * Creates and lays out a new movement phase display for the specified
@@ -92,6 +91,7 @@ public class ReportDisplay extends StatusBarPhaseDisplay  {
      */
     public ReportDisplay(ClientGUI clientgui) {
         super(clientgui);
+        this.clientgui = clientgui;
 
         if (clientgui == null) {
             return;
@@ -109,14 +109,13 @@ public class ReportDisplay extends StatusBarPhaseDisplay  {
 
         clientgui.getClient().getGame().addGameListener(this);
         clientgui.getBoardView().addBoardViewListener(this);
-        clientgui.getBoardView().addKeyListener(this);
     }
 
     @Override
     protected void setButtons() {
         buttons = new HashMap<>((int) (ReportCommand.values().length * 1.25 + 0.5));
         for (ReportCommand cmd : ReportCommand.values()) {
-            buttons.put(cmd, createButton(cmd.getCmd(), RD_REPORTDIPLAY));
+            buttons.put(cmd, createButton(cmd.getCmd(), RD_REPORTDISPLAY));
         }
         numButtonGroups = (int) Math.ceil((buttons.size() + 0.0) / buttonsPerGroup);
     }
@@ -124,7 +123,7 @@ public class ReportDisplay extends StatusBarPhaseDisplay  {
     @Override
     protected void setButtonsTooltips() {
         for (ReportCommand cmd : ReportCommand.values()) {
-            String tt = createToolTip(cmd.getCmd(), RD_REPORTDIPLAY, cmd.getHotKeyDesc());
+            String tt = createToolTip(cmd.getCmd(), RD_REPORTDISPLAY, cmd.getHotKeyDesc());
             buttons.get(cmd).setToolTipText(tt);
         }
     }
@@ -149,9 +148,6 @@ public class ReportDisplay extends StatusBarPhaseDisplay  {
 
     }
 
-    /**
-     * Sets you as ready and disables the ready button.
-     */
     @Override
     public void ready() {
         if (!clientgui.getBoardView().isTileImagesLoaded()) {
@@ -211,7 +207,7 @@ public class ReportDisplay extends StatusBarPhaseDisplay  {
     }
 
     private void resetButtons() {
-        butDone.setEnabled(true);
+        butDone.setEnabled(!clientgui.getClient().getLocalPlayer().isDone());
         setReportEnabled(true);
         setPlayerListEnabled(true);
 
@@ -222,7 +218,6 @@ public class ReportDisplay extends StatusBarPhaseDisplay  {
 
     @Override
     public void gamePhaseChange(GamePhaseChangeEvent e) {
-        // Are we ignoring events?
         if (isIgnoringEvents()) {
             return;
         }
@@ -251,13 +246,9 @@ public class ReportDisplay extends StatusBarPhaseDisplay  {
         clientgui.bingMyTurn();
     }
 
-    /**
-     * Stop just ignoring events and actually stop listening to them.
-     */
     @Override
     public void removeAllListeners() {
         clientgui.getClient().getGame().removeGameListener(this);
         clientgui.getBoardView().removeBoardViewListener(this);
-        clientgui.getBoardView().removeKeyListener(this);
     }
 }

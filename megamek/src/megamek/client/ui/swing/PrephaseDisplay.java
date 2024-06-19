@@ -35,7 +35,6 @@ import javax.swing.event.ListSelectionListener;
 import megamek.client.Client;
 import megamek.client.event.BoardViewEvent;
 import megamek.client.ui.Messages;
-import megamek.client.ui.swing.util.CommandAction;
 import megamek.client.ui.swing.util.KeyCommandBind;
 import megamek.client.ui.swing.util.MegaMekController;
 import megamek.client.ui.swing.widget.MegamekButton;
@@ -46,14 +45,11 @@ import megamek.common.event.GamePhaseChangeEvent;
 import megamek.common.event.GameTurnChangeEvent;
 import org.apache.logging.log4j.LogManager;
 
-import static megamek.client.ui.swing.util.UIUtil.guiScaledFontHTML;
-import static megamek.client.ui.swing.util.UIUtil.uiLightViolet;
-
 /**
  * PrephaseDisplay for revealing hidden units. This occurs before Move and Firing
  */
 public class PrephaseDisplay extends StatusBarPhaseDisplay implements
-        KeyListener, ItemListener, ListSelectionListener {
+        ItemListener, ListSelectionListener {
     private static final long serialVersionUID = 3441669419807288865L;
 
     /**
@@ -164,50 +160,10 @@ public class PrephaseDisplay extends StatusBarPhaseDisplay implements
      */
     protected void registerKeyCommands() {
         MegaMekController controller = clientgui.controller;
-        final StatusBarPhaseDisplay display = this;
-
-        controller.registerCommandAction(KeyCommandBind.NEXT_UNIT.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || !display.isVisible()
-                                || display.isIgnoringEvents()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        selectEntity(clientgui.getClient().getNextEntityNum(cen));
-                    }
-                });
-
-        // Register the action for PREV_UNIT
-        controller.registerCommandAction(KeyCommandBind.PREV_UNIT.cmd,
-                new CommandAction() {
-
-                    @Override
-                    public boolean shouldPerformAction() {
-                        if (!clientgui.getClient().isMyTurn()
-                                || clientgui.getBoardView().getChatterBoxActive()
-                                || !display.isVisible()
-                                || display.isIgnoringEvents()) {
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    }
-
-                    @Override
-                    public void performAction() {
-                        selectEntity(clientgui.getClient().getPrevEntityNum(cen));
-                    }
-                });
+        controller.registerCommandAction(KeyCommandBind.NEXT_UNIT, this,
+                () -> selectEntity(clientgui.getClient().getNextEntityNum(cen)));
+        controller.registerCommandAction(KeyCommandBind.PREV_UNIT, this,
+                () -> selectEntity(clientgui.getClient().getPrevEntityNum(cen)));
     }
 
     /**
@@ -224,11 +180,8 @@ public class PrephaseDisplay extends StatusBarPhaseDisplay implements
         clientgui.getClient().getGame().addGameListener(this);
         clientgui.getBoardView().addBoardViewListener(this);
 
-        clientgui.getBoardView().addKeyListener(this);
-
         // mech display.
         clientgui.getUnitDisplay().wPan.weaponList.addListSelectionListener(this);
-        clientgui.getUnitDisplay().wPan.weaponList.addKeyListener(this);
     }
 
     @Override
@@ -313,10 +266,6 @@ public class PrephaseDisplay extends StatusBarPhaseDisplay implements
         butDone.setEnabled(true);
     }
 
-    /**
-     * Called when the current entity is done firing. Send out our attack queue
-     * to the server.
-     */
     @Override
     public void ready() {
         // stop further input (hopefully)
@@ -332,10 +281,12 @@ public class PrephaseDisplay extends StatusBarPhaseDisplay implements
         setStatusBarText(Messages.getFormattedString("PrephaseDisplay.its_your_turn", phase.toString(), ""));
         butDone.setText("<html><b>" + Messages.getString("PrephaseDisplay.Done") + "</b></html>");
 
-        clientgui.getBoardView().clearFieldOfFire();
-        clientgui.getBoardView().clearSensorsRanges();
+        clientgui.clearFieldOfFire();
+        clientgui.clearTemporarySprites();
 
-        selectEntity(clientgui.getClient().getFirstEntityNum());
+        if (GUIP.getAutoSelectNextUnit()) {
+            selectEntity(clientgui.getClient().getFirstEntityNum());
+        }
 
         if (!clientgui.getBoardView().isMovingUnits()) {
             clientgui.maybeShowUnitDisplay();
@@ -354,10 +305,9 @@ public class PrephaseDisplay extends StatusBarPhaseDisplay implements
         clientgui.getBoardView().select(null);
         clientgui.getBoardView().highlight(null);
         clientgui.getBoardView().cursor(null);
-        clientgui.getBoardView().clearFiringSolutionData();
         clientgui.getBoardView().clearMovementData();
-        clientgui.getBoardView().clearFieldOfFire();
-        clientgui.getBoardView().clearSensorsRanges();
+        clientgui.clearFieldOfFire();
+        clientgui.clearTemporarySprites();
         clientgui.setSelectedEntityNum(Entity.NONE);
 
         refreshButtons();
